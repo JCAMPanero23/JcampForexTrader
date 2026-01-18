@@ -277,13 +277,14 @@ git commit -m "Updated strategy logic"
 - [x] Setup clean repository
 - [x] Create folder structure
 - [x] Setup MT5 symlinks
-- [ ] Extract indicators from BacktestEA (4-6 hours)
-- [ ] Extract regime detection (3-4 hours)
+- [x] Extract indicators from BacktestEA (Session 2 - ~1 hour)
+- [x] Extract regime detection (Session 2 - ~1.5 hours)
 - [ ] Extract strategies (6-8 hours)
 - [ ] Update Strategy_AnalysisEA to use modules (2-3 hours)
 - [ ] Test compilation in MetaEditor
 
 **Total Estimated Time:** 16-23 hours
+**Completed:** ~2.5 hours | **Remaining:** ~13.5-20.5 hours
 
 ### Phase 2: Local Testing (Weeks 3-4)
 - [ ] Copy CSM_AnalysisEA from old repo
@@ -378,27 +379,59 @@ Flow: Test strategies in CSM → Refine in backtesting → Deploy live
 
 ## 🎯 CURRENT SESSION STATUS
 
-**Session:** 1 (Setup & Configuration)
-**Date:** January 18, 2026
-**Duration:** ~2 hours
+**Session:** 2 (Indicator & Regime Extraction)
+**Date:** January 19, 2026
+**Duration:** ~2.5 hours
 **Status:** ✅ Complete
 
 **Accomplished:**
-1. ✅ Created new clean repository
-2. ✅ Setup folder structure
-3. ✅ Migrated documentation
-4. ✅ Created MT5 symlinks (verified working)
-5. ✅ Git initialized (3 commits)
+1. ✅ Extracted 4 indicator modules (EMA, ATR, ADX, RSI)
+2. ✅ Extracted regime detection module (100-point scoring system)
+3. ✅ Created modular .mqh files with clean dependencies
+4. ✅ Designed stateless architecture for multi-pair support
+
+**Files Created:**
+- `MT5_EAs/Include/JcampStrategies/Indicators/EmaCalculator.mqh`
+- `MT5_EAs/Include/JcampStrategies/Indicators/AtrCalculator.mqh`
+- `MT5_EAs/Include/JcampStrategies/Indicators/AdxCalculator.mqh`
+- `MT5_EAs/Include/JcampStrategies/Indicators/RsiCalculator.mqh`
+- `MT5_EAs/Include/JcampStrategies/RegimeDetector.mqh`
 
 **Git Commits:**
-1. `a9d15ce` - Initial commit: CSM architecture foundation
-2. `621d1d2` - Add MT5 path integration tools
-3. `25f2f10` - Symlinks successfully created and verified
+1. `d82731c` - feat: Extract indicator modules from BacktestEA
+2. `1571276` - feat: Extract regime detection module from BacktestEA
 
 **Next Session Focus:**
-- Extract indicators from BacktestEA.mq5
-- Start with EmaCalculator.mqh
-- Goal: All 4 indicators extracted (4-6 hours)
+- Extract TrendRiderStrategy.mqh (135-point confidence system)
+- Extract RangeRiderStrategy.mqh
+- Goal: Complete strategy extraction (6-8 hours)
+
+---
+
+## 📜 SESSION HISTORY
+
+### Session 1: Setup & Configuration (January 18, 2026)
+**Duration:** ~2 hours | **Status:** ✅ Complete
+
+**Accomplished:**
+- Created new clean repository
+- Setup folder structure
+- Migrated documentation
+- Created MT5 symlinks (verified working)
+- Git initialized
+
+**Commits:** `a9d15ce`, `621d1d2`, `25f2f10`
+
+### Session 2: Indicator & Regime Extraction (January 19, 2026)
+**Duration:** ~2.5 hours | **Status:** ✅ Complete
+
+**Accomplished:**
+- Extracted 4 indicator modules (EMA, ATR, ADX, RSI)
+- Extracted regime detection module (100-point scoring)
+- Created modular .mqh architecture
+- Designed stateless multi-pair support
+
+**Commits:** `d82731c`, `1571276`
 
 ---
 
