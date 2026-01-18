@@ -1,0 +1,29 @@
+# MT5 Compiled Files
+*.ex5
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# C# Build
+[Bb]in/
+[Oo]bj/
+.vs/
+*.user
+*.suo
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*~
+
+# CSM Data Files (runtime generated)
+CSM_Data/
+*.json
+*.txt
+
+# IDE
+.vscode/
+.idea/
