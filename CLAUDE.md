@@ -2,7 +2,7 @@
 
 **Purpose:** Single authoritative reference for Claude Code
 **Project:** CSM-based forex trading system with modular strategies
-**Last Updated:** January 18, 2026
+**Last Updated:** January 18, 2026 (Session 1 Complete - Repo Setup + Symlinks)
 
 ---
 
@@ -17,12 +17,26 @@
 ```bash
 /d/JcampForexTrader/
 /d/JcampForexTrader/MT5_EAs/
-/d/JcampForexTrader/CSMMonitor/
+/d/JcampForexTrader/Documentation/
 ```
 
 **NEVER use:**
 - ❌ `D:\JcampForexTrader\` (Windows paths)
 - ❌ `/mnt/d/` (WSL paths)
+
+### MT5 MetaEditor Integration ✅
+
+**Symlinks Created (January 18, 2026):**
+- ✅ `MT5\Experts\Jcamp\` → `D:\JcampForexTrader\MT5_EAs\Experts\`
+- ✅ `MT5\Include\JcampStrategies\` → `D:\JcampForexTrader\MT5_EAs\Include\JcampStrategies\`
+
+**What This Means:**
+- Work in clean dev folder: `D:\JcampForexTrader\MT5_EAs\`
+- MetaEditor sees changes automatically (no manual copying)
+- Compile directly in MetaEditor (F7)
+- Git tracks changes normally
+
+**See:** `SYMLINK_VERIFICATION.md` for complete setup details
 
 ---
 
@@ -30,55 +44,78 @@
 
 ```
 /d/JcampForexTrader/
+├── .git/                              # Git repository (initialized ✅)
 ├── CLAUDE.md                          # This file
 ├── README.md                          # Project overview
+├── .gitignore                         # Git ignore rules
+├── SYMLINK_VERIFICATION.md            # Symlink setup verification
 │
 ├── MT5_EAs/                          # MQ5 Expert Advisors
-│   ├── Experts/
-│   │   ├── Jcamp_CSM_AnalysisEA.mq5
-│   │   ├── Jcamp_Strategy_AnalysisEA.mq5
-│   │   └── Jcamp_MainTradingEA.mq5
+│   ├── Experts/                      # ← Symlinked to MT5
+│   │   ├── Jcamp_CSM_AnalysisEA.mq5  (TODO)
+│   │   ├── Jcamp_Strategy_AnalysisEA.mq5 (TODO)
+│   │   └── Jcamp_MainTradingEA.mq5   (TODO)
 │   │
 │   └── Include/
-│       └── JcampStrategies/
-│           ├── Indicators/
+│       └── JcampStrategies/          # ← Symlinked to MT5
+│           ├── Indicators/           # (TODO - extract from BacktestEA)
 │           │   ├── EmaCalculator.mqh
 │           │   ├── AtrCalculator.mqh
 │           │   ├── AdxCalculator.mqh
 │           │   └── RsiCalculator.mqh
-│           ├── RegimeDetector.mqh
-│           ├── Strategies/
+│           ├── RegimeDetector.mqh    # (TODO)
+│           ├── Strategies/           # (TODO)
 │           │   ├── IStrategy.mqh
 │           │   ├── TrendRiderStrategy.mqh
 │           │   └── RangeRiderStrategy.mqh
-│           └── SignalExporter.mqh
+│           └── SignalExporter.mqh    # (TODO)
 │
-├── CSMMonitor/                       # C# WPF Dashboard
+├── CSMMonitor/                       # C# WPF Dashboard (TODO - copy from old repo)
 │   └── JcampForexTrader/
 │       ├── MainWindow.xaml
 │       └── MainWindow.xaml.cs
 │
 ├── Documentation/
-│   ├── CORRECT_ARCHITECTURE_FOUND.md
-│   ├── CSM_ARCHITECTURE_SUMMARY.md
-│   └── OPTION_B_FINDINGS.md
+│   ├── CORRECT_ARCHITECTURE_FOUND.md  # ✅ Architecture discovery
+│   ├── CSM_ARCHITECTURE_SUMMARY.md    # ✅ CSM overview
+│   ├── OPTION_B_FINDINGS.md           # ✅ Investigation results
+│   └── MT5_PATH_SETUP.md              # ✅ Symlink guide
 │
-└── Reference/
-    └── Jcamp_BacktestEA.mq5          # 9,063 lines - strategy source
+├── Reference/
+│   └── Jcamp_BacktestEA.mq5          # ✅ 9,063 lines - strategy source
+│
+└── sync_to_mt5.bat                    # Manual sync script (backup option)
+    sync_from_mt5.bat                  # Reverse sync (backup option)
 ```
 
 ---
 
-## 🎯 CURRENT PHASE: Strategy Extraction
+## 🎯 CURRENT PHASE: Strategy Extraction (Phase 1)
 
-**Status:** Setting up clean repository
+**Status:** ✅ Repository Setup Complete | 🚀 Ready to Extract Strategies
 
-**Next Steps:**
-1. Extract indicators from BacktestEA.mq5
-2. Extract regime detection logic
-3. Extract Trend Rider strategy (135-point system)
-4. Extract Range Rider strategy
-5. Create modular .mqh files
+**Session 1 Completed (January 18, 2026):**
+- ✅ New repository created at `/d/JcampForexTrader/`
+- ✅ Clean folder structure created
+- ✅ BacktestEA.mq5 copied as reference (9,063 lines)
+- ✅ Documentation migrated from old project
+- ✅ Symlinks created and verified (MetaEditor integration working)
+- ✅ Git repository initialized (3 commits)
+- ✅ MT5 path integration complete
+
+**Next Session Tasks:**
+1. Extract indicators from BacktestEA.mq5 (4-6 hours)
+   - [ ] EmaCalculator.mqh
+   - [ ] AtrCalculator.mqh
+   - [ ] AdxCalculator.mqh
+   - [ ] RsiCalculator.mqh
+
+2. Extract regime detection logic (3-4 hours)
+   - [ ] RegimeDetector.mqh (100-point scoring)
+
+3. Extract strategies (6-8 hours)
+   - [ ] TrendRiderStrategy.mqh (135-point system)
+   - [ ] RangeRiderStrategy.mqh
 
 ---
 
@@ -109,45 +146,60 @@ CSMMonitor.exe (C# Dashboard)
 - Calculates currency strengths (8 currencies)
 - Exports to csm_current.txt
 - Runs once (any chart)
+- **Status:** Exists in old repo, needs copying
 
 **2. Jcamp_Strategy_AnalysisEA.mq5** (MODULAR VERSION)
 - Evaluates strategies per pair
 - Uses modular .mqh includes
 - Exports to {SYMBOL}_signals.json
 - Runs per pair (EURUSD, GBPUSD, GBPNZD charts)
+- **Status:** Needs updating with new modular architecture
 
 **3. Jcamp_MainTradingEA.mq5**
 - Reads all signal files
 - Executes trades
 - Manages positions
 - Exports history/performance
+- **Status:** Exists in old repo, needs copying
 
 **4. CSMMonitor.exe**
 - Reads all exported files
 - Displays live dashboard
 - 5-second auto-refresh
+- **Status:** Revert to commit 567d05c from old repo
 
 ---
 
-## 📊 STRATEGY MODULES
+## 📊 STRATEGY MODULES (Target Architecture)
 
 ### Indicators (Include/JcampStrategies/Indicators/)
-- **EmaCalculator.mqh** - EMA 20/50/100
-- **AtrCalculator.mqh** - ATR for volatility
-- **AdxCalculator.mqh** - Trend strength
-- **RsiCalculator.mqh** - Momentum
+- **EmaCalculator.mqh** - EMA 20/50/100 calculation
+- **AtrCalculator.mqh** - ATR for volatility measurement
+- **AdxCalculator.mqh** - Trend strength indicator
+- **RsiCalculator.mqh** - Momentum oscillator
 
 ### Regime Detection (Include/JcampStrategies/)
-- **RegimeDetector.mqh** - TRENDING/RANGING/TRANSITIONAL
-- 100-point competitive scoring
+- **RegimeDetector.mqh** - TRENDING/RANGING/TRANSITIONAL classification
+- 100-point competitive scoring system
+- Dynamic regime switching
 
 ### Strategies (Include/JcampStrategies/Strategies/)
-- **IStrategy.mqh** - Base interface
+- **IStrategy.mqh** - Base interface for all strategies
 - **TrendRiderStrategy.mqh** - 135-point confidence system
+  - EMA alignment (0-30 points)
+  - ADX strength (0-25 points)
+  - RSI momentum (0-20 points)
+  - CSM confirmation (0-25 points)
 - **RangeRiderStrategy.mqh** - Support/resistance trading
+  - Range width analysis
+  - S/R level detection
+  - Bounce quality scoring
 
 ### Export (Include/JcampStrategies/)
 - **SignalExporter.mqh** - JSON file writing
+- Exports complete signal data
+- CSM integration
+- Strategy breakdown
 
 ---
 
@@ -157,21 +209,25 @@ CSMMonitor.exe (C# Dashboard)
 - Each component in separate .mqh file
 - Easy to test independently
 - Easy to update/replace
+- Single responsibility principle
 
 ### 2. Strategy Source: BacktestEA
 - BacktestEA.mq5 (9,063 lines) is the validated source
 - Extract proven logic, don't reinvent
 - Maintain calculation accuracy
+- Preserve backtested performance characteristics
 
 ### 3. CSM Integration
 - All strategies use CSM confirmation
 - Currency strength > technical indicators
 - Filters false signals
+- Directional bias validation
 
 ### 4. Clean Separation
 - Indicators → Regime → Strategies → Signals
 - Each layer independent
 - Clear data flow
+- No circular dependencies
 
 ---
 
@@ -181,7 +237,9 @@ CSMMonitor.exe (C# Dashboard)
 ```bash
 cd /d/JcampForexTrader
 git status
-git log --oneline -5
+git log --oneline -10
+git add -A
+git commit -m "Description"
 ```
 
 ### File Navigation
@@ -193,61 +251,203 @@ ls -la /d/JcampForexTrader/MT5_EAs/Experts/
 ls -la /d/JcampForexTrader/MT5_EAs/Include/JcampStrategies/
 
 # View reference EA
-cat /d/JcampForexTrader/Reference/Jcamp_BacktestEA.mq5
+cat /d/JcampForexTrader/Reference/Jcamp_BacktestEA.mq5 | head -100
+
+# Check symlinks working
+ls -la "/c/Users/Jcamp_Laptop/AppData/Roaming/MetaQuotes/Terminal/D0E8209F77C8CF37AD8BF550E51FF075/MQL5/Experts/" | grep Jcamp
+```
+
+### MetaEditor Workflow
+```bash
+# Edit files in dev folder
+cd /d/JcampForexTrader/MT5_EAs/Experts/
+# MetaEditor sees changes automatically via symlinks
+
+# After editing, compile in MetaEditor (F7)
+# Then commit changes
+git add -A
+git commit -m "Updated strategy logic"
 ```
 
 ---
 
-## 🚀 DEPLOYMENT PLAN
+## 🚀 DEPLOYMENT ROADMAP
 
-### Phase 1: Local Development (Current)
-- Extract strategies from BacktestEA
-- Create modular .mqh files
-- Test on local MT5 demo
+### Phase 1: Local Development (CURRENT - Weeks 1-2)
+- [x] Setup clean repository
+- [x] Create folder structure
+- [x] Setup MT5 symlinks
+- [ ] Extract indicators from BacktestEA (4-6 hours)
+- [ ] Extract regime detection (3-4 hours)
+- [ ] Extract strategies (6-8 hours)
+- [ ] Update Strategy_AnalysisEA to use modules (2-3 hours)
+- [ ] Test compilation in MetaEditor
 
-### Phase 2: Local Testing
-- Deploy CSM architecture locally
-- Validate signals
-- Manual trading based on signals
+**Total Estimated Time:** 16-23 hours
 
-### Phase 3: VPS Deployment
-- Setup Forex VPS (Vultr, $12/month)
-- Deploy CSM architecture
-- 24/7 operation
+### Phase 2: Local Testing (Weeks 3-4)
+- [ ] Copy CSM_AnalysisEA from old repo
+- [ ] Copy MainTradingEA from old repo
+- [ ] Deploy CSM architecture on local MT5 demo
+- [ ] Validate signals vs backtest results
+- [ ] Manual trading based on signals (1-2 weeks)
+- [ ] Fine-tune confidence thresholds
 
-### Phase 4: Live Trading
-- Start with micro lots (0.01)
-- Monitor performance
-- Gradual scaling
+### Phase 3: VPS Deployment (Week 5)
+- [ ] Setup Forex VPS (Vultr recommended, $12/month)
+- [ ] Install Windows Server 2022
+- [ ] Install MT5 on VPS
+- [ ] Deploy CSM architecture remotely
+- [ ] Setup file sync for C# Monitor
+- [ ] Verify 24/7 operation
+
+### Phase 4: Live Trading (Weeks 6+)
+- [ ] Start with micro lots (0.01)
+- [ ] Monitor daily performance
+- [ ] Track win rate, R-multiples, drawdown
+- [ ] Gradually increase position size
+- [ ] Aim for consistent profitability
 
 ---
 
 ## 📋 SESSION CHECKLIST
 
 ### Session Start
-- [ ] Read this CLAUDE.md
+- [x] Read this CLAUDE.md
 - [ ] Check git status
 - [ ] Review current phase
+- [ ] Check symlinks still working
 
 ### During Session
-- [ ] Use Git Bash paths
+- [ ] Use Git Bash paths (`/d/...`)
 - [ ] Test incrementally
 - [ ] Document changes
+- [ ] Commit frequently
 
 ### Session End
 - [ ] Update documentation
-- [ ] Commit changes
-- [ ] Update this file if needed
+- [ ] Commit all changes
+- [ ] Update this CLAUDE.md if needed
+- [ ] Note next session tasks
 
 ---
 
 ## 🔗 RELATED PROJECTS
 
-**D:\Jcamp_TradingApp**
-- Phase 8 multi-pair backtesting (Python + C#)
-- Status: Complete, paused for CSM focus
-- Can resume later when CSM is live
+### D:\Jcamp_TradingApp (Phase 8 - Paused)
+- **Status:** Complete, on hold for CSM focus
+- **Content:** Phase 8 multi-pair backtesting (Python + C#)
+- **Purpose:** Advanced backtesting & visualization
+- **When to Resume:** After CSM live trading validated (2-4 months)
+
+**Phase 8 Work Preserved:**
+- Python backtesting engine (30/31 tests passing)
+- C# chart viewer with playback
+- Multi-pair support (EURUSD, GBPUSD, GBPNZD)
+- All bugs documented for future fixes
+
+### Relationship Between Projects
+```
+JcampForexTrader (Current)          Jcamp_TradingApp (Future)
+├── CSM live trading                ├── Multi-pair backtesting
+├── VPS deployment                  ├── Python strategy brain
+├── Real-time signals               ├── Advanced visualization
+└── 24/7 operation                  └── Strategy optimization
+
+Flow: Test strategies in CSM → Refine in backtesting → Deploy live
+```
+
+---
+
+## 📖 KEY DOCUMENTATION
+
+### Setup & Configuration
+- **SYMLINK_VERIFICATION.md** - MT5 path integration guide
+- **MT5_PATH_SETUP.md** - Detailed symlink setup instructions
+- **README.md** - Project overview
+
+### Architecture & Design
+- **CORRECT_ARCHITECTURE_FOUND.md** - CSM architecture discovery
+- **CSM_ARCHITECTURE_SUMMARY.md** - CSM overview
+- **OPTION_B_FINDINGS.md** - MainTradingEA investigation
+
+### Reference
+- **Reference/Jcamp_BacktestEA.mq5** - Strategy source (9,063 lines)
+
+---
+
+## 🎯 CURRENT SESSION STATUS
+
+**Session:** 1 (Setup & Configuration)
+**Date:** January 18, 2026
+**Duration:** ~2 hours
+**Status:** ✅ Complete
+
+**Accomplished:**
+1. ✅ Created new clean repository
+2. ✅ Setup folder structure
+3. ✅ Migrated documentation
+4. ✅ Created MT5 symlinks (verified working)
+5. ✅ Git initialized (3 commits)
+
+**Git Commits:**
+1. `a9d15ce` - Initial commit: CSM architecture foundation
+2. `621d1d2` - Add MT5 path integration tools
+3. `25f2f10` - Symlinks successfully created and verified
+
+**Next Session Focus:**
+- Extract indicators from BacktestEA.mq5
+- Start with EmaCalculator.mqh
+- Goal: All 4 indicators extracted (4-6 hours)
+
+---
+
+## 💡 IMPORTANT NOTES
+
+### MetaEditor Integration
+- **Symlinks active:** Files edited in either location sync automatically
+- **No manual copying:** Edit in dev folder OR MetaEditor, both work
+- **Compilation:** Press F7 in MetaEditor, .ex5 appears in dev folder
+- **Git tracking:** Always commit from `/d/JcampForexTrader/`
+
+### Development Workflow
+1. Edit files in `D:\JcampForexTrader\MT5_EAs\`
+2. MetaEditor sees changes instantly
+3. Compile in MetaEditor (F7)
+4. Test in MT5
+5. Commit changes via git
+
+### Code References in Strategy Files
+```mql5
+// In any EA in Experts\Jcamp\:
+#include <JcampStrategies/Indicators/EmaCalculator.mqh>
+#include <JcampStrategies/RegimeDetector.mqh>
+#include <JcampStrategies/Strategies/TrendRiderStrategy.mqh>
+
+// MetaEditor finds these automatically via symlinks!
+```
+
+---
+
+## 🚨 TROUBLESHOOTING
+
+### Symlinks Not Working?
+1. Verify admin rights when creating
+2. Check paths are exact (no typos)
+3. Restart MetaEditor after creating symlinks
+4. See `SYMLINK_VERIFICATION.md` for details
+
+### MetaEditor Can't Find Includes?
+1. Check symlink exists: `ls -la MT5/Include/`
+2. Refresh Navigator (F5 in MetaEditor)
+3. Verify include path: `#include <JcampStrategies/...>`
+
+### Git Issues?
+1. Always use Git Bash paths (`/d/...`)
+2. Check current directory: `pwd`
+3. Verify git status: `git status`
 
 ---
 
 *Read this file at start of every session for full context*
+*Updated: Session 1 - January 18, 2026*
