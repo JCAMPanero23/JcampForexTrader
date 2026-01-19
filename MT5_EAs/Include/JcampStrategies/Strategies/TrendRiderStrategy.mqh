@@ -29,17 +29,14 @@ class TrendRiderStrategy : public IStrategy
 {
 private:
    int minConfidence;
+   double minCSMDiff;
    bool verboseLogging;
 
-   EmaCalculator emaCalc;
-   AdxCalculator adxCalc;
-   RsiCalculator rsiCalc;
-   AtrCalculator atrCalc;
-
 public:
-   TrendRiderStrategy(int minConf = 65, bool verbose = false)
+   TrendRiderStrategy(int minConf = 65, double minCSM = 15.0, bool verbose = false)
    {
       minConfidence = minConf;
+      minCSMDiff = minCSM;
       verboseLogging = verbose;
    }
 
@@ -59,12 +56,12 @@ public:
       if(verboseLogging)
          Print("\n====== TREND RIDER ANALYSIS ======");
 
-      // Calculate indicators
-      double ema20 = emaCalc.Calculate(symbol, timeframe, 20);
-      double ema50 = emaCalc.Calculate(symbol, timeframe, 50);
-      double ema100 = emaCalc.Calculate(symbol, timeframe, 100);
-      double adx = adxCalc.Calculate(symbol, timeframe, 14);
-      double rsi = rsiCalc.Calculate(symbol, timeframe, 14);
+      // Calculate indicators using functions (not classes)
+      double ema20 = GetEMA(symbol, timeframe, 20);
+      double ema50 = GetEMA(symbol, timeframe, 50);
+      double ema100 = GetEMA(symbol, timeframe, 100);
+      double adx = GetADX(symbol, timeframe, 14);
+      double rsi = GetRSI(symbol, timeframe, 14);
 
       if(ema20 == 0 || ema50 == 0 || ema100 == 0)
          return false;
@@ -300,8 +297,8 @@ private:
    //+------------------------------------------------------------------+
    bool CheckMTFAlignment(string symbol, int signal)
    {
-      double ema20_h4 = emaCalc.Calculate(symbol, PERIOD_H4, 20);
-      double ema50_h4 = emaCalc.Calculate(symbol, PERIOD_H4, 50);
+      double ema20_h4 = GetEMA(symbol, PERIOD_H4, 20);
+      double ema50_h4 = GetEMA(symbol, PERIOD_H4, 50);
 
       if(ema20_h4 == 0 || ema50_h4 == 0)
          return false;

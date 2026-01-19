@@ -51,8 +51,6 @@ private:
    int minConfidence;
    bool verboseLogging;
 
-   RsiCalculator rsiCalc;
-
    // Range management (to be populated by calling EA)
    RangeData activeRange;
    bool hasActiveRange;
@@ -152,7 +150,7 @@ public:
          result.analysis += "REJ+" + IntegerToString(rejectionScore) + " ";
 
       // SCORE 3: RSI Confirmation (0-20 points)
-      double rsi = rsiCalc.Calculate(symbol, timeframe, 14);
+      double rsi = GetRSI(symbol, timeframe, 14);
       int rsiScore = 0;
 
       if(result.signal == 1)     // BUY at support
