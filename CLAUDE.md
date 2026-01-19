@@ -2,7 +2,7 @@
 
 **Purpose:** Single authoritative reference for Claude Code
 **Project:** CSM-based forex trading system with modular strategies
-**Last Updated:** January 18, 2026 (Session 1 Complete - Repo Setup + Symlinks)
+**Last Updated:** January 19, 2026 (Session 3 Complete - Strategy Extraction)
 
 ---
 
@@ -379,32 +379,31 @@ Flow: Test strategies in CSM → Refine in backtesting → Deploy live
 
 ## 🎯 CURRENT SESSION STATUS
 
-**Session:** 2 (Indicator & Regime Extraction)
+**Session:** 3 (Strategy Extraction)
 **Date:** January 19, 2026
-**Duration:** ~2.5 hours
+**Duration:** ~3 hours
 **Status:** ✅ Complete
 
 **Accomplished:**
-1. ✅ Extracted 4 indicator modules (EMA, ATR, ADX, RSI)
-2. ✅ Extracted regime detection module (100-point scoring system)
-3. ✅ Created modular .mqh files with clean dependencies
-4. ✅ Designed stateless architecture for multi-pair support
+1. ✅ Created IStrategy.mqh interface for all strategies
+2. ✅ Extracted TrendRiderStrategy.mqh (135-point confidence system)
+3. ✅ Extracted RangeRiderStrategy.mqh (100-point confidence system)
+4. ✅ Created SignalExporter.mqh for JSON signal export
+5. ✅ All strategies are stateless and support multi-pair analysis
 
 **Files Created:**
-- `MT5_EAs/Include/JcampStrategies/Indicators/EmaCalculator.mqh`
-- `MT5_EAs/Include/JcampStrategies/Indicators/AtrCalculator.mqh`
-- `MT5_EAs/Include/JcampStrategies/Indicators/AdxCalculator.mqh`
-- `MT5_EAs/Include/JcampStrategies/Indicators/RsiCalculator.mqh`
-- `MT5_EAs/Include/JcampStrategies/RegimeDetector.mqh`
+- `MT5_EAs/Include/JcampStrategies/Strategies/IStrategy.mqh`
+- `MT5_EAs/Include/JcampStrategies/Strategies/TrendRiderStrategy.mqh`
+- `MT5_EAs/Include/JcampStrategies/Strategies/RangeRiderStrategy.mqh`
+- `MT5_EAs/Include/JcampStrategies/SignalExporter.mqh`
 
-**Git Commits:**
-1. `d82731c` - feat: Extract indicator modules from BacktestEA
-2. `1571276` - feat: Extract regime detection module from BacktestEA
+**Git Commit:**
+- `5f03464` - feat: Extract strategy modules from BacktestEA
 
 **Next Session Focus:**
-- Extract TrendRiderStrategy.mqh (135-point confidence system)
-- Extract RangeRiderStrategy.mqh
-- Goal: Complete strategy extraction (6-8 hours)
+- Create Jcamp_Strategy_AnalysisEA.mq5 to use the modular strategies
+- Test compilation in MetaEditor
+- Verify strategy logic matches BacktestEA
 
 ---
 
@@ -432,6 +431,18 @@ Flow: Test strategies in CSM → Refine in backtesting → Deploy live
 - Designed stateless multi-pair support
 
 **Commits:** `d82731c`, `1571276`
+
+### Session 3: Strategy Extraction (January 19, 2026)
+**Duration:** ~3 hours | **Status:** ✅ Complete
+
+**Accomplished:**
+- Created IStrategy interface for polymorphic strategy support
+- Extracted TrendRiderStrategy (135-point confidence system)
+- Extracted RangeRiderStrategy (100-point confidence system)
+- Created SignalExporter for JSON signal export
+- All modules support multi-pair analysis
+
+**Commit:** `5f03464`
 
 ---
 
