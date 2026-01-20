@@ -308,8 +308,19 @@ void OnTick()
         // Only recheck if minimum interval passed
         if(minutesSinceLastCheck >= DynamicRegimeMinIntervalMinutes)
         {
+            if(VerboseLogging)
+            {
+                Print("⚡ Dynamic regime check running (", minutesSinceLastCheck, " min since last check)");
+            }
+
             // Get ADX to check for strong trending
             double currentADX = GetADX(_Symbol, AnalysisTimeframe, 14);
+
+            if(VerboseLogging)
+            {
+                Print("   Current ADX: ", DoubleToString(currentADX, 1),
+                      " | Current Regime: ", EnumToString(currentRegime));
+            }
 
             // Validate ADX data
             if(currentADX > 0)
@@ -346,7 +357,6 @@ void OnTick()
                                                            MinADXForTrending,
                                                            VerboseLogging);
                         lastRegimeCheck = currentTime;  // Update scheduled check timer too
-                        lastDynamicCheck = currentTime;
 
                         if(previousRegime != currentRegime)
                         {
@@ -372,7 +382,6 @@ void OnTick()
                                                            MinADXForTrending,
                                                            VerboseLogging);
                         lastRegimeCheck = currentTime;  // Update scheduled check timer too
-                        lastDynamicCheck = currentTime;
 
                         if(previousRegime != currentRegime)
                         {
@@ -382,6 +391,9 @@ void OnTick()
                     }
                 }
             }
+
+            // ALWAYS update timer after check completes (prevents spam)
+            lastDynamicCheck = currentTime;
         }
     }
 
