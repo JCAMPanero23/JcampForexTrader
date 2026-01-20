@@ -263,15 +263,7 @@ void OnTick()
     datetime currentTime = TimeCurrent();
 
     //═══════════════════════════════════════════════════════════════
-    // Throttle: Only analyze every 15 minutes (matches BacktestEA pattern)
-    //═══════════════════════════════════════════════════════════════
-    if(currentTime - lastAnalysisTime < analysisInterval)
-        return;
-
-    lastAnalysisTime = currentTime;
-
-    //═══════════════════════════════════════════════════════════════
-    // Update CSM hourly (matches BacktestEA)
+    // Update CSM hourly (runs independently)
     //═══════════════════════════════════════════════════════════════
     if(currentTime - last_csm_update >= csm_update_interval)
     {
@@ -284,7 +276,7 @@ void OnTick()
     }
 
     //═══════════════════════════════════════════════════════════════
-    // Update regime every 4 hours (matches BacktestEA)
+    // Update regime every 4 hours (runs independently)
     //═══════════════════════════════════════════════════════════════
     if(currentTime - lastRegimeCheck >= regimeCheckInterval)
     {
@@ -305,7 +297,7 @@ void OnTick()
     }
 
     //═══════════════════════════════════════════════════════════════
-    // PHASE 4E: DYNAMIC REGIME RE-EVALUATION
+    // PHASE 4E: DYNAMIC REGIME RE-EVALUATION (runs independently)
     // Re-check regime if strong trending signals detected
     //═══════════════════════════════════════════════════════════════
 
@@ -392,6 +384,14 @@ void OnTick()
             }
         }
     }
+
+    //═══════════════════════════════════════════════════════════════
+    // ANALYSIS INTERVAL THROTTLE (only for strategy/signals below)
+    //═══════════════════════════════════════════════════════════════
+    if(currentTime - lastAnalysisTime < analysisInterval)
+        return;  // Exit here - dynamic checks already ran above
+
+    lastAnalysisTime = currentTime;
 
     //═══════════════════════════════════════════════════════════════
     // Get CSM differential
