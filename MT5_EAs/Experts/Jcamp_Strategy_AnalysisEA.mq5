@@ -49,6 +49,14 @@ input double MinADXForTrending = 30.0;                    // Min ADX for strong 
 input double MinEMASeparation = 0.40;                     // Min EMA separation (%)
 
 //═══════════════════════════════════════════════════════════════════
+//  DYNAMIC REGIME DETECTION (Phase 4E)
+//═══════════════════════════════════════════════════════════════════
+input group "═══ DYNAMIC REGIME DETECTION (Phase 4E) ═══"
+input bool UseDynamicRegimeDetection = true;              // Enable dynamic regime re-evaluation
+input int DynamicRegimeMinIntervalMinutes = 60;           // Min minutes between dynamic checks
+input double DynamicRegimeADXThreshold = 35.0;            // ADX threshold for dynamic recheck
+
+//═══════════════════════════════════════════════════════════════════
 //  TREND RIDER STRATEGY
 //═══════════════════════════════════════════════════════════════════
 input group "═══ TREND RIDER STRATEGY ═══"
@@ -126,6 +134,7 @@ PairData pair_data[16];
 // Timing variables
 datetime lastAnalysisTime = 0;
 datetime lastRegimeCheck = 0;
+datetime lastDynamicCheck = 0;     // Dynamic regime detection (Phase 4E)
 datetime last_csm_update = 0;
 
 int analysisInterval;        // Will be set from input (minutes → seconds)
@@ -203,6 +212,7 @@ int OnInit()
                                        MinADXForTrending,
                                        false);
     lastRegimeCheck = TimeCurrent();
+    lastDynamicCheck = TimeCurrent();  // Initialize dynamic check timer (Phase 4E)
 
     Print("✓ Initial regime: ", EnumToString(currentRegime));
 
@@ -215,6 +225,12 @@ int OnInit()
     Print("\n═══ Configuration ═══");
     Print("Analysis Interval: ", AnalysisIntervalMinutes, " minutes");
     Print("Regime Check: ", RegimeCheckHours, " hours");
+    Print("Dynamic Regime: ", UseDynamicRegimeDetection ? "ENABLED" : "DISABLED");
+    if(UseDynamicRegimeDetection)
+    {
+        Print("  - Min Interval: ", DynamicRegimeMinIntervalMinutes, " minutes");
+        Print("  - ADX Threshold: ", DynamicRegimeADXThreshold);
+    }
     Print("CSM Update: 1 hour");
     Print("Symbol: ", _Symbol);
     Print("Timeframe: ", EnumToString(AnalysisTimeframe));
@@ -285,6 +301,95 @@ void OnTick()
             Print("Regime updated: ", EnumToString(currentRegime));
             if(previousRegime != currentRegime)
                 Print("  → Regime change: ", EnumToString(previousRegime), " → ", EnumToString(currentRegime));
+        }
+    }
+
+    //═══════════════════════════════════════════════════════════════
+    // PHASE 4E: DYNAMIC REGIME RE-EVALUATION
+    // Re-check regime if strong trending signals detected
+    //═══════════════════════════════════════════════════════════════
+
+    if(UseDynamicRegimeDetection)
+    {
+        int minutesSinceLastCheck = (int)((currentTime - lastDynamicCheck) / 60);
+
+        // Only recheck if minimum interval passed
+        if(minutesSinceLastCheck >= DynamicRegimeMinIntervalMinutes)
+        {
+            // Get ADX to check for strong trending
+            double currentADX = GetADX(_Symbol, AnalysisTimeframe, 14);
+
+            // Validate ADX data
+            if(currentADX > 0)
+            {
+                // Strong trending signal detected?
+                if(currentADX > DynamicRegimeADXThreshold)
+                {
+                    // Get EMA values for alignment check
+                    double ema20 = GetEMA(_Symbol, AnalysisTimeframe, 20);
+                    double ema50 = GetEMA(_Symbol, AnalysisTimeframe, 50);
+                    double ema100 = GetEMA(_Symbol, AnalysisTimeframe, 100);
+
+                    // Check for strong EMA alignment
+                    bool uptrend = (ema20 > ema50 && ema50 > ema100);
+                    bool downtrend = (ema20 < ema50 && ema50 < ema100);
+                    bool strongTrendingSignals = (uptrend || downtrend);
+
+                    // If strong trending detected but regime is not TRENDING, recheck!
+                    if(strongTrendingSignals && currentRegime != REGIME_TRENDING)
+                    {
+                        if(VerboseLogging)
+                        {
+                            Print("\n⚡ DYNAMIC REGIME RECHECK TRIGGERED:");
+                            Print("   ADX: ", DoubleToString(currentADX, 1), " > ", DynamicRegimeADXThreshold);
+                            Print("   EMA Alignment: ", uptrend ? "Strong Uptrend" : "Strong Downtrend");
+                            Print("   Current Regime: ", EnumToString(currentRegime), " → Forcing recheck!");
+                        }
+
+                        // Force regime re-evaluation (BYPASS TIME GATE)
+                        MARKET_REGIME previousRegime = currentRegime;
+                        currentRegime = DetectMarketRegime(_Symbol,
+                                                           TrendingThresholdPercent,
+                                                           RangingThresholdPercent,
+                                                           MinADXForTrending,
+                                                           VerboseLogging);
+                        lastRegimeCheck = currentTime;  // Update scheduled check timer too
+                        lastDynamicCheck = currentTime;
+
+                        if(previousRegime != currentRegime)
+                        {
+                            Print("⚡ DYNAMIC REGIME CHANGE: ", EnumToString(previousRegime),
+                                  " → ", EnumToString(currentRegime));
+                        }
+                    }
+                    // If weak ADX but regime is TRENDING, might need recheck
+                    else if(currentADX < 20 && currentRegime == REGIME_TRENDING)
+                    {
+                        if(VerboseLogging)
+                        {
+                            Print("\n⚡ DYNAMIC REGIME RECHECK (Weak ADX):");
+                            Print("   ADX: ", DoubleToString(currentADX, 1), " (very weak)");
+                            Print("   Current Regime: TRENDING → Might be ranging now");
+                        }
+
+                        // Force regime re-evaluation (BYPASS TIME GATE)
+                        MARKET_REGIME previousRegime = currentRegime;
+                        currentRegime = DetectMarketRegime(_Symbol,
+                                                           TrendingThresholdPercent,
+                                                           RangingThresholdPercent,
+                                                           MinADXForTrending,
+                                                           VerboseLogging);
+                        lastRegimeCheck = currentTime;  // Update scheduled check timer too
+                        lastDynamicCheck = currentTime;
+
+                        if(previousRegime != currentRegime)
+                        {
+                            Print("⚡ DYNAMIC REGIME CHANGE: ", EnumToString(previousRegime),
+                                  " → ", EnumToString(currentRegime));
+                        }
+                    }
+                }
+            }
         }
     }
 
