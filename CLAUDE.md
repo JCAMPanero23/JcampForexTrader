@@ -2,7 +2,7 @@
 
 **Purpose:** Single authoritative reference for Claude Code
 **Project:** CSM-based forex trading system with modular strategies
-**Last Updated:** January 21, 2026 (Session 5 Complete - Testing & Phase 4E)
+**Last Updated:** January 22, 2026 (Session 6 Complete - MainTradingEA Modular Implementation)
 
 ---
 
@@ -54,7 +54,7 @@
 │   ├── Experts/                      # ← Symlinked to MT5
 │   │   ├── Jcamp_CSM_AnalysisEA.mq5  (TODO - copy from old repo)
 │   │   ├── Jcamp_Strategy_AnalysisEA.mq5 ✅ Complete (tested, Phase 4E added)
-│   │   └── Jcamp_MainTradingEA.mq5   (CURRENT - Session 6)
+│   │   └── Jcamp_MainTradingEA.mq5   ✅ Complete (Session 6 - modular)
 │   │
 │   └── Include/
 │       └── JcampStrategies/          # ← Symlinked to MT5
@@ -68,6 +68,11 @@
 │           │   ├── IStrategy.mqh
 │           │   ├── TrendRiderStrategy.mqh
 │           │   └── RangeRiderStrategy.mqh
+│           ├── Trading/              ✅ Complete (4 modules)
+│           │   ├── SignalReader.mqh
+│           │   ├── TradeExecutor.mqh
+│           │   ├── PositionManager.mqh
+│           │   └── PerformanceTracker.mqh
 │           └── SignalExporter.mqh    ✅ Complete (JSON export)
 │
 ├── CSMMonitor/                       # C# WPF Dashboard (TODO - copy from old repo)
@@ -152,14 +157,14 @@ CSMMonitor.exe (C# Dashboard)
 - Uses modular .mqh includes
 - Exports to {SYMBOL}_signals.json
 - Runs per pair (EURUSD, GBPUSD, GBPNZD charts)
-- **Status:** Needs updating with new modular architecture
+- **Status:** ✅ Complete with Phase 4E dynamic regime detection
 
-**3. Jcamp_MainTradingEA.mq5**
+**3. Jcamp_MainTradingEA.mq5** (MODULAR VERSION)
 - Reads all signal files
-- Executes trades
-- Manages positions
+- Executes trades with risk management
+- Manages positions & trailing stops
 - Exports history/performance
-- **Status:** Exists in old repo, needs copying
+- **Status:** ✅ Complete with 4 core trading modules
 
 **4. CSMMonitor.exe**
 - Reads all exported files
@@ -169,7 +174,7 @@ CSMMonitor.exe (C# Dashboard)
 
 ---
 
-## 📊 STRATEGY MODULES (Target Architecture)
+## 📊 STRATEGY MODULES (Implemented Architecture)
 
 ### Indicators (Include/JcampStrategies/Indicators/)
 - **EmaCalculator.mqh** - EMA 20/50/100 calculation
@@ -180,7 +185,7 @@ CSMMonitor.exe (C# Dashboard)
 ### Regime Detection (Include/JcampStrategies/)
 - **RegimeDetector.mqh** - TRENDING/RANGING/TRANSITIONAL classification
 - 100-point competitive scoring system
-- Dynamic regime switching
+- Dynamic regime switching (Phase 4E)
 
 ### Strategies (Include/JcampStrategies/Strategies/)
 - **IStrategy.mqh** - Base interface for all strategies
@@ -193,6 +198,12 @@ CSMMonitor.exe (C# Dashboard)
   - Range width analysis
   - S/R level detection
   - Bounce quality scoring
+
+### Trading (Include/JcampStrategies/Trading/)
+- **SignalReader.mqh** - Multi-symbol JSON signal parsing
+- **TradeExecutor.mqh** - Risk-managed trade execution
+- **PositionManager.mqh** - Position tracking & trailing stops
+- **PerformanceTracker.mqh** - Trade history & performance export
 
 ### Export (Include/JcampStrategies/)
 - **SignalExporter.mqh** - JSON file writing
@@ -283,11 +294,13 @@ git commit -m "Updated strategy logic"
 - [x] Test compilation in MetaEditor (Session 4 - ✅ Successful)
 - [x] Test Strategy_AnalysisEA on live chart (Session 5 - ~1 hour)
 - [x] Add Phase 4E dynamic regime detection (Session 5 - ~1.5 hours)
-- [ ] Create modular MainTradingEA (Session 6 - ~4-6 hours)
+- [x] Create modular MainTradingEA (Session 6 - ~3 hours)
+- [ ] Copy CSM_AnalysisEA from old repo (Session 7 - ~1 hour)
+- [ ] Test complete CSM architecture on demo (Session 7 - ~2 hours)
 - [ ] Create BacktestEA_v2 for module validation (4-6 hours - DEFERRED)
 
 **Total Estimated Time:** 20-29 hours
-**Completed:** ~13.5 hours | **Remaining:** ~6.5-15.5 hours
+**Completed:** ~16.5 hours | **Remaining:** ~3.5-12.5 hours (Phase 1 nearly complete!)
 ### Phase 2: Local Testing (Weeks 3-4)
 - [ ] Copy CSM_AnalysisEA from old repo
 - [ ] Deploy CSM architecture on local MT5 demo
@@ -380,34 +393,29 @@ Flow: Test strategies in CSM → Refine in backtesting → Deploy live
 
 ## 🎯 CURRENT SESSION STATUS
 
-**Session:** 6 (MainTradingEA - Modular Implementation)
-**Date:** January 21, 2026
-**Duration:** In Progress
-**Status:** 🚀 Planning
+**Session:** 7 (CSM Integration & Testing)
+**Date:** January 22, 2026
+**Duration:** Not Started
+**Status:** 📋 Ready to Begin
 
 **Objective:**
-Create modular Jcamp_MainTradingEA.mq5 that reads signal files from Strategy_AnalysisEA and executes trades
+Complete Phase 1 by integrating CSM_AnalysisEA and testing the full architecture
 
-**Planned Components:**
-1. Signal file reader (JSON parsing)
-2. Trade execution engine
-3. Position management
-4. Risk management
-5. Performance tracking & export
-
-**Key Design Decisions:**
-- Use modular architecture (separate .mqh files where beneficial)
-- Read multiple signal files (EURUSD_signals.json, GBPUSD_signals.json, etc.)
-- Implement proper trade filtering (minimum confidence thresholds)
-- Export trade history, positions, and performance for C# Monitor
-- Follow BacktestEA trade management patterns
+**Planned Tasks:**
+1. Copy Jcamp_CSM_AnalysisEA.mq5 from old repository
+2. Test compilation and verify it works with new architecture
+3. Deploy complete CSM architecture on demo account:
+   - CSM_AnalysisEA on any chart (generates csm_current.txt)
+   - Strategy_AnalysisEA on EURUSD, GBPUSD, GBPNZD charts
+   - MainTradingEA on any chart (reads signals, executes trades)
+4. Verify data flow: CSM → Strategies → Signals → Trades → Exports
+5. Validate file exports for C# Monitor integration
 
 **Next Steps:**
-- Design MainTradingEA architecture
-- Plan signal file reading and parsing logic
-- Implement trade execution with proper risk management
-- Add position tracking and management
-- Create performance export functionality
+- Locate CSM_AnalysisEA in old repo
+- Copy and test CSM_AnalysisEA
+- Full system integration test
+- Phase 1 completion!
 
 
 ## 📜 SESSION HISTORY
@@ -480,6 +488,31 @@ Create modular Jcamp_MainTradingEA.mq5 that reads signal files from Strategy_Ana
 - Timer-based dynamic checks independent of 15-min analysis throttle
 - Clear log messages showing ADX values and regime transitions
 
+### Session 6: MainTradingEA - Modular Implementation (January 21, 2026)
+**Duration:** ~3 hours | **Status:** ✅ Complete
+
+**Accomplished:**
+- Created modular Jcamp_MainTradingEA.mq5 (267 lines)
+- Built 4 core trading modules:
+  - **SignalReader.mqh** - Multi-symbol JSON signal parsing
+  - **TradeExecutor.mqh** - Risk-managed trade execution
+  - **PositionManager.mqh** - Position tracking & trailing stops
+  - **PerformanceTracker.mqh** - Trade history & performance export
+- Implemented complete signal-to-trade pipeline
+- Added comprehensive risk management (position limits, spread checks, confidence filters)
+- Created performance export system for C# Monitor integration
+- Successfully compiled with 0 errors
+
+**Commit:** `e5d8d7b`
+
+**Key Features:**
+- Multi-symbol signal reading (EURUSD, GBPUSD, GBPNZD)
+- Configurable risk management (1% per trade default)
+- Position limits (per symbol & total)
+- Trailing stop management
+- JSON exports: trade_history.json, positions.txt, performance.txt
+- Verbose logging for debugging
+
 ---
 
 ## 💡 IMPORTANT NOTES
@@ -530,4 +563,4 @@ Create modular Jcamp_MainTradingEA.mq5 that reads signal files from Strategy_Ana
 ---
 
 *Read this file at start of every session for full context*
-*Updated: Session 1 - January 18, 2026*
+*Updated: Session 6 Complete - January 22, 2026*
