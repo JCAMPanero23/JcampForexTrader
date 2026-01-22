@@ -182,11 +182,90 @@ CSMMonitor.exe (C# Dashboard)
 - Exports history/performance
 - **Status:** ✅ Complete with 4 core trading modules
 
-**4. CSMMonitor.exe**
+**4. CSMMonitor.exe** (C# WPF Dashboard)
 - Reads all exported files
 - Displays live dashboard
 - 5-second auto-refresh
-- **Status:** Revert to commit 567d05c from old repo
+- **Status:** ⚠️ Needs update for CSM Alpha
+  - Copy from old repo (commit 567d05c)
+  - Update to display 9 currencies (add Gold/XAU)
+  - Update to monitor 4 assets (EURUSD, GBPUSD, AUDJPY, XAUUSD)
+  - Remove GBPNZD references
+  - Add Gold "fear indicator" visualization
+
+---
+
+## 🖥️ C# MONITOR UPDATE REQUIREMENTS
+
+### CSM Alpha Changes Needed
+
+**From (Old 8-Currency System):**
+- 8 currencies: USD, EUR, GBP, JPY, CHF, AUD, CAD, NZD
+- 3 assets: EURUSD, GBPUSD, GBPNZD
+
+**To (CSM Alpha 9-Currency System):**
+- **9 currencies:** USD, EUR, GBP, JPY, CHF, AUD, CAD, NZD, **XAU (Gold)**
+- **4 assets:** EURUSD, GBPUSD, AUDJPY, XAUUSD
+
+### Required Code Changes
+
+**1. CSM Display (MainWindow.xaml)**
+- Add 9th row for Gold (XAU) in currency strength grid
+- Add visual indicator for Gold strength level:
+  - Red background (80-100): FEAR/PANIC mode
+  - Yellow background (40-60): NEUTRAL
+  - Green background (0-20): GREED/RISK-ON mode
+
+**2. Signal File Monitoring (MainWindow.xaml.cs)**
+```csharp
+// OLD:
+string[] symbols = { "EURUSD", "GBPUSD", "GBPNZD" };
+
+// NEW:
+string[] symbols = { "EURUSD", "GBPUSD", "AUDJPY", "XAUUSD" };
+```
+
+**3. CSM File Parser**
+```csharp
+// OLD: Read 8 currencies from csm_current.txt
+// NEW: Read 9 currencies (add XAU handling)
+
+// Example:
+if (currency == "XAU")
+{
+    // Display as "Gold" with special formatting
+    GoldStrengthLabel.Content = $"Gold: {strength:F1}";
+    UpdateGoldIndicator(strength); // Color-code fear/greed
+}
+```
+
+**4. Market State Detection**
+- Add logic to detect market states:
+  - **PANIC:** Gold > 80 AND JPY > 80
+  - **RISK-ON:** Gold < 20 AND JPY < 20
+  - **INFLATION FEAR:** Gold > 80 AND USD > 80
+- Display market state in dashboard header
+
+**5. Asset-Specific Labels**
+- Update labels for new assets:
+  - "AUDJPY - The Risk Gauge"
+  - "XAUUSD - The Sentinel (Gold)"
+- Remove GBPNZD references
+
+**6. Gold Visualization Ideas**
+- Gold strength meter with fear/greed zones
+- Chart showing Gold vs JPY correlation
+- Market state indicator: "RISK-ON" / "NEUTRAL" / "RISK-OFF"
+- Gold trend arrow (up = safe haven demand, down = risk appetite)
+
+### Testing Checklist
+- [ ] CSM display shows all 9 currencies
+- [ ] Gold row has special color-coding (fear indicator)
+- [ ] 4 signal files read correctly (EURUSD, GBPUSD, AUDJPY, XAUUSD)
+- [ ] No GBPNZD references remain
+- [ ] Market state detection works (Gold+JPY logic)
+- [ ] Auto-refresh continues working (5 seconds)
+- [ ] Performance data shows 4 assets
 
 ---
 
@@ -299,7 +378,7 @@ git commit -m "Updated strategy logic"
 
 ## 🚀 DEPLOYMENT ROADMAP
 
-### Phase 1: Local Development (CURRENT - Weeks 1-2)
+### Phase 1: Local Development (✅ COMPLETE - Sessions 1-7)
 - [x] Setup clean repository
 - [x] Create folder structure
 - [x] Setup MT5 symlinks
@@ -311,16 +390,33 @@ git commit -m "Updated strategy logic"
 - [x] Test Strategy_AnalysisEA on live chart (Session 5 - ~1 hour)
 - [x] Add Phase 4E dynamic regime detection (Session 5 - ~1.5 hours)
 - [x] Create modular MainTradingEA (Session 6 - ~3 hours)
-- [ ] Copy CSM_AnalysisEA from old repo (Session 7 - ~1 hour)
-- [ ] Test complete CSM architecture on demo (Session 7 - ~2 hours)
-- [ ] Create BacktestEA_v2 for module validation (4-6 hours - DEFERRED)
+- [x] **Build CSM_AnalysisEA with Gold integration** (Session 7 - ~4 hours)
+- [x] **Update to 4-asset system** (Session 7 - included above)
 
-**Total Estimated Time:** 20-29 hours
-**Completed:** ~16.5 hours | **Remaining:** ~3.5-12.5 hours (Phase 1 nearly complete!)
-### Phase 2: Local Testing (Weeks 3-4)
-- [ ] Copy CSM_AnalysisEA from old repo
-- [ ] Deploy CSM architecture on local MT5 demo
-- [ ] Validate signals vs backtest results
+**Total Time:** ~20.5 hours | **Status:** ✅ Complete!
+
+### Phase 2: CSM Alpha Testing & Integration (CURRENT - Weeks 3-4)
+- [ ] Test CSM Alpha EAs compilation in MetaEditor (~30 min)
+  - [ ] CSM_AnalysisEA.mq5
+  - [ ] Strategy_AnalysisEA.mq5 (updated)
+  - [ ] MainTradingEA.mq5 (updated)
+- [ ] **Copy and update C# CSM Monitor** (~3-4 hours)
+  - [ ] Copy CSMMonitor from old repo (commit 567d05c)
+  - [ ] Update to display 9 currencies (add Gold/XAU row)
+  - [ ] Update to monitor 4 assets (EURUSD, GBPUSD, AUDJPY, XAUUSD)
+  - [ ] Remove GBPNZD references
+  - [ ] Add Gold "fear indicator" visualization
+  - [ ] Test with live CSM Alpha data
+- [ ] Deploy CSM Alpha on local MT5 demo (~1 hour)
+  - [ ] CSM_AnalysisEA on any chart
+  - [ ] Strategy_AnalysisEA on 4 charts (EURUSD, GBPUSD, AUDJPY, XAUUSD)
+  - [ ] MainTradingEA on any chart
+- [ ] Validate CSM Alpha system (~2-3 hours)
+  - [ ] Verify Gold strength calculation accuracy
+  - [ ] Test synthetic Gold pair formulas
+  - [ ] Validate 4-asset signal generation
+  - [ ] Monitor Gold TrendRider-only behavior
+  - [ ] Check Risk On/Off detection (AUDJPY signals)
 - [ ] Manual trading based on signals (1-2 weeks)
 - [ ] Fine-tune confidence thresholds
 
