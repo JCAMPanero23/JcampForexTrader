@@ -385,6 +385,7 @@ Flow: Test strategies in CSM → Refine in backtesting → Deploy live
 - **CORRECT_ARCHITECTURE_FOUND.md** - CSM architecture discovery
 - **CSM_ARCHITECTURE_SUMMARY.md** - CSM overview
 - **OPTION_B_FINDINGS.md** - MainTradingEA investigation
+- **MAINTRADING_EA_ARCHITECTURE_ANALYSIS.md** - Session 6 modular MainTradingEA analysis (Score: 8.2/10)
 
 ### Reference
 - **Reference/Jcamp_BacktestEA.mq5** - Strategy source (9,063 lines)
@@ -488,7 +489,7 @@ Complete Phase 1 by integrating CSM_AnalysisEA and testing the full architecture
 - Timer-based dynamic checks independent of 15-min analysis throttle
 - Clear log messages showing ADX values and regime transitions
 
-### Session 6: MainTradingEA - Modular Implementation (January 21, 2026)
+### Session 6: MainTradingEA - Modular Implementation (January 21-22, 2026)
 **Duration:** ~3 hours | **Status:** ✅ Complete
 
 **Accomplished:**
@@ -502,8 +503,13 @@ Complete Phase 1 by integrating CSM_AnalysisEA and testing the full architecture
 - Added comprehensive risk management (position limits, spread checks, confidence filters)
 - Created performance export system for C# Monitor integration
 - Successfully compiled with 0 errors
+- **Generated comprehensive architecture analysis** (MAINTRADING_EA_ARCHITECTURE_ANALYSIS.md)
+  - Overall score: 8.2/10
+  - Identified critical issue: Fixed SL/TP needs dynamic ATR-based calculation
+  - Validated all 4 trading modules
+  - Provided demo testing checklist
 
-**Commit:** `e5d8d7b`
+**Commits:** `e5d8d7b`, `d478c14`
 
 **Key Features:**
 - Multi-symbol signal reading (EURUSD, GBPUSD, GBPNZD)
@@ -512,6 +518,9 @@ Complete Phase 1 by integrating CSM_AnalysisEA and testing the full architecture
 - Trailing stop management
 - JSON exports: trade_history.json, positions.txt, performance.txt
 - Verbose logging for debugging
+
+**Critical Finding:**
+- 🚨 Must implement dynamic SL/TP before live trading (currently fixed at 50/100 pips)
 
 ---
 
