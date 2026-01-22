@@ -1,8 +1,8 @@
 # CLAUDE.md - JcampForexTrader Context
 
 **Purpose:** Single authoritative reference for Claude Code
-**Project:** CSM-based forex trading system with modular strategies
-**Last Updated:** January 22, 2026 (Session 6 Complete - MainTradingEA Modular Implementation)
+**Project:** CSM Alpha - 4-Asset Trading System with Gold
+**Last Updated:** January 23, 2026 (Session 7 Complete - CSM Alpha Implementation)
 
 ---
 
@@ -94,50 +94,60 @@
 ```
 ---
 
-## 🎯 CURRENT PHASE: Strategy Extraction (Phase 1)
+## 🎯 CURRENT PHASE: CSM Alpha - Ready for Demo Testing
 
-**Status:** ✅ Repository Setup Complete | 🚀 Ready to Extract Strategies
+**Status:** ✅ Phase 1 Complete | 🚀 CSM Alpha 4-Asset System Implemented
 
-**Session 1 Completed (January 18, 2026):**
-- ✅ New repository created at `/d/JcampForexTrader/`
-- ✅ Clean folder structure created
-- ✅ BacktestEA.mq5 copied as reference (9,063 lines)
-- ✅ Documentation migrated from old project
-- ✅ Symlinks created and verified (MetaEditor integration working)
-- ✅ Git repository initialized (3 commits)
-- ✅ MT5 path integration complete
+**✅ Completed (Sessions 1-7):**
+- ✅ Modular strategy architecture (4 indicators, 2 strategies)
+- ✅ Strategy_AnalysisEA with dynamic regime detection
+- ✅ MainTradingEA with 4 trading modules
+- ✅ **CSM Alpha:** 9-currency system with Gold integration
+- ✅ **4-asset trading:** EURUSD, GBPUSD, AUDJPY, XAUUSD
+- ✅ Synthetic Gold pair calculation
+- ✅ Gold TrendRider-only strategy
 
 **Next Session Tasks:**
-1. Extract indicators from BacktestEA.mq5 (4-6 hours)
-   - [ ] EmaCalculator.mqh
-   - [ ] AtrCalculator.mqh
-   - [ ] AdxCalculator.mqh
-   - [ ] RsiCalculator.mqh
+1. Test compilation in MetaEditor
+   - [ ] CSM_AnalysisEA.mq5 (new)
+   - [ ] Strategy_AnalysisEA.mq5 (updated)
+   - [ ] MainTradingEA.mq5 (updated)
 
-2. Extract regime detection logic (3-4 hours)
-   - [ ] RegimeDetector.mqh (100-point scoring)
+2. Deploy on demo account
+   - [ ] CSM_AnalysisEA on any chart (generates CSM)
+   - [ ] Strategy_AnalysisEA on 4 charts (EURUSD, GBPUSD, AUDJPY, XAUUSD)
+   - [ ] MainTradingEA on any chart (executes trades)
 
-3. Extract strategies (6-8 hours)
-   - [ ] TrendRiderStrategy.mqh (135-point system)
-   - [ ] RangeRiderStrategy.mqh
+3. Validate CSM Alpha system
+   - [ ] Verify Gold strength calculation
+   - [ ] Test synthetic Gold pair accuracy
+   - [ ] Validate signal generation for all 4 assets
+   - [ ] Monitor Gold TrendRider-only behavior
 
 ---
 
-## 🏗️ CSM ARCHITECTURE
+## 🏗️ CSM ALPHA ARCHITECTURE
+
+**🌟 NEW:** 9-Currency System with Gold as Market Fear Indicator
 
 ### Data Flow
 ```
 MT5 Terminal
     ↓
-Jcamp_CSM_AnalysisEA.mq5
-    ↓ (writes every 15 min)
-csm_current.txt (currency strengths)
+Jcamp_CSM_AnalysisEA.mq5 (any chart)
+    ↓ [Calculates 9-currency strengths: USD, EUR, GBP, JPY, CHF, AUD, CAD, NZD, XAU]
+    ↓ [Uses synthetic Gold pairs: XAUEUR, XAUJPY, XAUGBP, XAUAUD]
+    ↓ (writes every 60 min)
+csm_current.txt (currency strengths 0-100)
     ↓
-Jcamp_Strategy_AnalysisEA.mq5 (per pair)
+Jcamp_Strategy_AnalysisEA.mq5 (per symbol: EURUSD, GBPUSD, AUDJPY, XAUUSD)
+    ↓ [Reads CSM from file]
+    ↓ [Gold uses TrendRider only, others use both strategies]
     ↓ (writes every 15 min)
-EURUSD_signals.json, GBPUSD_signals.json, etc.
+EURUSD_signals.json, GBPUSD_signals.json, AUDJPY_signals.json, XAUUSD_signals.json
     ↓
-Jcamp_MainTradingEA.mq5
+Jcamp_MainTradingEA.mq5 (any chart)
+    ↓ [Reads signals from 4 assets]
     ↓ (executes trades)
 trade_history.json, positions.txt, performance.txt
     ↓ (reads every 5 sec)
@@ -146,20 +156,26 @@ CSMMonitor.exe (C# Dashboard)
 
 ### Key Components
 
-**1. Jcamp_CSM_AnalysisEA.mq5**
-- Calculates currency strengths (8 currencies)
-- Exports to csm_current.txt
+**1. Jcamp_CSM_AnalysisEA.mq5** (✅ NEW - Session 7)
+- **9-currency competitive scoring:** USD, EUR, GBP, JPY, CHF, AUD, CAD, NZD, **XAU (Gold)**
+- Synthetic Gold pair calculation (XAUEUR, XAUJPY, XAUGBP, XAUAUD)
+- Gold strength = Market fear indicator (0-100 scale)
+- Exports to csm_current.txt every 60 minutes
 - Runs once (any chart)
-- **Status:** Exists in old repo, needs copying
+- **Status:** ✅ Complete (640 lines)
 
-**2. Jcamp_Strategy_AnalysisEA.mq5** (MODULAR VERSION)
-- Evaluates strategies per pair
+**2. Jcamp_Strategy_AnalysisEA.mq5** (✅ UPDATED - Session 7)
+- Reads CSM from file (no embedded calculation)
+- Evaluates strategies per symbol
+- **4 assets:** EURUSD, GBPUSD, AUDJPY, XAUUSD
+- **Gold special handling:** TrendRider only (skips RangeRider)
 - Uses modular .mqh includes
-- Exports to {SYMBOL}_signals.json
-- Runs per pair (EURUSD, GBPUSD, GBPNZD charts)
-- **Status:** ✅ Complete with Phase 4E dynamic regime detection
+- Exports to {SYMBOL}_signals.json every 15 minutes
+- Runs per symbol (4 charts: EURUSD, GBPUSD, AUDJPY, XAUUSD)
+- **Status:** ✅ Complete (548 lines, optimized from 747)
 
-**3. Jcamp_MainTradingEA.mq5** (MODULAR VERSION)
+**3. Jcamp_MainTradingEA.mq5** (✅ UPDATED - Session 7)
+- **4 assets:** EURUSD, GBPUSD, AUDJPY, XAUUSD
 - Reads all signal files
 - Executes trades with risk management
 - Manages positions & trailing stops
@@ -383,7 +399,8 @@ Flow: Test strategies in CSM → Refine in backtesting → Deploy live
 
 ### Architecture & Design
 - **CORRECT_ARCHITECTURE_FOUND.md** - CSM architecture discovery
-- **CSM_ARCHITECTURE_SUMMARY.md** - CSM overview
+- **CSM_ARCHITECTURE_SUMMARY.md** - CSM overview (8-currency system)
+- **CSM_ALPHA_DESIGN.md** - Session 7 CSM Alpha specification (9-currency with Gold)
 - **OPTION_B_FINDINGS.md** - MainTradingEA investigation
 - **MAINTRADING_EA_ARCHITECTURE_ANALYSIS.md** - Session 6 modular MainTradingEA analysis (Score: 8.2/10)
 
@@ -521,6 +538,53 @@ Complete Phase 1 by integrating CSM_AnalysisEA and testing the full architecture
 
 **Critical Finding:**
 - 🚨 Must implement dynamic SL/TP before live trading (currently fixed at 50/100 pips)
+
+### Session 7: CSM Alpha Implementation (January 23, 2026)
+**Duration:** ~4 hours | **Status:** ✅ Complete
+
+**Accomplished:**
+- **Built CSM_AnalysisEA.mq5 from scratch** (640 lines)
+  - 9-currency competitive scoring system (USD, EUR, GBP, JPY, CHF, AUD, CAD, NZD, XAU)
+  - Synthetic Gold pair calculation (XAUEUR, XAUJPY, XAUGBP, XAUAUD)
+  - Gold as market fear indicator (0-100 strength scale)
+  - Exports csm_current.txt every 60 minutes
+- **Updated Strategy_AnalysisEA.mq5** (optimized 747→548 lines)
+  - Removed embedded CSM calculation (275 lines deleted)
+  - Reads CSM from file (generated by CSM_AnalysisEA)
+  - Added Gold (XAUUSD) support with TrendRider-only strategy
+  - Supports 9 currencies including Gold
+- **Updated MainTradingEA.mq5**
+  - Replaced GBPNZD with AUDJPY (better spreads, pure risk gauge)
+  - Added XAUUSD (Gold) support
+  - **4-asset system:** EURUSD, GBPUSD, AUDJPY, XAUUSD
+- **Created CSM_ALPHA_DESIGN.md**
+  - Complete architecture specification
+  - Synthetic pair calculation formulas
+  - Market state detection guide
+  - Demo testing checklist
+
+**Commits:** TBD (committing now)
+
+**Key Architecture:**
+- **9-Currency CSM:** Competitive scoring where Gold strength indicates market fear
+- **Synthetic Gold Pairs:** Cross-rate calculation for fair Gold strength measurement
+- **4-Asset Portfolio:**
+  - EURUSD (The Anchor - baseline USD strength)
+  - GBPUSD (The Momentum - London volatility)
+  - AUDJPY (The Risk Gauge - pure Risk On/Off indicator)
+  - XAUUSD (The Sentinel - safe haven, inflation hedge)
+- **Strategy Allocation:**
+  - EURUSD, GBPUSD, AUDJPY: TrendRider + RangeRider
+  - XAUUSD: TrendRider only (Gold trends, doesn't range well)
+
+**Design Rationale:**
+- **Why Gold as 9th currency?** Gold competes with fiat currencies and acts as fear/inflation indicator
+- **Why AUDJPY over GBPNZD?** Tighter spreads (1.2 vs 3.5 pips), better liquidity, pure risk sentiment gauge
+- **Why TrendRider-only for Gold?** Gold trends strongly during crises but doesn't range predictably
+- **Market State Detection:**
+  - Gold 80-100 + JPY 80-100 = PANIC (short AUDJPY, buy XAUUSD)
+  - Gold 0-20 + JPY 0-20 = RISK ON (buy AUDJPY)
+  - Gold 80-100 + USD 80-100 = INFLATION FEAR (complex, use higher confidence)
 
 ---
 

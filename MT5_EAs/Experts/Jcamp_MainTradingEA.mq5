@@ -5,7 +5,9 @@
 //+------------------------------------------------------------------+
 #property copyright "JcampForexTrader"
 #property link      ""
-#property version   "1.00"
+#property version   "2.00"
+#property description "CSM Alpha Main Trading EA - 4 Asset System"
+#property description "Trades: EURUSD, GBPUSD, AUDJPY, XAUUSD (Gold)"
 #property strict
 
 // Include modular components
@@ -19,7 +21,7 @@
 //+------------------------------------------------------------------+
 
 // --- Symbol Configuration ---
-input string TradedSymbols = "EURUSD,GBPUSD,GBPNZD";  // Comma-separated symbols to trade
+input string TradedSymbols = "EURUSD,GBPUSD,AUDJPY,XAUUSD";  // ✅ CSM Alpha: 4 assets
 
 // --- Signal Settings ---
 input string SignalFolder = "CSM_Signals";             // Folder containing signal files
