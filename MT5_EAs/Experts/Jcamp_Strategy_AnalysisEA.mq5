@@ -85,7 +85,7 @@ input bool VerboseLogging = true;                         // Enable detailed log
 input bool EnableCSMDiagnostics = false;                  // Enable CSM diagnostic reports
 
 // Broker suffix for symbol names
-input string BrokerSuffix = "";                           // Broker symbol suffix (e.g., ".sml")
+input string BrokerSuffix = ".sml";                           // Broker symbol suffix (e.g., ".sml")
 
 //+------------------------------------------------------------------+
 //| CSM DATA STRUCTURES (from BacktestEA)                            |

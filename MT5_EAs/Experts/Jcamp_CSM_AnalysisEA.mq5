@@ -23,7 +23,7 @@ input string ExportFolder = "CSM_Data";               // Export folder name
 input bool   VerboseLogging = false;                  // Verbose logging
 
 input group "═══ Broker Settings ═══"
-input string BrokerSuffix = "";                       // Broker symbol suffix (e.g., ".sml")
+input string BrokerSuffix = ".sml";                       // Broker symbol suffix (e.g., ".sml")
 
 //+------------------------------------------------------------------+
 //| CSM DATA STRUCTURES                                               |
