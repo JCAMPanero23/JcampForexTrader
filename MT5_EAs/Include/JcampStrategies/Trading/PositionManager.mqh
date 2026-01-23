@@ -211,28 +211,28 @@ private:
       if(profitPips < trailingStartPips)
          return;
 
-      // Get or create tracker for this position
-      PositionTracker* tracker = GetOrCreateTracker(ticket);
-      if(tracker == NULL)
+      // Get or create tracker for this position (returns index)
+      int trackerIdx = GetOrCreateTracker(ticket);
+      if(trackerIdx < 0)
          return;
 
       // Update high water mark
       if(posType == POSITION_TYPE_BUY)
       {
-         if(tracker.highWaterMark == 0 || currentPrice > tracker.highWaterMark)
-            tracker.highWaterMark = currentPrice;
+         if(trackers[trackerIdx].highWaterMark == 0 || currentPrice > trackers[trackerIdx].highWaterMark)
+            trackers[trackerIdx].highWaterMark = currentPrice;
       }
       else // SELL
       {
-         if(tracker.highWaterMark == 0 || currentPrice < tracker.highWaterMark)
-            tracker.highWaterMark = currentPrice;
+         if(trackers[trackerIdx].highWaterMark == 0 || currentPrice < trackers[trackerIdx].highWaterMark)
+            trackers[trackerIdx].highWaterMark = currentPrice;
       }
 
       // Calculate new trailing stop
       double newSL = 0;
       if(posType == POSITION_TYPE_BUY)
       {
-         newSL = tracker.highWaterMark - (trailingStopPips * pipValue);
+         newSL = trackers[trackerIdx].highWaterMark - (trailingStopPips * pipValue);
 
          // Only update if new SL is better (higher) than current SL
          if(newSL > currentSL || currentSL == 0)
@@ -245,14 +245,14 @@ private:
                {
                   Print("📈 Trailing Stop Updated: #", ticket, " | ",
                         symbol, " BUY | New SL: ", newSL,
-                        " | High: ", tracker.highWaterMark);
+                        " | High: ", trackers[trackerIdx].highWaterMark);
                }
             }
          }
       }
       else // SELL
       {
-         newSL = tracker.highWaterMark + (trailingStopPips * pipValue);
+         newSL = trackers[trackerIdx].highWaterMark + (trailingStopPips * pipValue);
 
          // Only update if new SL is better (lower) than current SL
          if(newSL < currentSL || currentSL == 0)
@@ -265,7 +265,7 @@ private:
                {
                   Print("📉 Trailing Stop Updated: #", ticket, " | ",
                         symbol, " SELL | New SL: ", newSL,
-                        " | Low: ", tracker.highWaterMark);
+                        " | Low: ", trackers[trackerIdx].highWaterMark);
                }
             }
          }
@@ -289,15 +289,15 @@ private:
    }
 
    //+------------------------------------------------------------------+
-   //| Get or Create Position Tracker                                   |
+   //| Get or Create Position Tracker (returns array index)             |
    //+------------------------------------------------------------------+
-   PositionTracker* GetOrCreateTracker(ulong ticket)
+   int GetOrCreateTracker(ulong ticket)
    {
       // Find existing tracker
       for(int i = 0; i < ArraySize(trackers); i++)
       {
          if(trackers[i].ticket == ticket)
-            return GetPointer(trackers[i]);
+            return i;  // Return index
       }
 
       // Create new tracker
@@ -306,7 +306,7 @@ private:
       trackers[size].ticket = ticket;
       trackers[size].highWaterMark = 0;
 
-      return GetPointer(trackers[size]);
+      return size;  // Return index of new tracker
    }
 
    //+------------------------------------------------------------------+

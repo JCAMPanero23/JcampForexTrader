@@ -481,8 +481,8 @@ void LoadCSMFromFile()
         return;
     
     last_file_check = currentTime;
-    
-    string filename = CSM_Folder + "\csm_current.txt";
+
+    string filename = CSM_Folder + "\\csm_current.txt";
     int handle = FileOpen(filename, FILE_READ|FILE_TXT|FILE_ANSI);
     
     if(handle == INVALID_HANDLE)
@@ -544,6 +544,51 @@ void LoadCSMFromFile()
     {
         Print("⚠ CSM file exists but no valid data found");
     }
+}
+
+//+------------------------------------------------------------------+
+//| Get Currency Index                                                |
+//+------------------------------------------------------------------+
+int GetCurrencyIndex(string currency)
+{
+    for(int i = 0; i < 9; i++)
+    {
+        if(currencies[i] == currency)
+            return i;
+    }
+    return -1;
+}
+
+//+------------------------------------------------------------------+
+//| Get CSM Differential for Symbol                                  |
+//+------------------------------------------------------------------+
+double GetCSMDifferential(string symbol)
+{
+    // Extract base and quote currencies from symbol
+    string base_currency = StringSubstr(symbol, 0, 3);
+    string quote_currency = StringSubstr(symbol, 3, 3);
+
+    int base_idx = GetCurrencyIndex(base_currency);
+    int quote_idx = GetCurrencyIndex(quote_currency);
+
+    if(base_idx < 0 || quote_idx < 0)
+    {
+        if(VerboseLogging)
+            Print("⚠ Cannot calculate CSM differential for ", symbol, " - currency not found");
+        return 0.0;
+    }
+
+    if(!csm_data[base_idx].data_valid || !csm_data[quote_idx].data_valid)
+    {
+        if(VerboseLogging)
+            Print("⚠ CSM data not valid for ", symbol);
+        return 0.0;
+    }
+
+    // CSM Differential = Base Strength - Quote Strength
+    double diff = csm_data[base_idx].current_strength - csm_data[quote_idx].current_strength;
+
+    return diff;
 }
 
 //+------------------------------------------------------------------+
