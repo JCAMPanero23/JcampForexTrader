@@ -977,22 +977,34 @@ namespace JcampForexTrader
                 string csmFile = IOPath.Combine(pathToValidate, "csm_current.txt");
                 bool hasCSM = File.Exists(csmFile);
 
-                string[] pairs = { "EURUSD", "GBPUSD", "AUDJPY", "XAUUSD" };
+                // CSM Alpha: Signal files are in CSM_Signals folder (sibling to CSM_Data)
+                string signalPath = pathToValidate.Replace("CSM_Data", "CSM_Signals");
+
+                // CSM Alpha: 4 assets with broker suffix mapping
+                var pairMappings = new Dictionary<string, string>
+                {
+                    ["EURUSD"] = "EURUSD.sml",
+                    ["GBPUSD"] = "GBPUSD.sml",
+                    ["AUDJPY"] = "AUDJPY",
+                    ["XAUUSD"] = "XAUUSD.sml"
+                };
+
                 int jsonFilesFound = 0;
                 int txtFilesFound = 0;
 
-                foreach (string pair in pairs)
+                foreach (var kvp in pairMappings)
                 {
-                    if (File.Exists(IOPath.Combine(pathToValidate, $"{pair}_signals.json")))
+                    string filePair = kvp.Value;
+                    if (File.Exists(IOPath.Combine(signalPath, $"{filePair}_signals.json")))
                         jsonFilesFound++;
-                    if (File.Exists(IOPath.Combine(pathToValidate, $"{pair}_signals.txt")))
+                    if (File.Exists(IOPath.Combine(signalPath, $"{filePair}_signals.txt")))
                         txtFilesFound++;
                 }
 
                 string result = $"✓ Directory exists\n" +
                                $"✓ CSM file: {(hasCSM ? "Found" : "Not found")}\n" +
-                               $"✓ JSON signal files: {jsonFilesFound}/3 found\n" +
-                               $"✓ TXT signal files: {txtFilesFound}/3 found\n\n" +
+                               $"✓ JSON signal files: {jsonFilesFound}/4 found (CSM Alpha)\n" +
+                               $"✓ TXT signal files: {txtFilesFound}/4 found\n\n" +
                                (hasCSM && (jsonFilesFound > 0 || txtFilesFound > 0) ?
                                 "Path is valid!" :
                                 "Path exists but missing data files.");
