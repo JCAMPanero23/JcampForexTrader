@@ -360,34 +360,31 @@ namespace JcampForexTrader
             try
             {
                 var lines = File.ReadAllLines(csmFile);
-                bool inStrengthSection = false;
-                DateTime lastUpdate = DateTime.MinValue;
                 int currenciesLoaded = 0;
 
                 foreach (var line in lines)
                 {
-                    // Parse timestamp
-                    if (line.StartsWith("TIMESTAMP="))
+                    // Skip comments and empty lines
+                    if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#"))
+                        continue;
+
+                    // CSM Alpha format: "CURRENCY,STRENGTH" (comma-separated)
+                    if (line.Contains(","))
                     {
-                        string timestampStr = line.Split('=')[1].Trim();
-                        if (DateTime.TryParseExact(timestampStr, "yyyy.MM.dd HH:mm",
-                            System.Globalization.CultureInfo.InvariantCulture,
-                            System.Globalization.DateTimeStyles.None,
-                            out lastUpdate))
+                        var parts = line.Split(',');
+                        if (parts.Length == 2)
                         {
-                            LastUpdateStatusText.Text = lastUpdate.ToString("HH:mm:ss");
+                            string currency = parts[0].Trim();
+                            if (double.TryParse(parts[1].Trim(), out double strength))
+                            {
+                                currencyStrengths[currency] = strength;
+                                currenciesLoaded++;
+                            }
                         }
                     }
 
-                    // Properly handle section transitions
-                    if (line.StartsWith("["))
-                    {
-                        inStrengthSection = line.Contains("[STRENGTH_VALUES]");
-                        continue;
-                    }
-
-                    // Only parse when in STRENGTH_VALUES section
-                    if (inStrengthSection && line.Contains("="))
+                    // Legacy format support: "CURRENCY=STRENGTH" (equals sign)
+                    else if (line.Contains("=") && !line.StartsWith("[") && !line.StartsWith("TIMESTAMP="))
                     {
                         var parts = line.Split('=');
                         if (parts.Length == 2)
