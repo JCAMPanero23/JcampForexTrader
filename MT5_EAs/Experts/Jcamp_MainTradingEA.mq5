@@ -7,7 +7,7 @@
 #property link      ""
 #property version   "2.00"
 #property description "CSM Alpha Main Trading EA - 4 Asset System"
-#property description "Trades: EURUSD, GBPUSD, AUDJPY, XAUUSD (Gold)"
+#property description "Trades: EURUSD.sml, GBPUSD.sml, AUDJPY, XAUUSD.sml (with broker suffix)"
 #property strict
 
 // Include modular components
@@ -21,7 +21,7 @@
 //+------------------------------------------------------------------+
 
 // --- Symbol Configuration ---
-input string TradedSymbols = "EURUSD,GBPUSD,AUDJPY,XAUUSD";  // ✅ CSM Alpha: 4 assets
+input string TradedSymbols = "EURUSD.sml,GBPUSD.sml,AUDJPY,XAUUSD.sml";  // ✅ CSM Alpha: 4 assets (with broker suffix)
 
 // --- Signal Settings ---
 input string SignalFolder = "CSM_Signals";             // Folder containing signal files
@@ -46,7 +46,7 @@ input int ExportIntervalSeconds = 300;                 // Export performance dat
 
 // --- System Settings ---
 input int MagicNumber = 100001;                        // Magic number for this EA
-input bool VerboseLogging = false;                     // Enable detailed logging
+input bool VerboseLogging = true;                      // Enable detailed logging
 
 //+------------------------------------------------------------------+
 //| Global Variables                                                  |
