@@ -1,0 +1,2196 @@
+﻿<Window x:Class="JcampForexTrader.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Advanced Currency Strength Trading System (ACSTS) Monitor" 
+        Height="900" Width="1400"
+        WindowStartupLocation="CenterScreen"
+        Background="#1E1E1E"
+        Foreground="White">
+
+    <Window.Resources>
+        <!-- Dark ComboBox Style - COMPLETE VERSION (FIXED) -->
+        <Style TargetType="ComboBox" x:Key="DarkComboBoxStyle">
+            <Setter Property="Background" Value="#2D2D30"/>
+            <Setter Property="Foreground" Value="#CCCCCC"/>
+            <Setter Property="BorderBrush" Value="#3E3E42"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Padding" Value="8,5"/>
+
+            <!-- Style for dropdown items -->
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ComboBoxItem">
+                        <Setter Property="Background" Value="#2D2D30"/>
+                        <Setter Property="Foreground" Value="#CCCCCC"/>
+                        <Setter Property="Padding" Value="8,6"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ComboBoxItem">
+                                    <Border Background="{TemplateBinding Background}" 
+                                    BorderThickness="0" 
+                                    Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsHighlighted" Value="True">
+                                            <Setter Property="Background" Value="#007ACC"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="Background" Value="#007ACC"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+
+            <!-- Template for the ComboBox itself -->
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <ToggleButton Grid.Column="0" 
+                                  Background="{TemplateBinding Background}"
+                                  BorderBrush="{TemplateBinding BorderBrush}"
+                                  Foreground="{TemplateBinding Foreground}"
+                                  BorderThickness="1"
+                                  IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                  ClickMode="Press">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="20"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ContentPresenter Grid.Column="0" 
+                                            Content="{TemplateBinding SelectionBoxItem}"
+                                            ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                            Margin="8,5"
+                                            VerticalAlignment="Center"
+                                            HorizontalAlignment="Left"/>
+                                    <Path Grid.Column="1" 
+                                  Data="M 0 0 L 4 4 L 8 0 Z" 
+                                  Fill="#CCCCCC"
+                                  VerticalAlignment="Center"
+                                  HorizontalAlignment="Center"/>
+                                </Grid>
+                            </ToggleButton>
+                            <Popup IsOpen="{TemplateBinding IsDropDownOpen}" 
+                           Placement="Bottom"
+                           AllowsTransparency="True">
+                                <Border Background="#2D2D30" 
+                                BorderBrush="#3E3E42" 
+                                BorderThickness="1"
+                                MinWidth="{TemplateBinding ActualWidth}">
+                                    <ScrollViewer>
+                                        <ItemsPresenter/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Progress Bar Style with 90% Black Background -->
+        <Style TargetType="ProgressBar" x:Key="DarkProgressBarStyle">
+            <Setter Property="Height" Value="18"/>
+            <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="Background" Value="#1A1A1A"/>
+            <Setter Property="BorderBrush" Value="#3E3E42"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ProgressBar">
+                        <Grid>
+                            <!-- Background Border -->
+                            <Border Background="#1A1A1A" 
+                                    BorderBrush="#3E3E42" 
+                                    BorderThickness="1" 
+                                    CornerRadius="2">
+                                <!-- Progress Indicator -->
+                                <Border x:Name="PART_Track" CornerRadius="2">
+                                    <Grid>
+                                        <Rectangle x:Name="PART_Indicator" 
+                                                   HorizontalAlignment="Left" 
+                                                   Fill="{TemplateBinding Foreground}"/>
+                                    </Grid>
+                                </Border>
+                            </Border>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <Style TargetType="TextBlock" x:Key="HeaderStyle">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Margin" Value="10,5"/>
+        </Style>
+
+        <Style TargetType="TextBlock" x:Key="CurrencyLabelStyle">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <Style TargetType="TextBlock" x:Key="ValueStyle">
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style TargetType="Border" x:Key="CurrencyBorderStyle">
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Background" Value="#2D2D30"/>
+        </Style>
+        <!-- Muted Colors (60% intensity by default) -->
+        <SolidColorBrush x:Key="MutedGreen" Color="#4A6F4A"/>
+        <!-- Replaces LightGreen -->
+        <SolidColorBrush x:Key="MutedRed" Color="#7A4A4A"/>
+        <!-- Replaces LightCoral -->
+        <SolidColorBrush x:Key="MutedYellow" Color="#7A7A4A"/>
+        <!-- Replaces Yellow -->
+        <SolidColorBrush x:Key="MutedOrange" Color="#7A5A4A"/>
+        <!-- Replaces Orange -->
+        <SolidColorBrush x:Key="MutedBlue" Color="#4A5A7A"/>
+        <!-- Replaces bright blue -->
+        <SolidColorBrush x:Key="MutedPurple" Color="#6A4A7A"/>
+        <!-- Replaces bright purple -->
+        <SolidColorBrush x:Key="MutedGray" Color="#888888"/>
+        <!-- Replaces LightGray -->
+
+        <!-- Dark Mode Text Colors -->
+        <SolidColorBrush x:Key="DarkText" Color="#CCCCCC"/>
+        <!-- Main text -->
+        <SolidColorBrush x:Key="DarkTextMuted" Color="#888888"/>
+        <!-- Secondary text -->
+
+        <!-- Dark Mode Backgrounds -->
+        <SolidColorBrush x:Key="DarkBackground" Color="#1A1A1A"/>
+        <!-- Darkest -->
+        <SolidColorBrush x:Key="DarkPanel" Color="#252526"/>
+        <!-- Panel background -->
+        <SolidColorBrush x:Key="DarkBorder" Color="#3E3E42"/>
+        <!-- Border color -->
+        
+        <Style x:Key="DarkDataGridStyle" TargetType="DataGrid">
+            <!-- Main Grid Appearance -->
+            <Setter Property="Background" Value="{StaticResource DarkBackground}"/>
+            <Setter Property="Foreground" Value="{StaticResource DarkText}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource DarkBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="RowBackground" Value="#2D2D30"/>
+            <Setter Property="AlternatingRowBackground" Value="#252526"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#3E3E42"/>
+            <Setter Property="VerticalGridLinesBrush" Value="Transparent"/>
+
+            <!-- Grid Behavior -->
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="CanUserDeleteRows" Value="False"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="SelectionMode" Value="Single"/>
+            <Setter Property="SelectionUnit" Value="FullRow"/>
+
+            <!-- Column Header Style -->
+            <Setter Property="ColumnHeaderStyle">
+                <Setter.Value>
+                    <Style TargetType="DataGridColumnHeader">
+                        <Setter Property="Background" Value="#3E3E42"/>
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="FontWeight" Value="Bold"/>
+                        <Setter Property="FontSize" Value="12"/>
+                        <Setter Property="Padding" Value="10,8"/>
+                        <Setter Property="BorderBrush" Value="#555555"/>
+                        <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+
+                        <!-- Header Hover Effect -->
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#007ACC"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+
+            <!-- Row Style -->
+            <Setter Property="RowStyle">
+                <Setter.Value>
+                    <Style TargetType="DataGridRow">
+                        <Setter Property="Background" Value="#2D2D30"/>
+                        <Setter Property="Foreground" Value="#CCCCCC"/>
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="Height" Value="32"/>
+
+                        <!-- Row Interaction Effects -->
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#3E3E42"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="#007ACC"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+
+            <!-- Cell Style -->
+            <Setter Property="CellStyle">
+                <Setter.Value>
+                    <Style TargetType="DataGridCell">
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="Padding" Value="8,6"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="Foreground" Value="#CCCCCC"/>
+                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+
+                        <!-- Cell Selection -->
+                        <Style.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="BorderBrush" Value="Transparent"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <Style TargetType="TabItem" x:Key="TabStyle">
+            <Setter Property="Background" Value="#3E3E42"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="2,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border Name="Border" Background="{TemplateBinding Background}" 
+                                BorderBrush="#666" BorderThickness="1,1,1,0" 
+                                CornerRadius="4,4,0,0" Margin="2,0">
+                            <ContentPresenter x:Name="ContentSite" 
+                                            VerticalAlignment="Center" 
+                                            HorizontalAlignment="Center" 
+                                            ContentSource="Header" 
+                                            Margin="10,8"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#007ACC"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="False">
+                                <Setter TargetName="Border" Property="Background" Value="#3E3E42"/>
+                                <Setter Property="Foreground" Value="#CCCCCC"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#5A5A5A"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Status Panel Container Style -->
+        <Style TargetType="Border" x:Key="StatusPanelStyle">
+            <Setter Property="Background" Value="#2D2D30"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Margin" Value="5,5,5,10"/>
+        </Style>
+
+        <!-- Status Indicator (Circle) Style -->
+        <Style TargetType="Ellipse" x:Key="StatusIndicatorStyle">
+            <Setter Property="Width" Value="12"/>
+            <Setter Property="Height" Value="12"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- Status Text Style -->
+        <Style TargetType="TextBlock" x:Key="StatusTextStyle">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="#CCCCCC"/>
+        </Style>
+
+        <!-- Threshold Label Style -->
+        <Style TargetType="TextBlock" x:Key="ThresholdLabelStyle">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Foreground" Value="#888888"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,2,5,2"/>
+        </Style>
+
+        <!-- Threshold Value Style -->
+        <Style TargetType="TextBlock" x:Key="ThresholdValueStyle">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#CCCCCC"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,2,5,2"/>
+        </Style>
+
+        <!-- Threshold Progress Bar Style -->
+        <Style TargetType="ProgressBar" x:Key="ThresholdProgressBarStyle">
+            <Setter Property="Height" Value="14"/>
+            <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="Background" Value="#1A1A1A"/>
+            <Setter Property="BorderBrush" Value="#3E3E42"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ProgressBar">
+                        <Grid>
+                            <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="2"/>
+                            <Border BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="2">
+                                <Grid>
+                                    <Rectangle Name="PART_Track"/>
+                                    <Rectangle Name="PART_Indicator" 
+                                     Fill="{TemplateBinding Foreground}"
+                                     HorizontalAlignment="Left"/>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Blocking Reason Text Style -->
+        <Style TargetType="TextBlock" x:Key="BlockingReasonStyle">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontStyle" Value="Italic"/>
+            <Setter Property="Foreground" Value="#FF9800"/>
+            <Setter Property="Margin" Value="20,5,0,2"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+
+        <!-- Needs Text Style -->
+        <Style TargetType="TextBlock" x:Key="NeedsTextStyle">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Foreground" Value="#888888"/>
+            <Setter Property="Margin" Value="20,2,0,5"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+
+        <!-- Percentage Display Style (for progress bars) -->
+        <Style TargetType="TextBlock" x:Key="PercentageStyle">
+            <Setter Property="FontSize" Value="9"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#CCCCCC"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="5,0,0,0"/>
+        </Style>
+
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="60"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="40"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#FF29638A" BorderBrush="#0E639C" BorderThickness="0,0,0,2">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="JcampForexTrader - Professional Trading Monitor" 
+                          Style="{StaticResource HeaderStyle}" 
+                          VerticalAlignment="Center" FontSize="20"/>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
+                    <Ellipse x:Name="ConnectionIndicator" Width="12" Height="12" 
+                            Fill="Red" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="ConnectionStatus" Text="Disconnected" 
+                              FontSize="12" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0">
+                    <TextBlock Text="Auto Trading: " FontSize="12" VerticalAlignment="Center"/>
+                    <Ellipse x:Name="TradingIndicator" Width="10" Height="10" 
+                            Fill="Gray" Margin="5,0"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0">
+                    <TextBlock Text="Balance: $" FontSize="12" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="AccountBalanceText" Text="0.00" 
+                              FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <Button Grid.Column="4" x:Name="RefreshButton" Content="Refresh" 
+                       Width="80" Height="30" Margin="10,0"
+                       Background="#4CAF50" Foreground="White" 
+                       BorderBrush="Transparent" Click="RefreshButton_Click"/>
+            </Grid>
+        </Border>
+
+        <!-- Main Tab Control -->
+        <TabControl Grid.Row="1" Background="#252526" BorderBrush="#3E3E42">
+
+            <!-- Live Dashboard Tab -->
+            <TabItem Header="LIVE DASHBOARD" Style="{StaticResource TabStyle}">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="356"/>
+                        <RowDefinition/>
+                        <RowDefinition Height="120"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- CSM Display -->
+                    <Border Grid.Row="0" Background="#252526" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="8" Margin="5,5,5,5">
+                        <Grid Margin="15">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="Live Currency Strength (0-100 Scale)" 
+                                      Style="{StaticResource HeaderStyle}" HorizontalAlignment="Center"/>
+
+                            <UniformGrid Grid.Row="1" x:Name="CurrencyStrengthGrid" Columns="3" Rows="3" Margin="0,15">
+                                <!-- 9 currencies: USD, EUR, GBP, JPY, CHF, AUD, CAD, NZD, XAU (Gold) -->
+                            </UniformGrid>
+                        </Grid>
+                    </Border>
+
+                    <!-- Live Signals Display -->
+                    <Border Grid.Row="1" Background="#252526" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="8" Margin="5,5,5,5">
+                        <Grid Margin="15">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="Live Trading Signals" 
+                                      Style="{StaticResource HeaderStyle}" HorizontalAlignment="Center"/>
+
+                            <Grid Grid.Row="1" Margin="0,15,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- EURUSD Signals -->
+                                <Border Grid.Column="0" Style="{StaticResource CurrencyBorderStyle}" BorderBrush="#FF48734A">
+                                    <StackPanel>
+                                        <TextBlock Text="EURUSD" Style="{StaticResource CurrencyLabelStyle}" FontSize="16"/>
+
+                                        <StackPanel x:Name="EURUSDSignalsPanel" Margin="0,10">
+                                            <Grid Margin="0,5">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="TR:" FontSize="10" Foreground="Gray"/>
+                                                <TextBlock Grid.Column="1" x:Name="EURUSD_TR_Signal" Text="HOLD" FontSize="10" HorizontalAlignment="Center"/>
+                                                <TextBlock Grid.Column="2" x:Name="EURUSD_TR_Conf" Text="0%" FontSize="10"/>
+                                            </Grid>
+
+                                            <Grid Margin="0,5">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="IP:" FontSize="10" Foreground="Gray"/>
+                                                <TextBlock Grid.Column="1" x:Name="EURUSD_IP_Signal" Text="HOLD" FontSize="10" HorizontalAlignment="Center"/>
+                                                <TextBlock Grid.Column="2" x:Name="EURUSD_IP_Conf" Text="0%" FontSize="10"/>
+                                            </Grid>
+
+                                            <Grid Margin="0,5">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="BR:" FontSize="10" Foreground="Gray"/>
+                                                <TextBlock Grid.Column="1" x:Name="EURUSD_BR_Signal" Text="HOLD" FontSize="10" HorizontalAlignment="Center"/>
+                                                <TextBlock Grid.Column="2" x:Name="EURUSD_BR_Conf" Text="0%" FontSize="10"/>
+                                            </Grid>
+
+                                            <Border BorderThickness="0,1,0,0" BorderBrush="Gray" Margin="0,10,0,5">
+                                                <Grid Margin="0,5,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" x:Name="EURUSD_Best_Signal" Text="HOLD" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="1" x:Name="EURUSD_Best_Conf" Text="0%" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                                </Grid>
+                                            </Border>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- GBPUSD Signals -->
+                                <Border Grid.Column="1" Style="{StaticResource CurrencyBorderStyle}" BorderBrush="#FF88632B">
+                                    <StackPanel>
+                                        <TextBlock Text="GBPUSD" Style="{StaticResource CurrencyLabelStyle}" FontSize="16"/>
+
+                                        <StackPanel x:Name="GBPUSDSignalsPanel" Margin="0,10">
+                                            <Grid Margin="0,5">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="TR:" FontSize="10" Foreground="Gray"/>
+                                                <TextBlock Grid.Column="1" x:Name="GBPUSD_TR_Signal" Text="HOLD" FontSize="10" HorizontalAlignment="Center"/>
+                                                <TextBlock Grid.Column="2" x:Name="GBPUSD_TR_Conf" Text="0%" FontSize="10"/>
+                                            </Grid>
+
+                                            <Grid Margin="0,5">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="IP:" FontSize="10" Foreground="Gray"/>
+                                                <TextBlock Grid.Column="1" x:Name="GBPUSD_IP_Signal" Text="HOLD" FontSize="10" HorizontalAlignment="Center"/>
+                                                <TextBlock Grid.Column="2" x:Name="GBPUSD_IP_Conf" Text="0%" FontSize="10"/>
+                                            </Grid>
+
+                                            <Grid Margin="0,5">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="BR:" FontSize="10" Foreground="Gray"/>
+                                                <TextBlock Grid.Column="1" x:Name="GBPUSD_BR_Signal" Text="HOLD" FontSize="10" HorizontalAlignment="Center"/>
+                                                <TextBlock Grid.Column="2" x:Name="GBPUSD_BR_Conf" Text="0%" FontSize="10"/>
+                                            </Grid>
+
+                                            <Border BorderThickness="0,1,0,0" BorderBrush="Gray" Margin="0,10,0,5">
+                                                <Grid Margin="0,5,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" x:Name="GBPUSD_Best_Signal" Text="HOLD" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="1" x:Name="GBPUSD_Best_Conf" Text="0%" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                                </Grid>
+                                            </Border>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- AUDJPY Signals -->
+                                <Border Grid.Column="2" Style="{StaticResource CurrencyBorderStyle}" BorderBrush="#FF602C69">
+                                    <StackPanel>
+                                        <TextBlock Text="AUDJPY" Style="{StaticResource CurrencyLabelStyle}" FontSize="16"/>
+
+                                        <StackPanel x:Name="AUDJPYSignalsPanel" Margin="0,10">
+                                            <Grid Margin="0,5">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="TR:" FontSize="10" Foreground="Gray"/>
+                                                <TextBlock Grid.Column="1" x:Name="AUDJPY_TR_Signal" Text="HOLD" FontSize="10" HorizontalAlignment="Center"/>
+                                                <TextBlock Grid.Column="2" x:Name="AUDJPY_TR_Conf" Text="0%" FontSize="10"/>
+                                            </Grid>
+
+                                            <Grid Margin="0,5">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="IP:" FontSize="10" Foreground="Gray"/>
+                                                <TextBlock Grid.Column="1" x:Name="AUDJPY_IP_Signal" Text="HOLD" FontSize="10" HorizontalAlignment="Center"/>
+                                                <TextBlock Grid.Column="2" x:Name="AUDJPY_IP_Conf" Text="0%" FontSize="10"/>
+                                            </Grid>
+
+                                            <Grid Margin="0,5">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="BR:" FontSize="10" Foreground="Gray"/>
+                                                <TextBlock Grid.Column="1" x:Name="AUDJPY_BR_Signal" Text="HOLD" FontSize="10" HorizontalAlignment="Center"/>
+                                                <TextBlock Grid.Column="2" x:Name="AUDJPY_BR_Conf" Text="0%" FontSize="10"/>
+                                            </Grid>
+
+                                            <Border BorderThickness="0,1,0,0" BorderBrush="Gray" Margin="0,10,0,5">
+                                                <Grid Margin="0,5,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" x:Name="AUDJPY_Best_Signal" Text="HOLD" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="1" x:Name="AUDJPY_Best_Conf" Text="0%" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                                </Grid>
+                                            </Border>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <!-- Quick Performance Summary -->
+                    <Border Grid.Row="2" Background="#252526" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="8" Margin="5,5,5,5">
+                        <Grid Margin="15">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                <TextBlock Text="Daily Return" FontSize="12" Foreground="Gray" HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="DailyPnLText" Text="$0.00" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                <TextBlock Text="Active Trades" FontSize="12" Foreground="Gray" HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="ActiveTradesText" Text="0" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                <TextBlock Text="Win Rate" FontSize="12" Foreground="Gray" HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="WinRateText" Text="0%" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="3" HorizontalAlignment="Center">
+                                <TextBlock Text="Avg R-Multiple" FontSize="12" Foreground="Gray" HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="AvgRMultipleText" Text="0.0R" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- Active Trades Tab -->
+            <TabItem Header="ACTIVE TRADES" Style="{StaticResource TabStyle}">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="200"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Active Positions List -->
+                    <Border Grid.Row="0" Background="#252526" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="8" Margin="5">
+                        <Grid Margin="15">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="Active Positions" Style="{StaticResource HeaderStyle}"/>
+
+                            <!-- ═══════════════════════════════════════════════════════════ -->
+                            <!-- Active Positions Grid - Dark Mode Applied         -->
+                            <!-- ═══════════════════════════════════════════════════════════ -->
+                            <DataGrid Grid.Row="1" x:Name="ActivePositionsGrid" 
+                                     Style="{StaticResource DarkDataGridStyle}"
+                                     Margin="0,10">
+
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Ticket" Binding="{Binding Ticket}" Width="80"/>
+                                    <DataGridTextColumn Header="Symbol" Binding="{Binding Symbol}" Width="80"/>
+                                    <DataGridTextColumn Header="Strategy" Binding="{Binding Strategy}" Width="120"/>
+                                    <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="50"/>
+                                    <DataGridTextColumn Header="Entry" Binding="{Binding EntryPrice}" Width="80"/>
+                                    <DataGridTextColumn Header="Current" Binding="{Binding CurrentPrice}" Width="80"/>
+                                    <DataGridTextColumn Header="Stop" Binding="{Binding StopLoss}" Width="80"/>
+                                    <DataGridTextColumn Header="Target" Binding="{Binding TakeProfit}" Width="80"/>
+                                    <DataGridTextColumn Header="Size" Binding="{Binding Size}" Width="60"/>
+                                    <DataGridTextColumn Header="PnL" Binding="{Binding PnL}" Width="80"/>
+                                    <DataGridTextColumn Header="R-Multiple" Binding="{Binding RMultiple}" Width="80"/>
+                                    <DataGridTextColumn Header="Risk Amount" Binding="{Binding Risk}" Width="80"/>
+                                    <DataGridTextColumn Header="Entry Time" Binding="{Binding EntryTime}" Width="120"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </Border>
+
+                    <!-- Risk Dashboard -->
+                    <Border Grid.Row="1" Background="#252526" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="8" Margin="5">
+                        <Grid Margin="15">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="Risk Management Dashboard" Style="{StaticResource HeaderStyle}"/>
+
+                            <Grid Grid.Row="1" Margin="0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Daily Risk Used" FontWeight="Bold" Margin="0,5"/>
+                                    <ProgressBar x:Name="DailyRiskProgressBar" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="100" Value="0"/>
+                                    <TextBlock x:Name="DailyRiskText" Text="0% / 3%" HorizontalAlignment="Center" FontSize="12"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Portfolio Risk" FontWeight="Bold" Margin="0,5"/>
+                                    <ProgressBar x:Name="PortfolioRiskProgressBar" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="100" Value="0"/>
+                                    <TextBlock x:Name="PortfolioRiskText" Text="0% / 5%" HorizontalAlignment="Center" FontSize="12"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Position Slots" FontWeight="Bold" Margin="0,5"/>
+                                    <ProgressBar x:Name="PositionSlotsProgressBar" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="2" Value="0"/>
+                                    <TextBlock x:Name="PositionSlotsText" Text="0 / 2" HorizontalAlignment="Center" FontSize="12"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="3">
+                                    <TextBlock Text="Margin Level" FontWeight="Bold" Margin="0,5"/>
+                                    <TextBlock x:Name="MarginLevelText" Text="N/A" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="(Healthy: >500%)" FontSize="10" Foreground="Gray" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- R-Multiple Analysis Tab -->
+            <TabItem Header="R-MULTIPLE ANALYSIS" Style="{StaticResource TabStyle}">
+                <Grid Margin="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- R-Multiple Distribution Chart -->
+                    <!-- Dark mode border -->
+                    <Border Grid.Column="0" Background="{StaticResource DarkBackground}" 
+                            BorderBrush="{StaticResource DarkBorder}" 
+                            BorderThickness="1" CornerRadius="8" Margin="5">
+                        <Grid Margin="15">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="R-Multiple Distribution" Style="{StaticResource HeaderStyle}"/>
+
+                            <Canvas Grid.Row="1" x:Name="RMultipleChart" Margin="20"/>
+
+                            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center">
+                                <TextBlock Text="Total Trades: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TotalTradesText" Text="0" FontWeight="Bold" Margin="5,0"/>
+                                <TextBlock Text=" | Average R: " FontWeight="Bold" Margin="10,0,0,0"/>
+                                <TextBlock x:Name="AverageRText" Text="0.0R" FontWeight="Bold" Margin="5,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Trade History List -->
+                    <!-- Dark mode border -->
+                    <Border Grid.Column="1" Background="{StaticResource DarkBackground}" 
+                            BorderBrush="{StaticResource DarkBorder}" 
+                            BorderThickness="1" CornerRadius="8" Margin="5">
+                        <Grid Margin="15">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="Recent Trade History" Style="{StaticResource HeaderStyle}"/>
+
+                            <!-- ═══════════════════════════════════════════════════════════ -->
+                            <!-- Trade History Grid - Dark Mode Applied            -->
+                            <!-- ═══════════════════════════════════════════════════════════ -->
+                            <DataGrid Grid.Row="1" x:Name="TradeHistoryGrid" 
+                                     Style="{StaticResource DarkDataGridStyle}"
+                                     Margin="0,10">
+
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Date" Binding="{Binding Date}" Width="80"/>
+                                    <DataGridTextColumn Header="Symbol" Binding="{Binding Symbol}" Width="60"/>
+                                    <DataGridTextColumn Header="Strategy" Binding="{Binding Strategy}" Width="80"/>
+                                    <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="40"/>
+                                    <DataGridTextColumn Header="Profit" Binding="{Binding PnL}" Width="60"/>
+                                    <DataGridTextColumn Header="R" Binding="{Binding RMultiple}" Width="50"/>
+                                    <DataGridTextColumn Header="Risk" Binding="{Binding Risk}" Width="60"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- Signal Analysis Tab -->
+            <TabItem Header="SIGNAL ANALYSIS" Style="{StaticResource TabStyle}">
+                <ScrollViewer>
+                    <StackPanel Margin="10">
+                        <!-- EURUSD Strategy Breakdown -->
+                        <Border Background="#252526" BorderBrush="#4CAF50" BorderThickness="2" CornerRadius="8" Margin="5">
+                            <Grid Margin="15">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Text="EURUSD - Strategy Breakdown" 
+                              Style="{StaticResource HeaderStyle}" Foreground="#4CAF50"/>
+
+                                <Grid Grid.Row="1"  Margin="0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Trend Rider -->
+                                    <!-- STATUS PANEL: EURUSD - TREND RIDER (Column 0) -->
+                                    <Border Grid.Row="0" Grid.Column="0" 
+                                            Style="{StaticResource StatusPanelStyle}" 
+                                            x:Name="EURUSD_TR_StatusPanel"
+                                            BorderBrush="#4A6F4A">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,8">
+                                                <Ellipse x:Name="EURUSD_TR_StatusIndicator" 
+                                                         Style="{StaticResource StatusIndicatorStyle}"
+                                                         Fill="#7A4A4A"/>
+                                                <TextBlock x:Name="EURUSD_TR_StatusText"
+                                                           Style="{StaticResource StatusTextStyle}"
+                                                           Text="HOLDING - Requirements Not Met"/>
+                                            </StackPanel>
+        
+                                            <Grid Grid.Row="1" Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="90"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                </Grid.ColumnDefinitions>
+            
+                                                <TextBlock Grid.Column="0" Text="Confidence:" 
+                                                           Style="{StaticResource ThresholdLabelStyle}"/>
+                                                <TextBlock Grid.Column="1" x:Name="EURUSD_TR_ConfidenceValue"
+                                                           Text="0% / 30%" Style="{StaticResource ThresholdValueStyle}"/>
+                                                <ProgressBar Grid.Column="2" x:Name="EURUSD_TR_ConfidenceBar"
+                                                             Style="{StaticResource ThresholdProgressBarStyle}"
+                                                             Minimum="0" Maximum="100" Value="0" Foreground="#7A7A4A"/>
+                                                <TextBlock Grid.Column="3" x:Name="EURUSD_TR_ConfidencePercent"
+                                                           Text="0%" Style="{StaticResource PercentageStyle}"/>
+                                            </Grid>
+        
+                                            <Grid Grid.Row="2" Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="90"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                </Grid.ColumnDefinitions>
+            
+                                                <TextBlock Grid.Column="0" Text="CSM Diff:" 
+                                                           Style="{StaticResource ThresholdLabelStyle}"/>
+                                                <TextBlock Grid.Column="1" x:Name="EURUSD_TR_CsmDiffValue"
+                                                           Text="0.0 / 5.0" Style="{StaticResource ThresholdValueStyle}"/>
+                                                <ProgressBar Grid.Column="2" x:Name="EURUSD_TR_CsmDiffBar"
+                                                             Style="{StaticResource ThresholdProgressBarStyle}"
+                                                             Minimum="0" Maximum="100" Value="0" Foreground="#7A4A4A"/>
+                                                <TextBlock Grid.Column="3" x:Name="EURUSD_TR_CsmDiffPercent"
+                                                           Text="0%" Style="{StaticResource PercentageStyle}"/>
+                                            </Grid>
+        
+                                            <TextBlock Grid.Row="3" x:Name="EURUSD_TR_BlockingReason"
+                                                       Style="{StaticResource BlockingReasonStyle}"
+                                                       Text="⚠️ Waiting for signal data..."/>
+        
+                                            <TextBlock Grid.Row="4" x:Name="EURUSD_TR_NeedsText"
+                                                       Style="{StaticResource NeedsTextStyle}"
+                                                       Text="📊 Loading threshold requirements..."/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- STATUS PANEL: EURUSD - IMPULSE PULLBACK (Column 1) -->
+                                    <Border Grid.Row="0" Grid.Column="1" 
+                                            Style="{StaticResource StatusPanelStyle}" 
+                                            x:Name="EURUSD_IP_StatusPanel"
+                                            BorderBrush="#4A6F4A">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+        
+                                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+                                                <Ellipse x:Name="EURUSD_IP_StatusIndicator" 
+                                                         Style="{StaticResource StatusIndicatorStyle}"
+                                                         Fill="#7A4A4A"/>
+                                                <TextBlock x:Name="EURUSD_IP_StatusText"
+                                                           Style="{StaticResource StatusTextStyle}"
+                                                           Text="HOLDING - Requirements Not Met"/>
+                                            </StackPanel>
+        
+                                            <Grid Grid.Row="1" Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="90"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                </Grid.ColumnDefinitions>
+            
+                                                <TextBlock Grid.Column="0" Text="Confidence:" 
+                                                           Style="{StaticResource ThresholdLabelStyle}"/>
+                                                <TextBlock Grid.Column="1" x:Name="EURUSD_IP_ConfidenceValue"
+                                                           Text="0% / 30%" Style="{StaticResource ThresholdValueStyle}"/>
+                                                <ProgressBar Grid.Column="2" x:Name="EURUSD_IP_ConfidenceBar"
+                                                             Style="{StaticResource ThresholdProgressBarStyle}"
+                                                             Minimum="0" Maximum="100" Value="0" Foreground="#7A7A4A"/>
+                                                <TextBlock Grid.Column="3" x:Name="EURUSD_IP_ConfidencePercent"
+                                                           Text="0%" Style="{StaticResource PercentageStyle}"/>
+                                            </Grid>
+        
+                                            <Grid Grid.Row="2" Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="90"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                </Grid.ColumnDefinitions>
+            
+                                                <TextBlock Grid.Column="0" Text="CSM Diff:" 
+                                                           Style="{StaticResource ThresholdLabelStyle}"/>
+                                                <TextBlock Grid.Column="1" x:Name="EURUSD_IP_CsmDiffValue"
+                                                           Text="0.0 / 5.0" Style="{StaticResource ThresholdValueStyle}"/>
+                                                <ProgressBar Grid.Column="2" x:Name="EURUSD_IP_CsmDiffBar"
+                                                             Style="{StaticResource ThresholdProgressBarStyle}"
+                                                             Minimum="0" Maximum="100" Value="0" Foreground="#7A4A4A"/>
+                                                <TextBlock Grid.Column="3" x:Name="EURUSD_IP_CsmDiffPercent"
+                                                           Text="0%" Style="{StaticResource PercentageStyle}"/>
+                                            </Grid>
+        
+                                            <TextBlock Grid.Row="3" x:Name="EURUSD_IP_BlockingReason"
+                                                       Style="{StaticResource BlockingReasonStyle}"
+                                                       Text="⚠️ Waiting for signal data..."/>
+        
+                                            <TextBlock Grid.Row="4" x:Name="EURUSD_IP_NeedsText"
+                                                       Style="{StaticResource NeedsTextStyle}"
+                                                       Text="📊 Loading threshold requirements..."/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- STATUS PANEL: EURUSD - BREAKOUT RETEST (Column 2) -->
+                                    <Border Grid.Row="0" Grid.Column="2" 
+                                            Style="{StaticResource StatusPanelStyle}" 
+                                            x:Name="EURUSD_BR_StatusPanel"
+                                            BorderBrush="#4A6F4A">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+        
+                                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+                                                <Ellipse x:Name="EURUSD_BR_StatusIndicator" 
+                                                         Style="{StaticResource StatusIndicatorStyle}"
+                                                         Fill="#7A4A4A"/>
+                                                <TextBlock x:Name="EURUSD_BR_StatusText"
+                                                           Style="{StaticResource StatusTextStyle}"
+                                                           Text="HOLDING - Requirements Not Met"/>
+                                            </StackPanel>
+        
+                                            <Grid Grid.Row="1" Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="90"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                </Grid.ColumnDefinitions>
+            
+                                                <TextBlock Grid.Column="0" Text="Confidence:" 
+                                                           Style="{StaticResource ThresholdLabelStyle}"/>
+                                                <TextBlock Grid.Column="1" x:Name="EURUSD_BR_ConfidenceValue"
+                                                           Text="0% / 30%" Style="{StaticResource ThresholdValueStyle}"/>
+                                                <ProgressBar Grid.Column="2" x:Name="EURUSD_BR_ConfidenceBar"
+                                                             Style="{StaticResource ThresholdProgressBarStyle}"
+                                                             Minimum="0" Maximum="100" Value="0" Foreground="#7A7A4A"/>
+                                                <TextBlock Grid.Column="3" x:Name="EURUSD_BR_ConfidencePercent"
+                                                           Text="0%" Style="{StaticResource PercentageStyle}"/>
+                                            </Grid>
+        
+                                            <Grid Grid.Row="2" Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="90"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                </Grid.ColumnDefinitions>
+            
+                                                <TextBlock Grid.Column="0" Text="CSM Diff:" 
+                                                           Style="{StaticResource ThresholdLabelStyle}"/>
+                                                <TextBlock Grid.Column="1" x:Name="EURUSD_BR_CsmDiffValue"
+                                                           Text="0.0 / 5.0" Style="{StaticResource ThresholdValueStyle}"/>
+                                                <ProgressBar Grid.Column="2" x:Name="EURUSD_BR_CsmDiffBar"
+                                                             Style="{StaticResource ThresholdProgressBarStyle}"
+                                                             Minimum="0" Maximum="100" Value="0" Foreground="#7A7A4A"/>
+                                                <TextBlock Grid.Column="3" x:Name="EURUSD_BR_CsmDiffPercent"
+                                                           Text="0%" Style="{StaticResource PercentageStyle}"/>
+                                            </Grid>
+        
+                                            <TextBlock Grid.Row="3" x:Name="EURUSD_BR_BlockingReason"
+                                                       Style="{StaticResource BlockingReasonStyle}"
+                                                       Text="⚠️ Waiting for signal data..."/>
+        
+                                            <TextBlock Grid.Row="4" x:Name="EURUSD_BR_NeedsText"
+                                                       Style="{StaticResource NeedsTextStyle}"
+                                                       Text="📊 Loading threshold requirements..."/>
+                                        </Grid>
+                                    </Border>
+
+                                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="5">
+                                        <TextBlock Text="Trend Rider" FontSize="14" FontWeight="Bold" Margin="0,0,0,5"/>
+                                        <TextBlock x:Name="EURUSD_TR_Details" Text="Signal: HOLD (40%)" FontSize="11" Margin="0,0,0,5"/>
+
+                                        <TextBlock Text="EMA Alignment:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="EURUSD_TR_EMA" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="35" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="ADX Strength:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="EURUSD_TR_ADX" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="25" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="RSI Position:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="EURUSD_TR_RSI" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="20" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="CSM Support:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="EURUSD_TR_CSM" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="25" Value="0" Margin="0,2"/>
+
+                                        <TextBlock x:Name="EURUSD_TR_Reasoning" Text="Reasoning: N/A" 
+                                      FontSize="9" Foreground="Gray" Margin="0,5" TextWrapping="Wrap"/>
+                                    </StackPanel>
+
+                                    <!-- Impulse Pullback -->
+                                    <StackPanel Grid.Row="1" Grid.Column="1" Margin="5">
+                                        <TextBlock Text="Impulse Pullback" FontSize="14" FontWeight="Bold" Margin="0,0,0,5"/>
+                                        <TextBlock x:Name="EURUSD_IP_Details" Text="Signal: HOLD (35%)" FontSize="11" Margin="0,0,0,5"/>
+
+                                        <TextBlock Text="Impulse Strength:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="EURUSD_IP_Impulse" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="35" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="Fib Retracement:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="EURUSD_IP_Fib" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="25" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="RSI Divergence:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="EURUSD_IP_RSI" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="20" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="CSM Support:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="EURUSD_IP_CSM" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="20" Value="0" Margin="0,2"/>
+
+                                        <TextBlock x:Name="EURUSD_IP_Reasoning" Text="Reasoning: N/A" 
+                                      FontSize="9" Foreground="Gray" Margin="0,5" TextWrapping="Wrap"/>
+                                    </StackPanel>
+
+                                    <!-- Breakout Retest -->
+                                    <StackPanel Grid.Row="1" Grid.Column="2" Margin="5">
+                                        <TextBlock Text="Breakout &amp; Retest" FontSize="14" FontWeight="Bold" Margin="0,0,0,5"/>
+                                        <TextBlock x:Name="EURUSD_BR_Details" Text="Signal: HOLD (15%)" FontSize="11" Margin="0,0,0,5"/>
+
+                                        <TextBlock Text="Level Quality:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="EURUSD_BR_Level" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="30" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="Breakout Strength:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="EURUSD_BR_Breakout" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="25" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="Volume Confirm:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="EURUSD_BR_Volume" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="25" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="CSM Validation:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="EURUSD_BR_CSM" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="20" Value="0" Margin="0,2"/>
+
+                                        <TextBlock x:Name="EURUSD_BR_Reasoning" Text="Reasoning: N/A" 
+                                      FontSize="9" Foreground="Gray" Margin="0,5" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <!-- GBPUSD Strategy Breakdown -->
+                        <Border Background="#252526" BorderBrush="#4CAF50" BorderThickness="2" CornerRadius="8" Margin="5">
+                            <Grid Margin="15">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Text="GBPUSD - Strategy Breakdown" 
+                              Style="{StaticResource HeaderStyle}" Foreground="#4CAF50"/>
+
+                                <Grid Grid.Row="1" Margin="0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Trend Rider -->
+                                    <!-- STATUS PANEL: GBPUSD - TREND RIDER (Column 0) -->
+                                    <Border Grid.Row="0" Grid.Column="0" 
+                                            Style="{StaticResource StatusPanelStyle}" 
+                                            x:Name="GBPUSD_TR_StatusPanel"
+                                            BorderBrush="#4A6F4A">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+        
+                                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+                                                <Ellipse x:Name="GBPUSD_TR_StatusIndicator" 
+                                                         Style="{StaticResource StatusIndicatorStyle}"
+                                                         Fill="#7A4A4A"/>
+                                                <TextBlock x:Name="GBPUSD_TR_StatusText"
+                                                           Style="{StaticResource StatusTextStyle}"
+                                                           Text="HOLDING - Requirements Not Met"/>
+                                            </StackPanel>
+        
+                                            <Grid Grid.Row="1" Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="90"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                </Grid.ColumnDefinitions>
+            
+                                                <TextBlock Grid.Column="0" Text="Confidence:" 
+                                                           Style="{StaticResource ThresholdLabelStyle}"/>
+                                                <TextBlock Grid.Column="1" x:Name="GBPUSD_TR_ConfidenceValue"
+                                                           Text="0% / 30%" Style="{StaticResource ThresholdValueStyle}"/>
+                                                <ProgressBar Grid.Column="2" x:Name="GBPUSD_TR_ConfidenceBar"
+                                                             Style="{StaticResource ThresholdProgressBarStyle}"
+                                                             Minimum="0" Maximum="100" Value="0" Foreground="#7A7A4A"/>
+                                                <TextBlock Grid.Column="3" x:Name="GBPUSD_TR_ConfidencePercent"
+                                                           Text="0%" Style="{StaticResource PercentageStyle}"/>
+                                            </Grid>
+        
+                                            <Grid Grid.Row="2" Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="90"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                </Grid.ColumnDefinitions>
+            
+                                                <TextBlock Grid.Column="0" Text="CSM Diff:" 
+                                                           Style="{StaticResource ThresholdLabelStyle}"/>
+                                                <TextBlock Grid.Column="1" x:Name="GBPUSD_TR_CsmDiffValue"
+                                                           Text="0.0 / 5.0" Style="{StaticResource ThresholdValueStyle}"/>
+                                                <ProgressBar Grid.Column="2" x:Name="GBPUSD_TR_CsmDiffBar"
+                                                             Style="{StaticResource ThresholdProgressBarStyle}"
+                                                             Minimum="0" Maximum="100" Value="0" Foreground="#7A4A4A"/>
+                                                <TextBlock Grid.Column="3" x:Name="GBPUSD_TR_CsmDiffPercent"
+                                                           Text="0%" Style="{StaticResource PercentageStyle}"/>
+                                            </Grid>
+        
+                                            <TextBlock Grid.Row="3" x:Name="GBPUSD_TR_BlockingReason"
+                                                       Style="{StaticResource BlockingReasonStyle}"
+                                                       Text="⚠️ Waiting for signal data..."/>
+        
+                                            <TextBlock Grid.Row="4" x:Name="GBPUSD_TR_NeedsText"
+                                                       Style="{StaticResource NeedsTextStyle}"
+                                                       Text="📊 Loading threshold requirements..."/>
+                                        </Grid>
+                                    </Border>
+                                    
+                    
+                                    <!-- STATUS PANEL: GBPUSD - IMPULSE PULLBACK (Column 1) -->
+                                    <Border Grid.Row="0" Grid.Column="1" 
+                                            Style="{StaticResource StatusPanelStyle}" 
+                                            x:Name="GBPUSD_IP_StatusPanel"
+                                            BorderBrush="#4A6F4A">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+        
+                                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+                                                <Ellipse x:Name="GBPUSD_IP_StatusIndicator" 
+                                                         Style="{StaticResource StatusIndicatorStyle}"
+                                                         Fill="#7A4A4A"/>
+                                                <TextBlock x:Name="GBPUSD_IP_StatusText"
+                                                           Style="{StaticResource StatusTextStyle}"
+                                                           Text="HOLDING - Requirements Not Met"/>
+                                            </StackPanel>
+        
+                                            <Grid Grid.Row="1" Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="90"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                </Grid.ColumnDefinitions>
+            
+                                                <TextBlock Grid.Column="0" Text="Confidence:" 
+                                                           Style="{StaticResource ThresholdLabelStyle}"/>
+                                                <TextBlock Grid.Column="1" x:Name="GBPUSD_IP_ConfidenceValue"
+                                                           Text="0% / 30%" Style="{StaticResource ThresholdValueStyle}"/>
+                                                <ProgressBar Grid.Column="2" x:Name="GBPUSD_IP_ConfidenceBar"
+                                                             Style="{StaticResource ThresholdProgressBarStyle}"
+                                                             Minimum="0" Maximum="100" Value="0" Foreground="#7A7A4A"/>
+                                                <TextBlock Grid.Column="3" x:Name="GBPUSD_IP_ConfidencePercent"
+                                                           Text="0%" Style="{StaticResource PercentageStyle}"/>
+                                            </Grid>
+        
+                                            <Grid Grid.Row="2" Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="90"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                </Grid.ColumnDefinitions>
+            
+                                                <TextBlock Grid.Column="0" Text="CSM Diff:" 
+                                                           Style="{StaticResource ThresholdLabelStyle}"/>
+                                                <TextBlock Grid.Column="1" x:Name="GBPUSD_IP_CsmDiffValue"
+                                                           Text="0.0 / 5.0" Style="{StaticResource ThresholdValueStyle}"/>
+                                                <ProgressBar Grid.Column="2" x:Name="GBPUSD_IP_CsmDiffBar"
+                                                             Style="{StaticResource ThresholdProgressBarStyle}"
+                                                             Minimum="0" Maximum="100" Value="0" Foreground="#7A7A4A"/>
+                                                <TextBlock Grid.Column="3" x:Name="GBPUSD_IP_CsmDiffPercent"
+                                                           Text="0%" Style="{StaticResource PercentageStyle}"/>
+                                            </Grid>
+        
+                                            <TextBlock Grid.Row="3" x:Name="GBPUSD_IP_BlockingReason"
+                                                       Style="{StaticResource BlockingReasonStyle}"
+                                                       Text="⚠️ Waiting for signal data..."/>
+        
+                                            <TextBlock Grid.Row="4" x:Name="GBPUSD_IP_NeedsText"
+                                                       Style="{StaticResource NeedsTextStyle}"
+                                                       Text="📊 Loading threshold requirements..."/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- STATUS PANEL: GBPUSD - BREAKOUT RETEST (Column 2) -->
+                                    <Border Grid.Row="0" Grid.Column="2" 
+                                            Style="{StaticResource StatusPanelStyle}" 
+                                            x:Name="GBPUSD_BR_StatusPanel"
+                                            BorderBrush="#4A6F4A">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,8">
+                                                <Ellipse x:Name="GBPUSD_BR_StatusIndicator" 
+                                                         Style="{StaticResource StatusIndicatorStyle}"
+                                                         Fill="#7A4A4A"/>
+                                                <TextBlock x:Name="GBPUSD_BR_StatusText"
+                                                           Style="{StaticResource StatusTextStyle}"
+                                                           Text="HOLDING - Requirements Not Met"/>
+                                            </StackPanel>
+        
+                                            <Grid Grid.Row="1" Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="90"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                </Grid.ColumnDefinitions>
+            
+                                                <TextBlock Grid.Column="0" Text="Confidence:" 
+                                                           Style="{StaticResource ThresholdLabelStyle}"/>
+                                                <TextBlock Grid.Column="1" x:Name="GBPUSD_BR_ConfidenceValue"
+                                                           Text="0% / 30%" Style="{StaticResource ThresholdValueStyle}"/>
+                                                <ProgressBar Grid.Column="2" x:Name="GBPUSD_BR_ConfidenceBar"
+                                                             Style="{StaticResource ThresholdProgressBarStyle}"
+                                                             Minimum="0" Maximum="100" Value="0" Foreground="#7A7A4A"/>
+                                                <TextBlock Grid.Column="3" x:Name="GBPUSD_BR_ConfidencePercent"
+                                                           Text="0%" Style="{StaticResource PercentageStyle}"/>
+                                            </Grid>
+        
+                                            <Grid Grid.Row="2" Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="90"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                </Grid.ColumnDefinitions>
+            
+                                                <TextBlock Grid.Column="0" Text="CSM Diff:" 
+                                                           Style="{StaticResource ThresholdLabelStyle}"/>
+                                                <TextBlock Grid.Column="1" x:Name="GBPUSD_BR_CsmDiffValue"
+                                                           Text="0.0 / 5.0" Style="{StaticResource ThresholdValueStyle}"/>
+                                                <ProgressBar Grid.Column="2" x:Name="GBPUSD_BR_CsmDiffBar"
+                                                             Style="{StaticResource ThresholdProgressBarStyle}"
+                                                             Minimum="0" Maximum="100" Value="0" Foreground="#7A7A4A"/>
+                                                <TextBlock Grid.Column="3" x:Name="GBPUSD_BR_CsmDiffPercent"
+                                                           Text="0%" Style="{StaticResource PercentageStyle}"/>
+                                            </Grid>
+        
+                                            <TextBlock Grid.Row="3" x:Name="GBPUSD_BR_BlockingReason"
+                                                       Style="{StaticResource BlockingReasonStyle}"
+                                                       Text="⚠️ Waiting for signal data..."/>
+        
+                                            <TextBlock Grid.Row="4" x:Name="GBPUSD_BR_NeedsText"
+                                                       Style="{StaticResource NeedsTextStyle}"
+                                                       Text="📊 Loading threshold requirements..."/>
+                                        </Grid>
+                                    </Border>
+                                    
+                                    <!-- Trend Rider -->
+                                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="5">
+                                        <TextBlock Text="Trend Rider" FontSize="14" FontWeight="Bold" Margin="0,0,0,5"/>
+                                        <TextBlock x:Name="GBPUSD_TR_Details" Text="Signal: HOLD (40%)" FontSize="11" Margin="0,0,0,5"/>
+
+                                        <TextBlock Text="EMA Alignment:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="GBPUSD_TR_EMA" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="35" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="ADX Strength:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="GBPUSD_TR_ADX" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="25" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="RSI Position:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="GBPUSD_TR_RSI" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="20" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="CSM Support:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="GBPUSD_TR_CSM" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="25" Value="0" Margin="0,2"/>
+
+                                        <TextBlock x:Name="GBPUSD_TR_Reasoning" Text="Reasoning: N/A" 
+                                      FontSize="9" Foreground="Gray" Margin="0,5" TextWrapping="Wrap"/>
+                                    </StackPanel>
+
+                                    <!-- Impulse Pullback -->
+                                    <StackPanel Grid.Row="1" Grid.Column="1" Margin="5">
+                                        <TextBlock Text="Impulse Pullback" FontSize="14" FontWeight="Bold" Margin="0,0,0,5"/>
+                                        <TextBlock x:Name="GBPUSD_IP_Details" Text="Signal: HOLD (35%)" FontSize="11" Margin="0,0,0,5"/>
+
+                                        <TextBlock Text="Impulse Strength:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="GBPUSD_IP_Impulse" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="35" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="Fib Retracement:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="GBPUSD_IP_Fib" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="25" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="RSI Divergence:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="GBPUSD_IP_RSI" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="20" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="CSM Support:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="GBPUSD_IP_CSM" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="20" Value="0" Margin="0,2"/>
+
+                                        <TextBlock x:Name="GBPUSD_IP_Reasoning" Text="Reasoning: N/A" 
+                                      FontSize="9" Foreground="Gray" Margin="0,5" TextWrapping="Wrap"/>
+                                    </StackPanel>
+
+                                    <!-- Breakout Retest -->
+                                    <StackPanel Grid.Row="1" Grid.Column="3" Margin="5">
+                                        <TextBlock Text="Breakout &amp; Retest" FontSize="14" FontWeight="Bold" Margin="0,0,0,5"/>
+                                        <TextBlock x:Name="GBPUSD_BR_Details" Text="Signal: HOLD (15%)" FontSize="11" Margin="0,0,0,5"/>
+
+                                        <TextBlock Text="Level Quality:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="GBPUSD_BR_Level" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="30" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="Breakout Strength:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="GBPUSD_BR_Breakout" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="25" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="Volume Confirm:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="GBPUSD_BR_Volume" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="25" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="CSM Validation:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="GBPUSD_BR_CSM" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="20" Value="0" Margin="0,2"/>
+
+                                        <TextBlock x:Name="GBPUSD_BR_Reasoning" Text="Reasoning: N/A" 
+                                      FontSize="9" Foreground="Gray" Margin="0,5" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                        
+                        <!-- AUDJPY Strategy Breakdown -->
+                        <Border Background="#252526" BorderBrush="#4CAF50" BorderThickness="2" CornerRadius="8" Margin="5">
+                            <Grid Margin="15">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Text="AUDJPY - Strategy Breakdown" 
+                              Style="{StaticResource HeaderStyle}" Foreground="#4CAF50"/>
+
+                                <Grid Grid.Row="1" Margin="0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Trend Rider -->
+                                    <!-- STATUS PANEL: AUDJPY - TREND RIDER (Column 0) -->
+                                    <Border Grid.Row="0" Grid.Column="0" 
+                                            Style="{StaticResource StatusPanelStyle}" 
+                                            x:Name="AUDJPY_TR_StatusPanel"
+                                            BorderBrush="#4A6F4A">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,8">
+                                                <Ellipse x:Name="AUDJPY_TR_StatusIndicator" 
+                                                         Style="{StaticResource StatusIndicatorStyle}"
+                                                         Fill="#7A4A4A"/>
+                                                <TextBlock x:Name="AUDJPY_TR_StatusText"
+                                                           Style="{StaticResource StatusTextStyle}"
+                                                           Text="HOLDING - Requirements Not Met"/>
+                                            </StackPanel>
+        
+                                            <Grid Grid.Row="1" Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="90"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                </Grid.ColumnDefinitions>
+            
+                                                <TextBlock Grid.Column="0" Text="Confidence:" 
+                                                           Style="{StaticResource ThresholdLabelStyle}"/>
+                                                <TextBlock Grid.Column="1" x:Name="AUDJPY_TR_ConfidenceValue"
+                                                           Text="0% / 30%" Style="{StaticResource ThresholdValueStyle}"/>
+                                                <ProgressBar Grid.Column="2" x:Name="AUDJPY_TR_ConfidenceBar"
+                                                             Style="{StaticResource ThresholdProgressBarStyle}"
+                                                             Minimum="0" Maximum="100" Value="0" Foreground="#7A7A4A"/>
+                                                <TextBlock Grid.Column="3" x:Name="AUDJPY_TR_ConfidencePercent"
+                                                           Text="0%" Style="{StaticResource PercentageStyle}"/>
+                                            </Grid>
+        
+                                            <Grid Grid.Row="2" Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="90"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                </Grid.ColumnDefinitions>
+            
+                                                <TextBlock Grid.Column="0" Text="CSM Diff:" 
+                                                           Style="{StaticResource ThresholdLabelStyle}"/>
+                                                <TextBlock Grid.Column="1" x:Name="AUDJPY_TR_CsmDiffValue"
+                                                           Text="0.0 / 5.0" Style="{StaticResource ThresholdValueStyle}"/>
+                                                <ProgressBar Grid.Column="2" x:Name="AUDJPY_TR_CsmDiffBar"
+                                                             Style="{StaticResource ThresholdProgressBarStyle}"
+                                                             Minimum="0" Maximum="100" Value="0" Foreground="#7A7A4A"/>
+                                                <TextBlock Grid.Column="3" x:Name="AUDJPY_TR_CsmDiffPercent"
+                                                           Text="0%" Style="{StaticResource PercentageStyle}"/>
+                                            </Grid>
+        
+                                            <TextBlock Grid.Row="3" x:Name="AUDJPY_TR_BlockingReason"
+                                                       Style="{StaticResource BlockingReasonStyle}"
+                                                       Text="⚠️ Waiting for signal data..."/>
+        
+                                            <TextBlock Grid.Row="4" x:Name="AUDJPY_TR_NeedsText"
+                                                       Style="{StaticResource NeedsTextStyle}"
+                                                       Text="📊 Loading threshold requirements..."/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- STATUS PANEL: AUDJPY - IMPULSE PULLBACK (Column 1) -->
+                                    <Border Grid.Row="0" Grid.Column="1" 
+                                            Style="{StaticResource StatusPanelStyle}" 
+                                            x:Name="AUDJPY_IP_StatusPanel"
+                                            BorderBrush="#4A6F4A">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,8">
+                                                <Ellipse x:Name="AUDJPY_IP_StatusIndicator" 
+                                                         Style="{StaticResource StatusIndicatorStyle}"
+                                                         Fill="#7A4A4A"/>
+                                                <TextBlock x:Name="AUDJPY_IP_StatusText"
+                                                           Style="{StaticResource StatusTextStyle}"
+                                                           Text="HOLDING - Requirements Not Met"/>
+                                            </StackPanel>
+        
+                                            <Grid Grid.Row="1" Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="90"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                </Grid.ColumnDefinitions>
+            
+                                                <TextBlock Grid.Column="0" Text="Confidence:" 
+                                                           Style="{StaticResource ThresholdLabelStyle}"/>
+                                                <TextBlock Grid.Column="1" x:Name="AUDJPY_IP_ConfidenceValue"
+                                                           Text="0% / 30%" Style="{StaticResource ThresholdValueStyle}"/>
+                                                <ProgressBar Grid.Column="2" x:Name="AUDJPY_IP_ConfidenceBar"
+                                                             Style="{StaticResource ThresholdProgressBarStyle}"
+                                                             Minimum="0" Maximum="100" Value="0" Foreground="#7A7A4A"/>
+                                                <TextBlock Grid.Column="3" x:Name="AUDJPY_IP_ConfidencePercent"
+                                                           Text="0%" Style="{StaticResource PercentageStyle}"/>
+                                            </Grid>
+        
+                                            <Grid Grid.Row="2" Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="90"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                </Grid.ColumnDefinitions>
+            
+                                                <TextBlock Grid.Column="0" Text="CSM Diff:" 
+                                                           Style="{StaticResource ThresholdLabelStyle}"/>
+                                                <TextBlock Grid.Column="1" x:Name="AUDJPY_IP_CsmDiffValue"
+                                                           Text="0.0 / 5.0" Style="{StaticResource ThresholdValueStyle}"/>
+                                                <ProgressBar Grid.Column="2" x:Name="AUDJPY_IP_CsmDiffBar"
+                                                             Style="{StaticResource ThresholdProgressBarStyle}"
+                                                             Minimum="0" Maximum="100" Value="0" Foreground="#7A7A4A"/>
+                                                <TextBlock Grid.Column="3" x:Name="AUDJPY_IP_CsmDiffPercent"
+                                                           Text="0%" Style="{StaticResource PercentageStyle}"/>
+                                            </Grid>
+        
+                                            <TextBlock Grid.Row="3" x:Name="AUDJPY_IP_BlockingReason"
+                                                       Style="{StaticResource BlockingReasonStyle}"
+                                                       Text="⚠️ Waiting for signal data..."/>
+        
+                                            <TextBlock Grid.Row="4" x:Name="AUDJPY_IP_NeedsText"
+                                                       Style="{StaticResource NeedsTextStyle}"
+                                                       Text="📊 Loading threshold requirements..."/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- STATUS PANEL: AUDJPY - BREAKOUT RETEST (Column 2) -->
+                                    <Border Grid.Row="0" Grid.Column="2" 
+                                            Style="{StaticResource StatusPanelStyle}" 
+                                            x:Name="AUDJPY_BR_StatusPanel"
+                                            BorderBrush="#4A6F4A">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,8">
+                                                <Ellipse x:Name="AUDJPY_BR_StatusIndicator" 
+                                                         Style="{StaticResource StatusIndicatorStyle}"
+                                                         Fill="#7A4A4A"/>
+                                                <TextBlock x:Name="AUDJPY_BR_StatusText"
+                                                           Style="{StaticResource StatusTextStyle}"
+                                                           Text="HOLDING - Requirements Not Met"/>
+                                            </StackPanel>
+        
+                                            <Grid Grid.Row="1" Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="90"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                </Grid.ColumnDefinitions>
+            
+                                                <TextBlock Grid.Column="0" Text="Confidence:" 
+                                                           Style="{StaticResource ThresholdLabelStyle}"/>
+                                                <TextBlock Grid.Column="1" x:Name="AUDJPY_BR_ConfidenceValue"
+                                                           Text="0% / 30%" Style="{StaticResource ThresholdValueStyle}"/>
+                                                <ProgressBar Grid.Column="2" x:Name="AUDJPY_BR_ConfidenceBar"
+                                                             Style="{StaticResource ThresholdProgressBarStyle}"
+                                                             Minimum="0" Maximum="100" Value="0" Foreground="#7A7A4A"/>
+                                                <TextBlock Grid.Column="3" x:Name="AUDJPY_BR_ConfidencePercent"
+                                                           Text="0%" Style="{StaticResource PercentageStyle}"/>
+                                            </Grid>
+        
+                                            <Grid Grid.Row="2" Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="90"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                </Grid.ColumnDefinitions>
+            
+                                                <TextBlock Grid.Column="0" Text="CSM Diff:" 
+                                                           Style="{StaticResource ThresholdLabelStyle}"/>
+                                                <TextBlock Grid.Column="1" x:Name="AUDJPY_BR_CsmDiffValue"
+                                                           Text="0.0 / 5.0" Style="{StaticResource ThresholdValueStyle}"/>
+                                                <ProgressBar Grid.Column="2" x:Name="AUDJPY_BR_CsmDiffBar"
+                                                             Style="{StaticResource ThresholdProgressBarStyle}"
+                                                             Minimum="0" Maximum="100" Value="0" Foreground="#7A7A4A"/>
+                                                <TextBlock Grid.Column="3" x:Name="AUDJPY_BR_CsmDiffPercent"
+                                                           Text="0%" Style="{StaticResource PercentageStyle}"/>
+                                            </Grid>
+        
+                                            <TextBlock Grid.Row="3" x:Name="AUDJPY_BR_BlockingReason"
+                                                       Style="{StaticResource BlockingReasonStyle}"
+                                                       Text="⚠️ Waiting for signal data..."/>
+        
+                                            <TextBlock Grid.Row="4" x:Name="AUDJPY_BR_NeedsText"
+                                                       Style="{StaticResource NeedsTextStyle}"
+                                                       Text="📊 Loading threshold requirements..."/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Trend Rider -->
+                                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="5">
+                                        <TextBlock Text="Trend Rider" FontSize="14" FontWeight="Bold" Margin="0,0,0,5"/>
+                                        <TextBlock x:Name="AUDJPY_TR_Details" Text="Signal: HOLD (40%)" FontSize="11" Margin="0,0,0,5"/>
+
+                                        <TextBlock Text="EMA Alignment:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="AUDJPY_TR_EMA" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="35" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="ADX Strength:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="AUDJPY_TR_ADX" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="25" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="RSI Position:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="AUDJPY_TR_RSI" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="20" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="CSM Support:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="AUDJPY_TR_CSM" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="25" Value="0" Margin="0,2"/>
+
+                                        <TextBlock x:Name="AUDJPY_TR_Reasoning" Text="Reasoning: N/A" 
+                                      FontSize="9" Foreground="Gray" Margin="0,5" TextWrapping="Wrap"/>
+                                    </StackPanel>
+
+                                    <!-- Impulse Pullback -->
+                                    <StackPanel Grid.Row="1" Grid.Column="1" Margin="5">
+                                        <TextBlock Text="Impulse Pullback" FontSize="14" FontWeight="Bold" Margin="0,0,0,5"/>
+                                        <TextBlock x:Name="AUDJPY_IP_Details" Text="Signal: HOLD (35%)" FontSize="11" Margin="0,0,0,5"/>
+
+                                        <TextBlock Text="Impulse Strength:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="AUDJPY_IP_Impulse" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="35" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="Fib Retracement:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="AUDJPY_IP_Fib" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="25" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="RSI Divergence:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="AUDJPY_IP_RSI" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="20" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="CSM Support:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="AUDJPY_IP_CSM" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="20" Value="0" Margin="0,2"/>
+
+                                        <TextBlock x:Name="AUDJPY_IP_Reasoning" Text="Reasoning: N/A" 
+                                      FontSize="9" Foreground="Gray" Margin="0,5" TextWrapping="Wrap"/>
+                                    </StackPanel>
+
+                                    <!-- Breakout Retest -->
+                                    <StackPanel Grid.Row="1" Grid.Column="2" Margin="5">
+                                        <TextBlock Text="Breakout &amp; Retest" FontSize="14" FontWeight="Bold" Margin="0,0,0,5"/>
+                                        <TextBlock x:Name="AUDJPY_BR_Details" Text="Signal: HOLD (15%)" FontSize="11" Margin="0,0,0,5"/>
+
+                                        <TextBlock Text="Level Quality:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="AUDJPY_BR_Level" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="30" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="Breakout Strength:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="AUDJPY_BR_Breakout" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="25" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="Volume Confirm:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="AUDJPY_BR_Volume" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="25" Value="0" Margin="0,2"/>
+
+                                        <TextBlock Text="CSM Validation:" FontSize="10" Margin="0,3,0,0"/>
+                                        <ProgressBar x:Name="AUDJPY_BR_CSM" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="20" Value="0" Margin="0,2"/>
+
+                                        <TextBlock x:Name="AUDJPY_BR_Reasoning" Text="Reasoning: N/A" 
+                                      FontSize="9" Foreground="Gray" Margin="0,5" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Performance Analytics Tab -->
+            <TabItem Header="PERFORMANCE" Style="{StaticResource TabStyle}">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="200"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Key Performance Metrics -->
+                    <!-- UPDATED: Dark mode border -->
+                    <Border Grid.Row="0" Background="{StaticResource DarkBackground}" 
+                            BorderBrush="{StaticResource DarkBorder}" 
+                            BorderThickness="1" CornerRadius="8" Margin="5">
+                        
+                        <Grid Margin="15">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="Key Performance Metrics" Style="{StaticResource HeaderStyle}"/>
+
+                            <Grid Grid.Row="1" Margin="0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                    <TextBlock Text="Total Return" FontSize="12" Foreground="Gray" HorizontalAlignment="Center"/>
+                                    <TextBlock x:Name="TotalReturnText" Text="0%" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Since Start" FontSize="10" Foreground="Gray" HorizontalAlignment="Center"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                    <TextBlock Text="Win Rate" FontSize="12" Foreground="Gray" HorizontalAlignment="Center"/>
+                                    <TextBlock x:Name="WinRateDetailText" Text="0%" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                    <TextBlock x:Name="WinLossText" Text="0W / 0L" FontSize="10" Foreground="Gray" HorizontalAlignment="Center"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                    <TextBlock Text="Profit Factor" FontSize="12" Foreground="Gray" HorizontalAlignment="Center"/>
+                                    <TextBlock x:Name="ProfitFactorText" Text="0.00" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Gross Win/Loss" FontSize="10" Foreground="Gray" HorizontalAlignment="Center"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="3" HorizontalAlignment="Center">
+                                    <TextBlock Text="Max Drawdown" FontSize="12" Foreground="Gray" HorizontalAlignment="Center"/>
+                                    <TextBlock x:Name="MaxDrawdownText" Text="0%" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Peak to Trough" FontSize="10" Foreground="Gray" HorizontalAlignment="Center"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="4" HorizontalAlignment="Center">
+                                    <TextBlock Text="Sharpe Ratio" FontSize="12" Foreground="Gray" HorizontalAlignment="Center"/>
+                                    <TextBlock x:Name="SharpeRatioText" Text="0.00" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Risk-Adj Return" FontSize="10" Foreground="Gray" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <!-- Strategy Performance Breakdown -->
+                    <Border Grid.Row="1" Background="#252526" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="8" Margin="5">
+                        <Grid Margin="15">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="Strategy Performance Comparison" Style="{StaticResource HeaderStyle}"/>
+
+                            <!-- ═══════════════════════════════════════════════════════════ -->
+                            <!--        Strategy Performance Grid - Dark Mode Applied        -->
+                            <!-- ═══════════════════════════════════════════════════════════ -->
+                            <DataGrid Grid.Row="1" x:Name="StrategyPerformanceGrid" 
+                                     Style="{StaticResource DarkDataGridStyle}"
+                                     Margin="0,10">
+
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Strategy" Binding="{Binding Strategy}" Width="150"/>
+                                    <DataGridTextColumn Header="Trades" Binding="{Binding TotalTrades}" Width="80"/>
+                                    <DataGridTextColumn Header="Wins" Binding="{Binding Wins}" Width="60"/>
+                                    <DataGridTextColumn Header="Losses" Binding="{Binding Losses}" Width="60"/>
+                                    <DataGridTextColumn Header="Win Rate" Binding="{Binding WinRate}" Width="80"/>
+                                    <DataGridTextColumn Header="Avg R" Binding="{Binding AvgR}" Width="80"/>
+                                    <DataGridTextColumn Header="Best R" Binding="{Binding BestR}" Width="80"/>
+                                    <DataGridTextColumn Header="Worst R" Binding="{Binding WorstR}" Width="80"/>
+                                    <DataGridTextColumn Header="Total Profit" Binding="{Binding TotalPnL}" Width="100"/>
+                                    <DataGridTextColumn Header="Profit Factor" Binding="{Binding ProfitFactor}" Width="100"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- System Settings Tab -->
+            <TabItem Header="SETTINGS" Style="{StaticResource TabStyle}">
+                <ScrollViewer>
+                    <Grid Margin="20">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- File Paths Settings -->
+                        <Border Grid.Row="0" Background="{StaticResource DarkBackground}" 
+                                BorderBrush="{StaticResource DarkBorder}" 
+                                BorderThickness="1" CornerRadius="8" Margin="5">
+                            <Grid Margin="15">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Text="File Monitoring Settings" Style="{StaticResource HeaderStyle}"/>
+
+                                <Grid Grid.Row="1" Margin="0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="200"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="MT5 Data Path:" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1" x:Name="MT5PathTextBox" Margin="10,0"/>
+                                    <Button Grid.Column="2" Content="Validate" Width="80" Click="BrowseButton_Click"/>
+                                </Grid>
+
+                                <Grid Grid.Row="2" Margin="0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="200"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Update Interval (seconds):" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1" x:Name="UpdateIntervalTextBox" Text="5" Margin="10,0"/>
+                                </Grid>
+
+                                <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,10">
+                                    <CheckBox x:Name="EnableAutoRefreshCheckBox" Content="Enable Auto Refresh" IsChecked="True" Foreground="#FF9C9C9C"/>
+                                    <CheckBox x:Name="EnableSoundAlertsCheckBox" Content="Enable Sound Alerts" IsChecked="True" Margin="20,0,0,0" Foreground="#FF9C9C9C"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Alert Settings -->
+                        <Border Grid.Row="1" Background="{StaticResource DarkBackground}" 
+                                BorderBrush="{StaticResource DarkBorder}" 
+                                BorderThickness="1" CornerRadius="8" Margin="5">
+                            <Grid Margin="15">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Text="Alert Settings" Style="{StaticResource HeaderStyle}"/>
+
+                                <Grid Grid.Row="1" Margin="0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="200"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="High Confidence Threshold:" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1" x:Name="HighConfidenceThresholdTextBox" Text="85" Margin="10,0"/>
+                                </Grid>
+
+                                <Grid Grid.Row="2" Margin="0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="200"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Risk Alert Threshold (%):" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1" x:Name="RiskAlertThresholdTextBox" Text="2.5" Margin="10,0"/>
+                                </Grid>
+
+                                <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,10">
+                                    <CheckBox x:Name="EnableDesktopAlertsCheckBox" Content="Desktop Notifications" IsChecked="True" Foreground="#FF9C9C9C"/>
+                                    <CheckBox x:Name="EnableEmailAlertsCheckBox" Content="Email Alerts" IsChecked="False" Margin="20,0,0,0" Foreground="#FF9C9C9C"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Display Settings -->
+                        <Border Grid.Row="2" Background="#252526" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="8" Margin="5">
+                            <Grid Margin="15">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Text="Display Settings" Style="{StaticResource HeaderStyle}"/>
+
+                                <Grid Grid.Row="1" Margin="0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="200"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Theme:" VerticalAlignment="Center"/>
+                                    <ComboBox Grid.Column="1" x:Name="ThemeComboBox" Margin="10,0">
+                                        <ComboBoxItem Content="Dark" IsSelected="True"/>
+                                        <ComboBoxItem Content="Light"/>
+                                    </ComboBox>
+                                </Grid>
+
+                                <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10">
+                                    <CheckBox x:Name="ShowTooltipsCheckBox" Content="Show Tooltips" IsChecked="True" Foreground="#FF9C9C9C"/>
+                                    <CheckBox x:Name="CompactViewCheckBox" Content="Compact View" IsChecked="False" Margin="20,0,0,0" Foreground="#FF9C9C9C"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Action Buttons -->
+                        <Border Grid.Row="3" Background="#252526" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="8" Margin="5">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="15">
+                                <Button Content="Save Settings" Width="120" Height="35" Margin="10" 
+                                       Background="#FF49774B" Foreground="White" BorderBrush="Transparent"
+                                       Click="SaveSettingsButton_Click"/>
+                                <Button Content="Reset Defaults" Width="120" Height="35" Margin="10"
+                                       Background="#FFA2472B" Foreground="White" BorderBrush="Transparent"
+                                       Click="ResetSettingsButton_Click"/>
+                                <Button Content="Export Data" Width="120" Height="35" Margin="10"
+                                       Background="#FF17486F" Foreground="White" BorderBrush="Transparent"
+                                       Click="ExportDataButton_Click"/>
+                            </StackPanel>
+                        </Border>
+                        
+                        <!-- ═══════════════════════════════════════════════════════════ -->
+                        <!--           COLOR & DISPLAY SETTINGS SECTION                  -->
+                        <!-- ═══════════════════════════════════════════════════════════ -->
+                        <Border Grid.Row="4" Background="{StaticResource DarkPanel}" 
+                        BorderBrush="{StaticResource DarkBorder}" 
+                        BorderThickness="1" CornerRadius="8" Margin="5">
+                            <Grid Margin="15">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Section Header -->
+                                <TextBlock Grid.Row="0" Text="Color &amp; Display Settings" 
+                                   Style="{StaticResource HeaderStyle}"/>
+
+                                <!-- Color Intensity Slider -->
+                                <Grid Grid.Row="1" Margin="0,15,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="180"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="60"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0" Text="Color Intensity:" 
+                                       VerticalAlignment="Center" 
+                                       Foreground="{StaticResource DarkText}"/>
+
+                                    <Slider Grid.Column="1" x:Name="ColorIntensitySlider" 
+                                    Minimum="0.3" Maximum="1.0" Value="0.6" 
+                                    TickFrequency="0.1" TickPlacement="BottomRight"
+                                    Margin="10,0" VerticalAlignment="Center"
+                                    ValueChanged="ColorIntensitySlider_ValueChanged"
+                                    Foreground="#007ACC" Background="#3E3E42"/>
+
+                                    <TextBlock Grid.Column="2" x:Name="ColorIntensityValue" 
+                                       Text="60%" VerticalAlignment="Center" 
+                                       Width="50" FontWeight="Bold"
+                                       Foreground="{StaticResource DarkText}"
+                                       HorizontalAlignment="Right"/>
+                                </Grid>
+
+                                <!-- Color Scheme Presets -->
+                                <Grid Grid.Row="2" Margin="0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="180"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0" Text="Color Scheme:" 
+                                       VerticalAlignment="Center"
+                                       Foreground="{StaticResource DarkText}"/>
+
+                                    <ComboBox Grid.Column="1" x:Name="ColorSchemeComboBox" 
+                                      Style="{StaticResource DarkComboBoxStyle}"
+                                      SelectionChanged="ColorSchemeComboBox_SelectionChanged"
+                                      Background="#3E3E42" Foreground="White"
+                                      BorderBrush="#555555">
+                                        <ComboBoxItem Content="Muted Dark (Recommended)" IsSelected="True"/>
+                                        <ComboBoxItem Content="Standard Dark"/>
+                                        <ComboBoxItem Content="High Contrast"/>
+                                        <ComboBoxItem Content="Soft Monochrome"/>
+                                        <ComboBoxItem Content="Deep Blue"/>
+                                    </ComboBox>
+                                </Grid>
+
+                                <!-- Preview Panel -->
+                                <Border Grid.Row="3" BorderBrush="#555" BorderThickness="1" 
+                                Background="#1E1E1E" CornerRadius="4" Padding="15" Margin="0,15,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="PREVIEW:" FontSize="11" 
+                                           Foreground="Gray" Margin="0,0,0,10"/>
+
+                                        <!-- Signal Color Previews -->
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5">
+                                            <Border x:Name="PreviewBuyBorder" 
+                                            Background="{StaticResource MutedGreen}" 
+                                            Width="80" Height="35" 
+                                            Margin="8" CornerRadius="4" 
+                                            BorderThickness="1" BorderBrush="#555">
+                                                <TextBlock Text="BUY" HorizontalAlignment="Center" 
+                                                   VerticalAlignment="Center" 
+                                                   FontWeight="Bold" FontSize="13"
+                                                   Foreground="White"/>
+                                            </Border>
+
+                                            <Border x:Name="PreviewSellBorder" 
+                                            Background="{StaticResource MutedRed}" 
+                                            Width="80" Height="35" 
+                                            Margin="8" CornerRadius="4"
+                                            BorderThickness="1" BorderBrush="#555">
+                                                <TextBlock Text="SELL" HorizontalAlignment="Center" 
+                                                   VerticalAlignment="Center" 
+                                                   FontWeight="Bold" FontSize="13"
+                                                   Foreground="White"/>
+                                            </Border>
+
+                                            <Border x:Name="PreviewHoldBorder" 
+                                            Background="{StaticResource MutedYellow}" 
+                                            Width="80" Height="35" 
+                                            Margin="8" CornerRadius="4"
+                                            BorderThickness="1" BorderBrush="#555">
+                                                <TextBlock Text="HOLD" HorizontalAlignment="Center" 
+                                                   VerticalAlignment="Center" 
+                                                   FontWeight="Bold" FontSize="13"
+                                                   Foreground="White"/>
+                                            </Border>
+                                        </StackPanel>
+
+                                        <!-- Progress Bar Preview -->
+                                        <StackPanel Margin="0,15,0,0">
+                                            <TextBlock Text="Component Score Example:" 
+                                               FontSize="10" Foreground="Gray" Margin="0,0,0,5"/>
+                                            <ProgressBar x:Name="PreviewProgressBar" 
+                                                 Height="18" Value="75" Maximum="100"
+                                                 Background="#2D2D30" 
+                                                 BorderBrush="#3E3E42" 
+                                                 BorderThickness="1"
+                                                 Foreground="{StaticResource MutedGreen}"/>
+                                            <TextBlock Text="75 / 100 (Good)" 
+                                               FontSize="10" Foreground="Gray" 
+                                               HorizontalAlignment="Center" Margin="0,3,0,0"/>
+                                        </StackPanel>
+
+                                        <!-- Info Text -->
+                                        <TextBlock Text="Adjust settings above and see instant preview here" 
+                                           FontSize="9" Foreground="#666" 
+                                           HorizontalAlignment="Center" 
+                                           Margin="0,10,0,0" FontStyle="Italic"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="2" Background="#FF43214C" BorderBrush="#FF392352" BorderThickness="0,1,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock x:Name="StatusText" Grid.Column="0"
+                          Text="Ready - Monitoring ACSTS trading system..."
+                          VerticalAlignment="Center" Margin="10,0" FontSize="12"/>
+
+                <TextBlock Grid.Column="1"
+                          Text="Last Update:"
+                          VerticalAlignment="Center" Margin="10,0" FontSize="10"/>
+
+                <TextBlock x:Name="LastUpdateStatusText" Grid.Column="2"
+                          Text="Never"
+                          VerticalAlignment="Center" Margin="5,0" FontSize="10" FontWeight="Bold"/>
+
+                <Button Grid.Column="3" x:Name="BacktestButton" Content="Backtest"
+                       Width="80" Height="25" Margin="10,0"
+                       Background="#007ACC" Foreground="White"
+                       BorderBrush="Transparent" Click="BacktestButton_Click"/>
+
+                <Button Grid.Column="4" x:Name="AboutButton" Content="About"
+                       Width="60" Height="25" Margin="10,0"
+                       Background="#6A5ACD" Foreground="White"
+                       BorderBrush="Transparent" Click="AboutButton_Click"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
