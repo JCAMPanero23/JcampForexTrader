@@ -257,11 +257,26 @@ public:
       double balance = AccountInfoDouble(ACCOUNT_BALANCE);
       double riskAmount = balance * (riskPercent / 100.0);
 
-      // Calculate stop loss distance in pips (simplified: use ATR or fixed pips)
-      // For now, use a fixed 50 pips stop loss
-      double slPips = 50.0;
-      double point = SymbolInfoDouble(symbol, SYMBOL_POINT);
-      double slDistance = slPips * point * 10.0; // Convert pips to price distance
+      // Calculate stop loss distance (symbol-aware)
+      double slDistance = 0.0;
+      double slDisplay = 0.0; // For logging
+
+      // Check if Gold (XAUUSD)
+      if(StringFind(symbol, "XAU") >= 0 || StringFind(symbol, "GOLD") >= 0)
+      {
+         // Gold: Use $50 stop loss
+         slDistance = 50.0;
+         slDisplay = 50.0;
+      }
+      else
+      {
+         // Forex pairs: Use 50 pips
+         double point = SymbolInfoDouble(symbol, SYMBOL_POINT);
+         int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
+         double pipSize = (digits == 3 || digits == 5) ? point * 10.0 : point;
+         slDistance = 50.0 * pipSize;
+         slDisplay = 50.0;
+      }
 
       // Calculate lot size
       double tickValue = SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_VALUE);
@@ -282,9 +297,9 @@ public:
 
       if(verboseLogging)
       {
-         Print("Position Size Calculation: ", symbol,
+         Print("💰 Position Size: ", symbol,
                " | Risk: $", riskAmount,
-               " | SL Pips: ", slPips,
+               " | SL: ", (StringFind(symbol, "XAU") >= 0 ? "$" : ""), slDisplay, (StringFind(symbol, "XAU") >= 0 ? "" : " pips"),
                " | Lots: ", lots);
       }
 
@@ -298,16 +313,31 @@ private:
    //+------------------------------------------------------------------+
    double CalculateStopLoss(string symbol, ENUM_ORDER_TYPE orderType, double entryPrice)
    {
-      double point = SymbolInfoDouble(symbol, SYMBOL_POINT);
-      double slPips = 50.0; // Fixed 50 pips for now
+      // Symbol-specific SL calculation
+      double slDistance = 0.0;
 
-      if(orderType == ORDER_TYPE_BUY)
+      // Check if Gold (XAUUSD)
+      if(StringFind(symbol, "XAU") >= 0 || StringFind(symbol, "GOLD") >= 0)
       {
-         return entryPrice - (slPips * point * 10.0);
+         // Gold: Use $50 stop loss (not pips, actual price distance)
+         slDistance = 50.0;
       }
       else
       {
-         return entryPrice + (slPips * point * 10.0);
+         // Forex pairs: Use 50 pips
+         double point = SymbolInfoDouble(symbol, SYMBOL_POINT);
+         int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
+         double pipSize = (digits == 3 || digits == 5) ? point * 10.0 : point;
+         slDistance = 50.0 * pipSize;
+      }
+
+      if(orderType == ORDER_TYPE_BUY)
+      {
+         return entryPrice - slDistance;
+      }
+      else
+      {
+         return entryPrice + slDistance;
       }
    }
 
@@ -317,16 +347,31 @@ private:
    //+------------------------------------------------------------------+
    double CalculateTakeProfit(string symbol, ENUM_ORDER_TYPE orderType, double entryPrice)
    {
-      double point = SymbolInfoDouble(symbol, SYMBOL_POINT);
-      double tpPips = 100.0; // 2x SL = 100 pips
+      // Symbol-specific TP calculation (2x SL)
+      double tpDistance = 0.0;
 
-      if(orderType == ORDER_TYPE_BUY)
+      // Check if Gold (XAUUSD)
+      if(StringFind(symbol, "XAU") >= 0 || StringFind(symbol, "GOLD") >= 0)
       {
-         return entryPrice + (tpPips * point * 10.0);
+         // Gold: Use $100 take profit (2x SL of $50)
+         tpDistance = 100.0;
       }
       else
       {
-         return entryPrice - (tpPips * point * 10.0);
+         // Forex pairs: Use 100 pips (2x SL of 50 pips)
+         double point = SymbolInfoDouble(symbol, SYMBOL_POINT);
+         int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
+         double pipSize = (digits == 3 || digits == 5) ? point * 10.0 : point;
+         tpDistance = 100.0 * pipSize;
+      }
+
+      if(orderType == ORDER_TYPE_BUY)
+      {
+         return entryPrice + tpDistance;
+      }
+      else
+      {
+         return entryPrice - tpDistance;
       }
    }
 
