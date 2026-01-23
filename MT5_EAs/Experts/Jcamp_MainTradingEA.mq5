@@ -31,7 +31,11 @@ input int MaxSignalAgeMinutes = 30;                    // Max age of signal to b
 
 // --- Risk Management ---
 input double RiskPercent = 1.0;                        // Risk per trade (% of account balance)
-input double MaxSpreadPips = 2.0;                      // Maximum spread allowed (pips)
+input double MaxSpreadPips = 2.0;                      // Base spread limit (pips) - multiplied per symbol
+input double SpreadMultiplierEURUSD = 1.0;             // EURUSD spread multiplier (1x = 2.0 pips)
+input double SpreadMultiplierGBPUSD = 1.0;             // GBPUSD spread multiplier (1x = 2.0 pips)
+input double SpreadMultiplierAUDJPY = 1.0;             // AUDJPY spread multiplier (1x = 2.0 pips)
+input double SpreadMultiplierXAUUSD = 5.0;             // XAUUSD (Gold) spread multiplier (5x = 10.0 pips)
 input int MaxPositionsPerSymbol = 1;                   // Max simultaneous positions per symbol
 input int MaxTotalPositions = 3;                       // Max total open positions
 
@@ -76,7 +80,9 @@ int OnInit()
 
    // Initialize modules
    signalReader = new SignalReader(SignalFolder, VerboseLogging);
-   tradeExecutor = new TradeExecutor(RiskPercent, MinConfidence, MaxSpreadPips, MagicNumber, VerboseLogging);
+   tradeExecutor = new TradeExecutor(RiskPercent, MinConfidence, MaxSpreadPips, MagicNumber, VerboseLogging,
+                                     SpreadMultiplierEURUSD, SpreadMultiplierGBPUSD,
+                                     SpreadMultiplierAUDJPY, SpreadMultiplierXAUUSD);
    positionManager = new PositionManager(MagicNumber, EnableTrailingStop, TrailingStopPips, TrailingStartPips, VerboseLogging);
    performanceTracker = new PerformanceTracker(ExportFolder, MagicNumber, VerboseLogging);
 

@@ -21,10 +21,17 @@ private:
    CTrade   trade;
    double   riskPercent;          // Risk per trade (% of account balance)
    int      minConfidence;        // Minimum confidence to trade
-   double   maxSpreadPips;        // Maximum spread allowed (pips)
+   double   maxSpreadPips;        // Base maximum spread (pips)
    int      magic;                // Magic number for this EA
    string   tradeComment;         // Comment for trades
    bool     verboseLogging;
+
+   // Symbol-specific spread multipliers
+   struct SpreadMultiplier {
+      string symbol;
+      double multiplier;
+   };
+   SpreadMultiplier spreadMultipliers[];
 
    // Track last executed signals to prevent duplicates
    struct LastTrade {
@@ -39,7 +46,11 @@ public:
                  int minConf = 70,
                  double maxSpread = 2.0,
                  int magicNum = 100001,
-                 bool verbose = false)
+                 bool verbose = false,
+                 double eurMultiplier = 1.0,
+                 double gbpMultiplier = 1.0,
+                 double audMultiplier = 1.0,
+                 double xauMultiplier = 5.0)
    {
       riskPercent = riskPct;
       minConfidence = minConf;
@@ -47,6 +58,13 @@ public:
       magic = magicNum;
       tradeComment = "JcampCSM";
       verboseLogging = verbose;
+
+      // Initialize spread multipliers for CSM Alpha symbols
+      ArrayResize(spreadMultipliers, 4);
+      spreadMultipliers[0].symbol = "EURUSD";  spreadMultipliers[0].multiplier = eurMultiplier;
+      spreadMultipliers[1].symbol = "GBPUSD";  spreadMultipliers[1].multiplier = gbpMultiplier;
+      spreadMultipliers[2].symbol = "AUDJPY";  spreadMultipliers[2].multiplier = audMultiplier;
+      spreadMultipliers[3].symbol = "XAUUSD";  spreadMultipliers[3].multiplier = xauMultiplier;
 
       trade.SetExpertMagicNumber(magic);
       trade.SetMarginMode();
@@ -171,16 +189,23 @@ public:
          return false;
       }
 
-      // Check spread
+      // Check spread with symbol-specific multiplier
       double spread = SymbolInfoInteger(signal.symbol, SYMBOL_SPREAD) * SymbolInfoDouble(signal.symbol, SYMBOL_POINT);
       double spreadPips = spread / SymbolInfoDouble(signal.symbol, SYMBOL_POINT) / 10.0;
 
-      if(spreadPips > maxSpreadPips)
+      // Get multiplier for this symbol
+      double multiplier = GetSpreadMultiplier(signal.symbol);
+      double maxSpreadForSymbol = maxSpreadPips * multiplier;
+
+      if(spreadPips > maxSpreadForSymbol)
       {
          if(verboseLogging)
-            Print("Spread too high: ", spreadPips, " pips > ", maxSpreadPips, " pips");
+            Print("⚠️ Spread too high for ", signal.symbol, ": ", spreadPips, " pips (max: ", maxSpreadForSymbol, " pips with ", multiplier, "x multiplier)");
          return false;
       }
+
+      if(verboseLogging)
+         Print("✓ Spread OK for ", signal.symbol, ": ", spreadPips, " pips (max: ", maxSpreadForSymbol, " pips)");
 
       // Check if market is open
       if(!IsMarketOpen(signal.symbol))
@@ -198,6 +223,29 @@ public:
       }
 
       return true;
+   }
+
+   //+------------------------------------------------------------------+
+   //| Get Spread Multiplier for Symbol                                 |
+   //| Returns multiplier for this symbol, defaults to 1.0              |
+   //+------------------------------------------------------------------+
+   double GetSpreadMultiplier(string symbol)
+   {
+      // Remove broker suffix for matching (e.g., EURUSD.sml → EURUSD)
+      string cleanSymbol = symbol;
+      StringReplace(cleanSymbol, ".sml", "");
+      StringReplace(cleanSymbol, ".ecn", "");
+      StringReplace(cleanSymbol, ".raw", "");
+
+      // Find matching symbol multiplier
+      for(int i = 0; i < ArraySize(spreadMultipliers); i++)
+      {
+         if(StringFind(cleanSymbol, spreadMultipliers[i].symbol) >= 0)
+            return spreadMultipliers[i].multiplier;
+      }
+
+      // Default multiplier
+      return 1.0;
    }
 
    //+------------------------------------------------------------------+
