@@ -467,6 +467,23 @@ namespace JcampForexTrader
             try
             {
                 string jsonContent = File.ReadAllText(filePath);
+
+                // Try CSM Alpha flat format first
+                try
+                {
+                    var csmAlphaSignal = JsonConvert.DeserializeObject<dynamic>(jsonContent);
+                    if (csmAlphaSignal != null && csmAlphaSignal.strategy != null)
+                    {
+                        LoadCSMAlphaSignal(pair, csmAlphaSignal);
+                        return;
+                    }
+                }
+                catch
+                {
+                    // Fall through to old format
+                }
+
+                // Try old nested format
                 var signalFile = JsonConvert.DeserializeObject<SignalFileData>(jsonContent);
 
                 if (signalFile == null)
@@ -548,6 +565,67 @@ namespace JcampForexTrader
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error reading {pair} JSON: {ex.Message}");
+            }
+        }
+
+        private void LoadCSMAlphaSignal(string pair, dynamic signal)
+        {
+            try
+            {
+                var signalData = pairSignals[pair];
+
+                // Parse CSM Alpha flat JSON format
+                string strategy = signal.strategy?.ToString() ?? "NONE";
+                string signalText = signal.signal_text?.ToString() ?? "HOLD";
+                int confidence = (int)(signal.confidence ?? 0);
+                string analysis = signal.analysis?.ToString() ?? "";
+                double csmDiff = (double)(signal.csm_diff ?? 0.0);
+                string regime = signal.regime?.ToString() ?? "";
+
+                // Map to display format based on strategy
+                if (strategy == "TREND_RIDER")
+                {
+                    signalData.TrendRiderSignal = signalText;
+                    signalData.TrendRiderConfidence = confidence;
+                    signalData.TrendRiderReasoning = analysis;
+
+                    // Best signal is TrendRider if it has confidence
+                    if (confidence > 0)
+                    {
+                        signalData.BestSignal = signalText;
+                        signalData.BestConfidence = confidence;
+                    }
+                }
+                else if (strategy == "RANGE_RIDER")
+                {
+                    signalData.ImpulsePullbackSignal = signalText; // Map to ImpulsePullback for display
+                    signalData.ImpulsePullbackConfidence = confidence;
+                    signalData.ImpulsePullbackReasoning = analysis;
+
+                    // Best signal is RangeRider if it has confidence
+                    if (confidence > 0)
+                    {
+                        signalData.BestSignal = signalText;
+                        signalData.BestConfidence = confidence;
+                    }
+                }
+                else
+                {
+                    // NONE or NEUTRAL
+                    signalData.BestSignal = "HOLD";
+                    signalData.BestConfidence = 0;
+                }
+
+                // CSM data
+                signalData.CsmDifferential = csmDiff;
+                signalData.CsmTrend = regime;
+
+                if (ENABLE_VERBOSE_DEBUG)
+                    System.Diagnostics.Debug.WriteLine($"CSM Alpha signal loaded: {pair} | {signalText} @ {confidence} | {strategy}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error parsing CSM Alpha signal for {pair}: {ex.Message}");
             }
         }
 
