@@ -421,33 +421,46 @@ namespace JcampForexTrader
 
         private void LoadSignalData()
         {
-            string[] pairs = { "EURUSD", "GBPUSD", "AUDJPY", "XAUUSD" };
+            // Signal files are in CSM_Signals folder (sibling to CSM_Data)
+            string signalPath = csmDataPath.Replace("CSM_Data", "CSM_Signals");
 
-            foreach (string pair in pairs)
+            // CSM Alpha: Handle broker suffix (.sml) for some symbols
+            var pairMappings = new Dictionary<string, string>
             {
+                ["EURUSD"] = "EURUSD.sml",
+                ["GBPUSD"] = "GBPUSD.sml",
+                ["AUDJPY"] = "AUDJPY",
+                ["XAUUSD"] = "XAUUSD.sml"
+            };
+
+            foreach (var kvp in pairMappings)
+            {
+                string displayPair = kvp.Key;      // EURUSD (for display)
+                string filePair = kvp.Value;        // EURUSD.sml (for file name)
+
                 // Look for JSON file first, fallback to TXT if not found
-                string jsonFile = IOPath.Combine(csmDataPath, $"{pair}_signals.json");
-                string txtFile = IOPath.Combine(csmDataPath, $"{pair}_signals.txt");
+                string jsonFile = IOPath.Combine(signalPath, $"{filePair}_signals.json");
+                string txtFile = IOPath.Combine(signalPath, $"{filePair}_signals.txt");
 
                 try
                 {
                     if (File.Exists(jsonFile))
                     {
-                        LoadSignalFromJSON(pair, jsonFile);
+                        LoadSignalFromJSON(displayPair, jsonFile);
                         if (ENABLE_VERBOSE_DEBUG)
-                            System.Diagnostics.Debug.WriteLine($"Loaded {pair} from JSON");
+                            System.Diagnostics.Debug.WriteLine($"Loaded {displayPair} from JSON");
                     }
                     else if (File.Exists(txtFile))
                     {
                         // Fallback to TXT format for backward compatibility
-                        LoadSignalFromTXT(pair, txtFile);
+                        LoadSignalFromTXT(displayPair, txtFile);
                         if (ENABLE_VERBOSE_DEBUG)
-                            System.Diagnostics.Debug.WriteLine($"Loaded {pair} from TXT (fallback)");
+                            System.Diagnostics.Debug.WriteLine($"Loaded {displayPair} from TXT (fallback)");
                     }
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Error loading {pair} signals: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"Error loading {displayPair} signals: {ex.Message}");
                 }
             }
         }
