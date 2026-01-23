@@ -84,14 +84,8 @@ public:
             CheckAndApplyTrailingStop(ticket, symbol, posType, openPrice, currentPrice, sl);
          }
 
-         // Log position status if verbose
-         if(verboseLogging)
-         {
-            double pips = CalculatePips(symbol, openPrice, currentPrice, posType);
-            Print("Position #", ticket, " | ", symbol, " ",
-                  EnumToString(posType), " | P&L: $", profit,
-                  " | Pips: ", pips);
-         }
+         // Note: Removed verbose position logging here to prevent log spam
+         // Position status is exported to files every 5 minutes instead
       }
    }
 
