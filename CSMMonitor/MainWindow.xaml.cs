@@ -26,6 +26,11 @@ namespace JcampForexTrader
         private Dictionary<string, Color> mutedColors;
         private const double MIN_CONFIDENCE_THRESHOLD = 30.0;  // Testing mode (change to 60.0 for production)
         private const double MIN_CSM_DIFFERENTIAL = 5.0;        // Testing mode (change to 20.0 for production)
+        private string selectedAsset = "EURUSD";  // Default selected asset for trade details panel
+
+        // Risk Management Settings
+        private const double DAILY_LOSS_LIMIT_R = 6.0;  // Maximum daily loss in R-multiples
+        private double dailyLossUsedR = 0.0;  // Current daily loss in R (updated from trades)
 
         public class SignalData
         {
@@ -88,6 +93,13 @@ namespace JcampForexTrader
             InitializeData();
             InitializeTimer();
             UpdateDisplay();
+
+            // Initialize selected asset card visual state
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                SelectAssetCard(selectedAsset);
+                UpdateTradeDetailsPanel(selectedAsset);
+            }), System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
         private void InitializeData()
@@ -157,12 +169,13 @@ namespace JcampForexTrader
 
         private void InitializeMutedColors()
         {
+            // HIGH CONTRAST color scheme
             mutedColors = new Dictionary<string, Color>
             {
-                ["Green"] = Color.FromRgb(74, 111, 74),      // #4A6F4A
-                ["Red"] = Color.FromRgb(122, 74, 74),        // #7A4A4A
-                ["Yellow"] = Color.FromRgb(122, 122, 74),    // #7A7A4A
-                ["Orange"] = Color.FromRgb(122, 90, 74),     // #7A5A4A
+                ["Green"] = Color.FromRgb(100, 200, 100),     // Bright green for high contrast
+                ["Red"] = Color.FromRgb(255, 100, 100),       // Bright red for high contrast
+                ["Yellow"] = Color.FromRgb(255, 255, 100),    // Bright yellow for high contrast
+                ["Orange"] = Color.FromRgb(255, 180, 100),    // Bright orange for high contrast
                 ["Blue"] = Color.FromRgb(74, 90, 122),       // #4A5A7A
                 ["Purple"] = Color.FromRgb(106, 74, 122),    // #6A4A7A
                 ["Gray"] = Color.FromRgb(136, 136, 136)      // #888888
@@ -743,6 +756,13 @@ namespace JcampForexTrader
             UpdateStrategyDetails("XAUUSD");
 
             UpdateStatusPanels();
+
+            // Update trade details panel for currently selected asset
+            UpdateTradeDetailsPanel(selectedAsset);
+
+            // Update new dashboard metrics
+            UpdateDailyLossLimit();
+            UpdateTradingSession();
         }
 
         private void UpdateCurrencyStrengthDisplay()
@@ -759,69 +779,289 @@ namespace JcampForexTrader
                     bool hasData = currencyStrengths.ContainsKey(currency);
                     double strength = hasData ? currencyStrengths[currency] : 50.0;
 
-                    var border = new Border
-                    {
-                        BorderThickness = new Thickness(2),
-                        CornerRadius = new CornerRadius(8),
-                        Margin = new Thickness(5),
-                        Padding = new Thickness(15),
-                        Background = new SolidColorBrush(Color.FromRgb(45, 45, 48)),
-                        MinHeight = 80,
-                        MinWidth = 120
-                    };
-
-                    // Border color
-                    if (!hasData)
-                        border.BorderBrush = GetMutedBrush("Gray");
-                    else if (strength > 70)
-                        border.BorderBrush = GetMutedBrush("Green");
-                    else if (strength > 40)
-                        border.BorderBrush = GetMutedBrush("Orange");
-                    else
-                        border.BorderBrush = GetMutedBrush("Red");
-
+                    // Create compact horizontal currency card
                     var stackPanel = new StackPanel
                     {
-                        HorizontalAlignment = HorizontalAlignment.Center,
+                        Margin = new Thickness(4, 0, 4, 0),
                         VerticalAlignment = VerticalAlignment.Center
                     };
 
-                    // SINGLE value display with equals sign
+                    // Currency Label
+                    var currencyLabel = new TextBlock
+                    {
+                        Text = currency,
+                        FontSize = 13,
+                        FontWeight = FontWeights.Bold,
+                        Foreground = new SolidColorBrush(Color.FromRgb(255, 255, 255)), // High contrast white
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        Margin = new Thickness(0, 0, 0, 2)
+                    };
+
+                    // Strength Value
                     var strengthValue = new TextBlock
                     {
-                        Text = hasData ? $"{currency} = {strength:F1}" : $"{currency} = --",
-                        FontSize = 18,
+                        Text = hasData ? $"{strength:F1}" : "--",
+                        FontSize = 15,
                         FontWeight = FontWeights.Bold,
-                        Foreground = hasData ?
-                            new SolidColorBrush(Color.FromRgb(204, 204, 204)) :  // Muted white
-                            GetMutedBrush("Gray"),
-                        HorizontalAlignment = HorizontalAlignment.Center
-                    };
-
-                    var indicatorText = new TextBlock
-                    {
-                        Text = hasData ? "●" : "○",
-                        FontSize = 16,
+                        FontFamily = new System.Windows.Media.FontFamily("Consolas"),
                         Foreground = !hasData ? GetMutedBrush("Gray") :
                             strength > 70 ? GetMutedBrush("Green") :
-                            strength > 60 ? GetMutedBrush("Yellow") :
+                            strength > 60 ? new SolidColorBrush(Color.FromRgb(255, 255, 100)) : // Brighter yellow
                             strength < 30 ? GetMutedBrush("Red") :
                             strength < 40 ? GetMutedBrush("Orange") :
-                            GetMutedBrush("Gray"),
+                            new SolidColorBrush(Color.FromRgb(255, 255, 255)), // High contrast white
                         HorizontalAlignment = HorizontalAlignment.Center,
-                        Margin = new Thickness(0, 5, 0, 0)
+                        Margin = new Thickness(0, 0, 0, 3)
                     };
 
-                    stackPanel.Children.Add(strengthValue);
-                    stackPanel.Children.Add(indicatorText);
+                    // Special styling for Gold (XAU)
+                    if (currency == "XAU")
+                    {
+                        currencyLabel.Foreground = new SolidColorBrush(Color.FromRgb(255, 215, 0)); // Gold color
 
-                    border.Child = stackPanel;
-                    CurrencyStrengthGrid.Children.Add(border);
+                        // Gold fear indicator color coding
+                        if (hasData)
+                        {
+                            if (strength >= 80) // PANIC mode
+                                strengthValue.Foreground = new SolidColorBrush(Color.FromRgb(255, 100, 100)); // Brighter red
+                            else if (strength >= 60 && strength < 80) // Fear mode
+                                strengthValue.Foreground = new SolidColorBrush(Color.FromRgb(255, 255, 100)); // Brighter yellow
+                            else if (strength >= 40 && strength < 60) // Neutral
+                                strengthValue.Foreground = new SolidColorBrush(Color.FromRgb(255, 255, 255)); // High contrast white
+                            else // Risk-On (< 40)
+                                strengthValue.Foreground = new SolidColorBrush(Color.FromRgb(78, 201, 176)); // #4EC9B0 (green)
+                        }
+                    }
+
+                    // Mini progress bar
+                    var progressBar = new ProgressBar
+                    {
+                        Height = 4,
+                        Width = 50,
+                        Minimum = 0,
+                        Maximum = 100,
+                        Value = hasData ? strength : 0,
+                        Foreground = !hasData ? GetMutedBrush("Gray") :
+                            strength > 70 ? GetMutedBrush("Green") :
+                            strength > 60 ? new SolidColorBrush(Color.FromRgb(220, 220, 170)) :
+                            strength < 30 ? GetMutedBrush("Red") :
+                            strength < 40 ? GetMutedBrush("Orange") :
+                            new SolidColorBrush(Color.FromRgb(136, 136, 136)),
+                        Background = new SolidColorBrush(Color.FromRgb(26, 26, 26)),
+                        BorderThickness = new Thickness(0)
+                    };
+
+                    stackPanel.Children.Add(currencyLabel);
+                    stackPanel.Children.Add(strengthValue);
+                    stackPanel.Children.Add(progressBar);
+
+                    CurrencyStrengthGrid.Children.Add(stackPanel);
                 }
+
+                // Update market state indicator based on Gold + JPY
+                UpdateMarketStateIndicator();
             });
 
             if (ENABLE_VERBOSE_DEBUG)
                 System.Diagnostics.Debug.WriteLine($"CSM Display Updated - Currencies: {currencyStrengths.Count}");
+        }
+
+        private void UpdateMarketStateIndicator()
+        {
+            bool hasGold = currencyStrengths.ContainsKey("XAU");
+            bool hasJPY = currencyStrengths.ContainsKey("JPY");
+
+            if (!hasGold || !hasJPY)
+                return;
+
+            double goldStrength = currencyStrengths["XAU"];
+            double jpyStrength = currencyStrengths["JPY"];
+
+            string marketState = "NEUTRAL";
+            Color indicatorColor = Color.FromRgb(220, 220, 170); // Yellow
+
+            // PANIC: Gold > 80 AND JPY > 80
+            if (goldStrength > 80 && jpyStrength > 80)
+            {
+                marketState = "PANIC";
+                indicatorColor = Color.FromRgb(244, 135, 113); // Red
+            }
+            // RISK-ON: Gold < 30 AND JPY < 30
+            else if (goldStrength < 30 && jpyStrength < 30)
+            {
+                marketState = "RISK-ON";
+                indicatorColor = Color.FromRgb(78, 201, 176); // Green
+            }
+            // INFLATION FEAR: Gold > 80 AND USD > 80
+            else if (currencyStrengths.ContainsKey("USD") && goldStrength > 80 && currencyStrengths["USD"] > 80)
+            {
+                marketState = "INFLATION";
+                indicatorColor = Color.FromRgb(255, 152, 0); // Orange
+            }
+
+            if (MarketStateLabel != null)
+            {
+                MarketStateLabel.Text = marketState;
+                MarketStateLabel.Foreground = new SolidColorBrush(indicatorColor);
+            }
+            if (MarketStateIndicator != null)
+                MarketStateIndicator.Fill = new SolidColorBrush(indicatorColor);
+        }
+
+        private void UpdateDailyLossLimit()
+        {
+            Dispatcher.Invoke(() =>
+            {
+                try
+                {
+                    // Calculate daily loss from trade history (if available)
+                    if (tradeHistoryManager != null)
+                    {
+                        var stats = tradeHistoryManager.GetStatistics();
+
+                        // Calculate total R lost today (negative R-multiples)
+                        var todayTrades = tradeHistoryManager.GetAllTrades()
+                            .Where(t => t.ExitTime.Date == DateTime.Now.Date)
+                            .ToList();
+
+                        double totalRToday = 0;
+                        foreach (var trade in todayTrades)
+                        {
+                            if (trade.RMultiple < 0)
+                                totalRToday += Math.Abs(trade.RMultiple);
+                        }
+
+                        dailyLossUsedR = totalRToday;
+                    }
+
+                    // Update UI
+                    if (DailyLossUsedText != null)
+                        DailyLossUsedText.Text = $"-{dailyLossUsedR:F1}R";
+
+                    if (DailyLossLimitText != null)
+                        DailyLossLimitText.Text = $"-{DAILY_LOSS_LIMIT_R:F0}R";
+
+                    if (DailyLossBar != null)
+                    {
+                        DailyLossBar.Maximum = DAILY_LOSS_LIMIT_R;
+                        DailyLossBar.Value = dailyLossUsedR;
+
+                        // Color-code based on proximity to limit
+                        double lossPercentage = (dailyLossUsedR / DAILY_LOSS_LIMIT_R) * 100;
+                        if (lossPercentage >= 90)
+                            DailyLossBar.Foreground = new SolidColorBrush(Color.FromRgb(244, 71, 71)); // Bright red
+                        else if (lossPercentage >= 70)
+                            DailyLossBar.Foreground = new SolidColorBrush(Color.FromRgb(244, 135, 113)); // Orange-red
+                        else if (lossPercentage >= 50)
+                            DailyLossBar.Foreground = new SolidColorBrush(Color.FromRgb(255, 152, 0)); // Orange
+                        else
+                            DailyLossBar.Foreground = new SolidColorBrush(Color.FromRgb(122, 74, 74)); // Muted red
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error updating daily loss limit: {ex.Message}");
+                }
+            });
+        }
+
+        private void UpdateTradingSession()
+        {
+            Dispatcher.Invoke(() =>
+            {
+                try
+                {
+                    DateTime utcNow = DateTime.UtcNow;
+                    TimeSpan utcTime = utcNow.TimeOfDay;
+
+                    string session = "CLOSED";
+                    string sessionTime = "";
+                    Color sessionColor = Color.FromRgb(136, 136, 136); // Gray
+                    string nextSession = "";
+
+                    // Trading Session Times (UTC):
+                    // Tokyo: 00:00 - 09:00 UTC
+                    // London: 08:00 - 17:00 UTC
+                    // New York: 13:00 - 22:00 UTC
+                    // Sydney: 22:00 - 07:00 UTC (next day)
+
+                    if (utcTime >= TimeSpan.FromHours(22) || utcTime < TimeSpan.FromHours(7))
+                    {
+                        session = "SYDNEY";
+                        sessionColor = Color.FromRgb(255, 152, 0); // Orange
+                        sessionTime = $" • {utcNow:HH:mm} UTC";
+
+                        // Calculate time to Tokyo
+                        var tokyoStart = utcTime < TimeSpan.FromHours(7)
+                            ? TimeSpan.FromHours(24) - utcTime
+                            : TimeSpan.FromHours(24) - utcTime;
+                        nextSession = $"TOKYO in {tokyoStart.Hours}h {tokyoStart.Minutes}m";
+                    }
+                    else if (utcTime >= TimeSpan.FromHours(0) && utcTime < TimeSpan.FromHours(9))
+                    {
+                        session = "TOKYO";
+                        sessionColor = Color.FromRgb(220, 220, 170); // Yellow
+                        sessionTime = $" • {utcNow:HH:mm} UTC";
+
+                        var londonStart = TimeSpan.FromHours(8) - utcTime;
+                        nextSession = $"LONDON in {londonStart.Hours}h {londonStart.Minutes}m";
+                    }
+                    else if (utcTime >= TimeSpan.FromHours(8) && utcTime < TimeSpan.FromHours(17))
+                    {
+                        session = "LONDON";
+                        sessionColor = Color.FromRgb(78, 201, 176); // Green (most liquid)
+                        sessionTime = $" • {utcNow:HH:mm} UTC";
+
+                        if (utcTime < TimeSpan.FromHours(13))
+                        {
+                            var nyStart = TimeSpan.FromHours(13) - utcTime;
+                            nextSession = $"NY in {nyStart.Hours}h {nyStart.Minutes}m";
+                        }
+                        else
+                        {
+                            var nyClose = TimeSpan.FromHours(17) - utcTime;
+                            nextSession = $"Closes in {nyClose.Hours}h {nyClose.Minutes}m";
+                        }
+                    }
+                    else if (utcTime >= TimeSpan.FromHours(13) && utcTime < TimeSpan.FromHours(22))
+                    {
+                        session = "NEW YORK";
+                        sessionColor = Color.FromRgb(0, 122, 204); // Blue
+                        sessionTime = $" • {utcNow:HH:mm} UTC";
+
+                        var sydneyStart = TimeSpan.FromHours(22) - utcTime;
+                        nextSession = $"SYDNEY in {sydneyStart.Hours}h {sydneyStart.Minutes}m";
+                    }
+
+                    // Special case: London/NY overlap (13:00-17:00 UTC) - highest volume
+                    if (utcTime >= TimeSpan.FromHours(13) && utcTime < TimeSpan.FromHours(17))
+                    {
+                        session = "LON/NY";
+                        sessionColor = Color.FromRgb(78, 201, 176); // Bright green (premium session)
+                        nextSession = $"Peak liquidity";
+                    }
+
+                    // Update UI
+                    if (CurrentSessionText != null)
+                    {
+                        CurrentSessionText.Text = session;
+                        CurrentSessionText.Foreground = new SolidColorBrush(sessionColor);
+                    }
+
+                    if (SessionIndicator != null)
+                        SessionIndicator.Fill = new SolidColorBrush(sessionColor);
+
+                    if (SessionTimeText != null)
+                        SessionTimeText.Text = sessionTime;
+
+                    if (NextSessionText != null)
+                        NextSessionText.Text = nextSession;
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error updating trading session: {ex.Message}");
+                }
+            });
         }
 
         private void UpdateSignalDisplay(string pair)
@@ -1005,7 +1245,8 @@ namespace JcampForexTrader
             // Update UI
             Dispatcher.Invoke(() =>
             {
-                AccountBalanceText.Text = balance.ToString("F2");
+                // AccountBalanceText removed from header - balance shown in bottom section
+                // AccountBalanceText.Text = balance.ToString("F2");
                 ActiveTradesText.Text = activePositions.ToString();
 
                 // Update the DataGrid
@@ -1021,6 +1262,135 @@ namespace JcampForexTrader
                     TradingIndicator.Fill = new SolidColorBrush(Colors.Gray);
                 }
             });
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // REDESIGNED UI EVENT HANDLERS
+        // ═══════════════════════════════════════════════════════════
+
+        private void AssetCard_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (sender is Border border && border.Tag is string asset)
+            {
+                selectedAsset = asset;
+                SelectAssetCard(asset);
+                UpdateTradeDetailsPanel(asset);
+            }
+        }
+
+        private void SelectAssetCard(string asset)
+        {
+            // Reset all asset card borders to default
+            var assets = new[] { "EURUSD", "GBPUSD", "AUDJPY", "XAUUSD" };
+            foreach (var a in assets)
+            {
+                var borderName = $"{a}Border";
+                if (FindName(borderName) is Border border)
+                {
+                    border.BorderBrush = new SolidColorBrush(Color.FromRgb(62, 62, 66));
+                    border.BorderThickness = new Thickness(1);
+                    border.Background = new SolidColorBrush(Color.FromRgb(45, 45, 48));
+                }
+            }
+
+            // Highlight selected asset card
+            var selectedBorderName = $"{asset}Border";
+            if (FindName(selectedBorderName) is Border selectedBorder)
+            {
+                selectedBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(0, 122, 204)); // #007ACC
+                selectedBorder.BorderThickness = new Thickness(2);
+                selectedBorder.Background = new SolidColorBrush(Color.FromRgb(37, 37, 38));
+            }
+        }
+
+        private void UpdateTradeDetailsPanel(string asset)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                try
+                {
+                    // Update header
+                    if (SelectedAssetLabel != null)
+                        SelectedAssetLabel.Text = asset;
+
+                    // Get signal data for selected asset
+                    if (!pairSignals.ContainsKey(asset))
+                        return;
+
+                    var signalData = pairSignals[asset];
+
+                    // Determine active strategy (use best signal)
+                    string strategyName = "—";
+                    if (signalData.TrendRiderConfidence >= signalData.ImpulsePullbackConfidence &&
+                        signalData.TrendRiderConfidence >= signalData.BreakoutRetestConfidence)
+                        strategyName = "TrendRider";
+                    else if (signalData.ImpulsePullbackConfidence >= signalData.BreakoutRetestConfidence)
+                        strategyName = "ImpulsePullback";
+                    else
+                        strategyName = "BreakoutRetest";
+
+                    if (SelectedStrategyLabel != null)
+                        SelectedStrategyLabel.Text = $"— {strategyName}";
+
+                    // Update signal confidence
+                    if (SignalConfidenceText != null)
+                        SignalConfidenceText.Text = $"{signalData.BestConfidence}%";
+                    if (SignalConfidenceBar != null)
+                        SignalConfidenceBar.Value = signalData.BestConfidence;
+
+                    // TODO: Load actual position data from active trades
+                    // For now, show placeholder data
+                    if (TradeStatusLabel != null)
+                        TradeStatusLabel.Text = signalData.BestSignal == "HOLD" ? "NO POSITION" : "ACTIVE POSITION";
+
+                    // Show/hide panels based on position status
+                    bool hasPosition = signalData.BestSignal != "HOLD" && signalData.BestConfidence >= MIN_CONFIDENCE_THRESHOLD;
+
+                    if (TradeDetailsPanel != null)
+                        TradeDetailsPanel.Visibility = hasPosition ? Visibility.Visible : Visibility.Collapsed;
+                    if (NoPositionPanel != null)
+                    {
+                        NoPositionPanel.Visibility = hasPosition ? Visibility.Collapsed : Visibility.Visible;
+                        if (LastSignalText != null)
+                            LastSignalText.Text = $"Last Signal: {signalData.BestSignal} @ {signalData.BestConfidence}%";
+                    }
+
+                    // Update trade details (placeholder values - will be replaced with actual position data)
+                    if (hasPosition)
+                    {
+                        UpdateTradeDetailsPlaceholder(asset, signalData);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error updating trade details: {ex.Message}");
+                }
+            });
+        }
+
+        private void UpdateTradeDetailsPlaceholder(string asset, SignalData signalData)
+        {
+            // Placeholder implementation - will be replaced with actual position data
+            if (EntryPriceText != null)
+                EntryPriceText.Text = "—";
+            if (CurrentPriceText != null)
+                CurrentPriceText.Text = "—";
+            if (RMultipleText != null)
+                RMultipleText.Text = "—";
+            if (StopLossText != null)
+                StopLossText.Text = "—";
+            if (TakeProfitText != null)
+                TakeProfitText.Text = "—";
+            if (PipsToSLText != null)
+                PipsToSLText.Text = "— pips";
+            if (PipsToTPText != null)
+                PipsToTPText.Text = "— pips";
+            if (UnrealizedPnLText != null)
+                UnrealizedPnLText.Text = "—";
+            if (PositionSizeText != null)
+                PositionSizeText.Text = "— lots";
+            if (TimeInTradeText != null)
+                TimeInTradeText.Text = "—";
         }
 
         private void RefreshButton_Click(object sender, RoutedEventArgs e)
