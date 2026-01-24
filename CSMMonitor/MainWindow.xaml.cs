@@ -31,6 +31,7 @@ namespace JcampForexTrader
         // Risk Management Settings
         private const double DAILY_LOSS_LIMIT_R = 6.0;  // Maximum daily loss in R-multiples
         private double dailyLossUsedR = 0.0;  // Current daily loss in R (updated from trades)
+        private List<PositionDisplay> activePositions = new List<PositionDisplay>();  // Store active positions for trade details panel
 
         public class SignalData
         {
@@ -1207,7 +1208,7 @@ namespace JcampForexTrader
 
             double balance = 0;
             bool autoTradingActive = false;
-            int activePositions = 0;
+            int activePositionCount = 0;
 
             // Read performance file for balance
             if (File.Exists(perfFile))
@@ -1290,7 +1291,7 @@ namespace JcampForexTrader
                                 pos.Risk = "N/A";
 
                                 positionsList.Add(pos);
-                                activePositions++;
+                                activePositionCount++;
                             }
                         }
                     }
@@ -1301,16 +1302,22 @@ namespace JcampForexTrader
                 }
             }
 
+            // Store positions for trade details panel
+            activePositions = positionsList;
+
             // Update UI
             Dispatcher.Invoke(() =>
             {
                 // AccountBalanceText removed from header - balance shown in bottom section
                 // AccountBalanceText.Text = balance.ToString("F2");
-                ActiveTradesText.Text = activePositions.ToString();
+                ActiveTradesText.Text = activePositionCount.ToString();
 
                 // Update the DataGrid
                 ActivePositionsGrid.ItemsSource = null;
                 ActivePositionsGrid.ItemsSource = positionsList;
+
+                // Update trade details panel if a position exists for the selected asset
+                UpdateTradeDetailsPanel(selectedAsset);
 
                 if (autoTradingActive)
                 {
@@ -1397,14 +1404,16 @@ namespace JcampForexTrader
                     if (SignalConfidenceBar != null)
                         SignalConfidenceBar.Value = signalData.BestConfidence;
 
-                    // TODO: Load actual position data from active trades
-                    // For now, show placeholder data
+                    // Find active position for this asset
+                    var position = activePositions.FirstOrDefault(p =>
+                        p.Symbol.Replace(".sml", "").Replace(".ecn", "").Replace(".raw", "").ToUpper() == asset.ToUpper());
+
+                    bool hasPosition = position != null;
+
                     if (TradeStatusLabel != null)
-                        TradeStatusLabel.Text = signalData.BestSignal == "HOLD" ? "NO POSITION" : "ACTIVE POSITION";
+                        TradeStatusLabel.Text = hasPosition ? "ACTIVE POSITION" : "NO POSITION";
 
                     // Show/hide panels based on position status
-                    bool hasPosition = signalData.BestSignal != "HOLD" && signalData.BestConfidence >= MIN_CONFIDENCE_THRESHOLD;
-
                     if (TradeDetailsPanel != null)
                         TradeDetailsPanel.Visibility = hasPosition ? Visibility.Visible : Visibility.Collapsed;
                     if (NoPositionPanel != null)
@@ -1414,10 +1423,10 @@ namespace JcampForexTrader
                             LastSignalText.Text = $"Last Signal: {signalData.BestSignal} @ {signalData.BestConfidence}%";
                     }
 
-                    // Update trade details (placeholder values - will be replaced with actual position data)
+                    // Update trade details with real position data
                     if (hasPosition)
                     {
-                        UpdateTradeDetailsPlaceholder(asset, signalData);
+                        UpdateTradeDetailsWithPosition(asset, position, signalData);
                     }
                 }
                 catch (Exception ex)
@@ -1427,29 +1436,118 @@ namespace JcampForexTrader
             });
         }
 
-        private void UpdateTradeDetailsPlaceholder(string asset, SignalData signalData)
+        private void UpdateTradeDetailsWithPosition(string asset, PositionDisplay position, SignalData signalData)
         {
-            // Placeholder implementation - will be replaced with actual position data
-            if (EntryPriceText != null)
-                EntryPriceText.Text = "—";
-            if (CurrentPriceText != null)
-                CurrentPriceText.Text = "—";
-            if (RMultipleText != null)
-                RMultipleText.Text = "—";
-            if (StopLossText != null)
-                StopLossText.Text = "—";
-            if (TakeProfitText != null)
-                TakeProfitText.Text = "—";
-            if (PipsToSLText != null)
-                PipsToSLText.Text = "— pips";
-            if (PipsToTPText != null)
-                PipsToTPText.Text = "— pips";
-            if (UnrealizedPnLText != null)
-                UnrealizedPnLText.Text = "—";
-            if (PositionSizeText != null)
-                PositionSizeText.Text = "— lots";
-            if (TimeInTradeText != null)
-                TimeInTradeText.Text = "—";
+            try
+            {
+                // Update price fields
+                if (EntryPriceText != null)
+                    EntryPriceText.Text = position.EntryPrice ?? "—";
+                if (CurrentPriceText != null)
+                {
+                    CurrentPriceText.Text = position.CurrentPrice ?? "—";
+                    // Color code current price based on profit/loss
+                    if (position.PnL != null && double.TryParse(position.PnL, out double pnl))
+                    {
+                        CurrentPriceText.Foreground = pnl >= 0 ?
+                            new SolidColorBrush(Color.FromRgb(78, 201, 176)) :  // Green
+                            new SolidColorBrush(Color.FromRgb(244, 135, 113));  // Red
+                    }
+                }
+
+                // Update SL/TP fields
+                if (StopLossText != null)
+                    StopLossText.Text = position.StopLoss ?? "—";
+                if (TakeProfitText != null)
+                    TakeProfitText.Text = position.TakeProfit ?? "—";
+
+                // Calculate pips to SL/TP
+                if (double.TryParse(position.CurrentPrice, out double current) &&
+                    double.TryParse(position.StopLoss, out double sl) &&
+                    double.TryParse(position.TakeProfit, out double tp))
+                {
+                    double pipsToSL = Math.Abs(current - sl) * 10000; // Forex pip calculation
+                    double pipsToTP = Math.Abs(tp - current) * 10000;
+
+                    // Special handling for Gold (XAU) - different pip size
+                    if (asset.Contains("XAU"))
+                    {
+                        pipsToSL = Math.Abs(current - sl);
+                        pipsToTP = Math.Abs(tp - current);
+                    }
+
+                    if (PipsToSLText != null)
+                        PipsToSLText.Text = $"{pipsToSL:F1} pips";
+                    if (PipsToTPText != null)
+                        PipsToTPText.Text = $"{pipsToTP:F1} pips";
+                }
+                else
+                {
+                    if (PipsToSLText != null)
+                        PipsToSLText.Text = "— pips";
+                    if (PipsToTPText != null)
+                        PipsToTPText.Text = "— pips";
+                }
+
+                // Update R-Multiple
+                if (RMultipleText != null)
+                {
+                    RMultipleText.Text = position.RMultiple ?? "—";
+                    // Color code R-Multiple
+                    if (position.RMultiple != null && position.RMultiple.Contains("R"))
+                    {
+                        string rValue = position.RMultiple.Replace("R", "");
+                        if (double.TryParse(rValue, out double r))
+                        {
+                            RMultipleText.Foreground = r >= 1.0 ?
+                                new SolidColorBrush(Color.FromRgb(78, 201, 176)) :  // Green
+                                r >= 0 ?
+                                new SolidColorBrush(Color.FromRgb(220, 220, 170)) :  // Yellow
+                                new SolidColorBrush(Color.FromRgb(244, 135, 113));   // Red
+                        }
+                    }
+                }
+
+                // Update P&L
+                if (UnrealizedPnLText != null && position.PnL != null)
+                {
+                    UnrealizedPnLText.Text = $"${position.PnL}";
+                    // Color code P&L
+                    if (double.TryParse(position.PnL, out double pnl))
+                    {
+                        UnrealizedPnLText.Foreground = pnl >= 0 ?
+                            new SolidColorBrush(Color.FromRgb(78, 201, 176)) :  // Green
+                            new SolidColorBrush(Color.FromRgb(244, 135, 113));  // Red
+                    }
+                }
+
+                // Update position size
+                if (PositionSizeText != null)
+                    PositionSizeText.Text = position.Size != null ? $"{position.Size} lots" : "— lots";
+
+                // Update time in trade
+                if (TimeInTradeText != null && position.EntryTime != null)
+                {
+                    if (DateTime.TryParse(position.EntryTime, out DateTime entryTime))
+                    {
+                        TimeSpan duration = DateTime.Now - entryTime;
+                        if (duration.TotalDays >= 1)
+                            TimeInTradeText.Text = $"{(int)duration.TotalDays}d {duration.Hours}h";
+                        else if (duration.TotalHours >= 1)
+                            TimeInTradeText.Text = $"{(int)duration.TotalHours}h {duration.Minutes}m";
+                        else
+                            TimeInTradeText.Text = $"{duration.Minutes}m";
+                    }
+                    else
+                    {
+                        TimeInTradeText.Text = position.EntryTime;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error updating trade details: {ex.Message}");
+            }
         }
 
         private void RefreshButton_Click(object sender, RoutedEventArgs e)
