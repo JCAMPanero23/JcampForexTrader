@@ -1080,7 +1080,9 @@ namespace JcampForexTrader
 
             var signalData = pairSignals[pair];
 
-            // Find the controls for this pair
+            // ═══════════════════════════════════════════════════════════
+            // UPDATE LIVE DASHBOARD (Hidden elements for compatibility)
+            // ═══════════════════════════════════════════════════════════
             var trSignal = FindName($"{pair}_TR_Signal") as TextBlock;
             var trConf = FindName($"{pair}_TR_Conf") as TextBlock;
             var ipSignal = FindName($"{pair}_IP_Signal") as TextBlock;
@@ -1090,7 +1092,7 @@ namespace JcampForexTrader
             var bestSignal = FindName($"{pair}_Best_Signal") as TextBlock;
             var bestConf = FindName($"{pair}_Best_Conf") as TextBlock;
 
-            // Update Trend Rider
+            // Update Trend Rider (hidden)
             if (trSignal != null)
             {
                 trSignal.Text = signalData.TrendRiderSignal;
@@ -1099,7 +1101,7 @@ namespace JcampForexTrader
             if (trConf != null)
                 trConf.Text = $"{signalData.TrendRiderConfidence}%";
 
-            // Update Impulse Pullback
+            // Update Impulse Pullback (hidden)
             if (ipSignal != null)
             {
                 ipSignal.Text = signalData.ImpulsePullbackSignal;
@@ -1108,7 +1110,7 @@ namespace JcampForexTrader
             if (ipConf != null)
                 ipConf.Text = $"{signalData.ImpulsePullbackConfidence}%";
 
-            // Update Breakout Retest
+            // Update Breakout Retest (hidden)
             if (brSignal != null)
             {
                 brSignal.Text = signalData.BreakoutRetestSignal;
@@ -1117,7 +1119,7 @@ namespace JcampForexTrader
             if (brConf != null)
                 brConf.Text = $"{signalData.BreakoutRetestConfidence}%";
 
-            // Update Best Signal
+            // Update Best Signal (Live Dashboard visible cards)
             if (bestSignal != null)
             {
                 bestSignal.Text = signalData.BestSignal;
@@ -1125,6 +1127,63 @@ namespace JcampForexTrader
             }
             if (bestConf != null)
                 bestConf.Text = $"{signalData.BestConfidence}%";
+
+            // ═══════════════════════════════════════════════════════════
+            // UPDATE SIGNAL ANALYSIS TAB (2x2 Grid with _SA suffix)
+            // ═══════════════════════════════════════════════════════════
+
+            // Top-level signal and confidence (main card display)
+            var saSignal = FindName($"{pair}_Signal_SA") as TextBlock;
+            var saConfidence = FindName($"{pair}_Confidence_SA") as TextBlock;
+
+            if (saSignal != null)
+            {
+                saSignal.Text = signalData.BestSignal;
+                saSignal.Foreground = GetSignalColor(signalData.BestSignal);
+            }
+            if (saConfidence != null)
+            {
+                saConfidence.Text = $"{signalData.BestConfidence}%";
+                saConfidence.Foreground = new SolidColorBrush(Color.FromRgb(255, 255, 255)); // White
+            }
+
+            // TrendRider Strategy in Signal Analysis tab
+            var saTrSignal = FindName($"{pair}_TR_Signal_SA") as TextBlock;
+            var saTrConf = FindName($"{pair}_TR_Conf_SA") as TextBlock;
+            var saTrBar = FindName($"{pair}_TR_Bar_SA") as System.Windows.Controls.Primitives.RangeBase;
+
+            if (saTrSignal != null)
+            {
+                saTrSignal.Text = signalData.TrendRiderSignal;
+                saTrSignal.Foreground = GetSignalColor(signalData.TrendRiderSignal);
+            }
+            if (saTrConf != null)
+            {
+                saTrConf.Text = $"{signalData.TrendRiderConfidence}%";
+            }
+            if (saTrBar != null)
+            {
+                saTrBar.Value = signalData.TrendRiderConfidence;
+            }
+
+            // RangeRider Strategy in Signal Analysis tab (mapped from ImpulsePullback for CSM Alpha)
+            var saRrSignal = FindName($"{pair}_RR_Signal_SA") as TextBlock;
+            var saRrConf = FindName($"{pair}_RR_Conf_SA") as TextBlock;
+            var saRrBar = FindName($"{pair}_RR_Bar_SA") as System.Windows.Controls.Primitives.RangeBase;
+
+            if (saRrSignal != null)
+            {
+                saRrSignal.Text = signalData.ImpulsePullbackSignal; // CSM Alpha: RangeRider data in ImpulsePullback field
+                saRrSignal.Foreground = GetSignalColor(signalData.ImpulsePullbackSignal);
+            }
+            if (saRrConf != null)
+            {
+                saRrConf.Text = $"{signalData.ImpulsePullbackConfidence}%";
+            }
+            if (saRrBar != null)
+            {
+                saRrBar.Value = signalData.ImpulsePullbackConfidence;
+            }
         }
 
         private SolidColorBrush GetSignalColor(string signal)
@@ -1737,6 +1796,7 @@ namespace JcampForexTrader
         /// <summary>
         /// Handles color intensity slider changes
         /// </summary>
+        /* COMMENTED OUT - ColorIntensitySlider removed in new Settings tab design
         private void ColorIntensitySlider_ValueChanged(object sender,
                                                        RoutedPropertyChangedEventArgs<double> e)
         {
@@ -1756,6 +1816,7 @@ namespace JcampForexTrader
             // Refresh all colors in the UI
             UpdateAllColors();
         }
+        */
 
         /// <summary>
         /// Handles color scheme preset selection
@@ -1763,8 +1824,7 @@ namespace JcampForexTrader
         private void ColorSchemeComboBox_SelectionChanged(object sender,
                                                           SelectionChangedEventArgs e)
         {
-            if (ColorSchemeComboBox.SelectedIndex == -1) return;
-            if (ColorIntensitySlider == null) return;  // Prevent execution during init
+            if (ColorSchemeComboBox == null || ColorSchemeComboBox.SelectedIndex == -1) return;
 
             var selected = (ColorSchemeComboBox.SelectedItem as ComboBoxItem)?.Content.ToString();
 
@@ -1772,43 +1832,30 @@ namespace JcampForexTrader
 
             switch (selected)
             {
-                case "Muted Dark (Recommended)":
+                case "Muted":
                     colorIntensity = 0.6;
-                    System.Diagnostics.Debug.WriteLine("→ Applied Muted Dark preset (60%)");
+                    System.Diagnostics.Debug.WriteLine("→ Applied Muted preset (60%)");
                     break;
 
-                case "Standard Dark":
+                case "Standard":
                     colorIntensity = 0.8;
-                    System.Diagnostics.Debug.WriteLine("→ Applied Standard Dark preset (80%)");
+                    System.Diagnostics.Debug.WriteLine("→ Applied Standard preset (80%)");
                     break;
 
-                case "High Contrast":
+                case "High Contrast (Current)":
                     colorIntensity = 1.0;
                     System.Diagnostics.Debug.WriteLine("→ Applied High Contrast preset (100%)");
                     break;
-
-                case "Soft Monochrome":
-                    colorIntensity = 0.4;
-                    System.Diagnostics.Debug.WriteLine("→ Applied Soft Monochrome preset (40%)");
-                    break;
-
-                case "Deep Blue":
-                    colorIntensity = 0.7;
-                    System.Diagnostics.Debug.WriteLine("→ Applied Deep Blue preset (70%)");
-                    break;
             }
 
-            // Update slider to match
-            ColorIntensitySlider.Value = colorIntensity;
-
-            // Update preview and all UI colors
-            UpdateColorPreview();
+            // Refresh all colors in the UI
             UpdateAllColors();
         }
 
         /// <summary>
         /// Updates the color preview panel in settings
         /// </summary>
+        /* COMMENTED OUT - Preview controls removed in new Settings tab design
         private void UpdateColorPreview()
         {
             if (PreviewBuyBorder == null || PreviewSellBorder == null || PreviewHoldBorder == null)
@@ -1826,6 +1873,7 @@ namespace JcampForexTrader
 
             System.Diagnostics.Debug.WriteLine("✓ Color preview updated");
         }
+        */
 
         /// <summary>
         /// Refreshes all colors in the UI
