@@ -1324,8 +1324,11 @@ namespace JcampForexTrader
             // Update UI
             Dispatcher.Invoke(() =>
             {
-                // AccountBalanceText removed from header - balance shown in bottom section
-                // AccountBalanceText.Text = balance.ToString("F2");
+                // Update account balance in bottom section
+                if (balance > 0)
+                {
+                    AccountBalanceLargeText.Text = "$" + balance.ToString("N2");
+                }
                 ActiveTradesText.Text = activePositionCount.ToString();
 
                 // Update the DataGrid
