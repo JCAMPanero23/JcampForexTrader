@@ -21,10 +21,10 @@ namespace JcampForexTrader
         [JsonProperty("type")]
         public string Type { get; set; }
 
-        [JsonProperty("entry_price")]
+        [JsonProperty("open_price")] // MT5 exports "open_price", not "entry_price"
         public double EntryPrice { get; set; }
 
-        [JsonProperty("exit_price")]
+        [JsonProperty("close_price")] // MT5 exports "close_price", not "exit_price"
         public double ExitPrice { get; set; }
 
         [JsonProperty("lots")]
@@ -33,10 +33,10 @@ namespace JcampForexTrader
         [JsonProperty("profit")]
         public double Profit { get; set; }
 
-        [JsonProperty("entry_time")]
+        [JsonProperty("open_time")] // MT5 exports "open_time", not "entry_time"
         public string EntryTimeString { get; set; }
 
-        [JsonProperty("exit_time")]
+        [JsonProperty("close_time")] // MT5 exports "close_time", not "exit_time"
         public string ExitTimeString { get; set; }
 
         [JsonIgnore]

@@ -1218,7 +1218,14 @@ namespace JcampForexTrader
                     var lines = File.ReadAllLines(perfFile);
                     foreach (var line in lines)
                     {
-                        if (line.Contains("BALANCE="))
+                        // NEW FORMAT: "Current Balance: $9642.28"
+                        if (line.Contains("Current Balance:"))
+                        {
+                            string value = line.Replace("Current Balance:", "").Replace("$", "").Trim();
+                            double.TryParse(value, out balance);
+                        }
+                        // OLD FORMAT: "BALANCE=" (fallback)
+                        else if (line.Contains("BALANCE="))
                         {
                             string value = line.Split('=')[1].Trim();
                             double.TryParse(value, out balance);
@@ -1243,51 +1250,60 @@ namespace JcampForexTrader
                     var lines = File.ReadAllLines(posFile);
                     foreach (var line in lines)
                     {
-                        if (line.StartsWith("POSITION="))
+                        // NEW FORMAT: Ticket: 32815798 | EURUSD.sml BUY | Lots: 0.19 | Entry: 1.17912 | Current: 1.18288 | P&L: $71.44
+                        if (line.StartsWith("Ticket:"))
                         {
-                            // Format: POSITION=ticket|symbol|strategy|type|entry|current|sl|tp|lots|profit|time
-                            string data = line.Substring(9); // Remove "POSITION="
-                            string[] parts = data.Split('|');
-
-                            if (parts.Length >= 11)
+                            string[] parts = line.Split('|');
+                            if (parts.Length >= 6)
                             {
+                                // Parse ticket: "Ticket: 32815798"
+                                string ticketStr = parts[0].Replace("Ticket:", "").Trim();
+
+                                // Parse symbol and type: "EURUSD.sml BUY" or "GBPUSD.sml SELL"
+                                string[] symbolTypeParts = parts[1].Trim().Split(' ');
+                                string symbol = symbolTypeParts.Length > 0 ? symbolTypeParts[0] : "";
+                                string type = symbolTypeParts.Length > 1 ? symbolTypeParts[1] : "";
+
+                                // Parse lots: "Lots: 0.19"
+                                string lotsStr = parts[2].Replace("Lots:", "").Trim();
+
+                                // Parse entry: "Entry: 1.17912"
+                                string entryStr = parts[3].Replace("Entry:", "").Trim();
+
+                                // Parse current: "Current: 1.18288"
+                                string currentStr = parts[4].Replace("Current:", "").Trim();
+
+                                // Parse P&L: "P&L: $71.44"
+                                string pnlStr = parts[5].Replace("P&L:", "").Replace("$", "").Trim();
+
                                 var pos = new PositionDisplay
                                 {
-                                    Ticket = parts[0],
-                                    Symbol = parts[1],
-                                    Strategy = parts[2],
-                                    Type = parts[3],
-                                    EntryPrice = parts[4],
-                                    CurrentPrice = parts[5],
-                                    StopLoss = parts[6],
-                                    TakeProfit = parts[7],
-                                    Size = parts[8],
-                                    PnL = parts[9],
-                                    EntryTime = parts[10]
+                                    Ticket = ticketStr,
+                                    Symbol = symbol,
+                                    Strategy = "CSM", // Not in file, use default
+                                    Type = type,
+                                    EntryPrice = entryStr,
+                                    CurrentPrice = currentStr,
+                                    StopLoss = "N/A", // Not in file
+                                    TakeProfit = "N/A", // Not in file
+                                    Size = lotsStr,
+                                    PnL = "$" + pnlStr,
+                                    EntryTime = "N/A" // Not in file
                                 };
 
-                                // Calculate R-Multiple (if SL exists)
-                                if (double.TryParse(parts[4], out double entry) &&
-                                    double.TryParse(parts[6], out double sl) &&
-                                    double.TryParse(parts[9], out double profit))
+                                // Calculate R-Multiple (simplified - without SL data)
+                                if (double.TryParse(pnlStr, out double profit))
                                 {
-                                    double risk = Math.Abs(entry - sl);
-                                    if (risk > 0)
-                                    {
-                                        double rMultiple = profit / risk;
-                                        pos.RMultiple = rMultiple.ToString("F2") + "R";
-                                    }
-                                    else
-                                    {
-                                        pos.RMultiple = "N/A";
-                                    }
+                                    // Without SL, we can't calculate true R-Multiple
+                                    // Just show profit for now
+                                    pos.RMultiple = "N/A";
                                 }
                                 else
                                 {
                                     pos.RMultiple = "N/A";
                                 }
 
-                                // Risk amount (not in file, calculate or use N/A)
+                                // Risk amount (not in file)
                                 pos.Risk = "N/A";
 
                                 positionsList.Add(pos);
