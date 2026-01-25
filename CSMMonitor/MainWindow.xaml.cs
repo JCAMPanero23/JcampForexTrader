@@ -1250,11 +1250,11 @@ namespace JcampForexTrader
                     var lines = File.ReadAllLines(posFile);
                     foreach (var line in lines)
                     {
-                        // NEW FORMAT: Ticket: 32815798 | EURUSD.sml BUY | Lots: 0.19 | Entry: 1.17912 | Current: 1.18288 | P&L: $71.44
+                        // NEW FORMAT: Ticket: 32815798 | EURUSD.sml BUY | Lots: 0.19 | Entry: 1.17912 | Current: 1.18288 | SL: 1.17412 | TP: 1.18912 | P&L: $71.44 | Time: 2026.01.23 15:30
                         if (line.StartsWith("Ticket:"))
                         {
                             string[] parts = line.Split('|');
-                            if (parts.Length >= 6)
+                            if (parts.Length >= 6) // At minimum we need ticket, symbol, lots, entry, current, P&L
                             {
                                 // Parse ticket: "Ticket: 32815798"
                                 string ticketStr = parts[0].Replace("Ticket:", "").Trim();
@@ -1273,8 +1273,34 @@ namespace JcampForexTrader
                                 // Parse current: "Current: 1.18288"
                                 string currentStr = parts[4].Replace("Current:", "").Trim();
 
+                                // Parse SL (if exists): "SL: 1.17412"
+                                string slStr = "N/A";
+                                if (parts.Length >= 7 && parts[5].Contains("SL:"))
+                                {
+                                    string slValue = parts[5].Replace("SL:", "").Trim();
+                                    if (double.TryParse(slValue, out double slDouble) && slDouble > 0)
+                                        slStr = slValue;
+                                }
+
+                                // Parse TP (if exists): "TP: 1.18912"
+                                string tpStr = "N/A";
+                                if (parts.Length >= 7 && parts[6].Contains("TP:"))
+                                {
+                                    string tpValue = parts[6].Replace("TP:", "").Trim();
+                                    if (double.TryParse(tpValue, out double tp) && tp > 0)
+                                        tpStr = tpValue;
+                                }
+
                                 // Parse P&L: "P&L: $71.44"
-                                string pnlStr = parts[5].Replace("P&L:", "").Replace("$", "").Trim();
+                                int pnlIndex = parts.Length >= 8 ? 7 : 5; // With or without SL/TP
+                                string pnlStr = parts[pnlIndex].Replace("P&L:", "").Replace("$", "").Trim();
+
+                                // Parse Time (if exists): "Time: 2026.01.23 15:30"
+                                string timeStr = "N/A";
+                                if (parts.Length >= 9 && parts[8].Contains("Time:"))
+                                {
+                                    timeStr = parts[8].Replace("Time:", "").Trim();
+                                }
 
                                 var pos = new PositionDisplay
                                 {
@@ -1284,27 +1310,47 @@ namespace JcampForexTrader
                                     Type = type,
                                     EntryPrice = entryStr,
                                     CurrentPrice = currentStr,
-                                    StopLoss = "N/A", // Not in file
-                                    TakeProfit = "N/A", // Not in file
+                                    StopLoss = slStr,
+                                    TakeProfit = tpStr,
                                     Size = lotsStr,
                                     PnL = "$" + pnlStr,
-                                    EntryTime = "N/A" // Not in file
+                                    EntryTime = timeStr
                                 };
 
-                                // Calculate R-Multiple (simplified - without SL data)
-                                if (double.TryParse(pnlStr, out double profit))
+                                // Calculate R-Multiple (if we have SL and P&L)
+                                if (double.TryParse(entryStr, out double entry) &&
+                                    double.TryParse(slStr, out double sl) &&
+                                    double.TryParse(pnlStr, out double profit))
                                 {
-                                    // Without SL, we can't calculate true R-Multiple
-                                    // Just show profit for now
-                                    pos.RMultiple = "N/A";
+                                    double risk = Math.Abs(entry - sl) * double.Parse(lotsStr) * 100000; // Simplified risk calculation
+                                    if (risk > 0)
+                                    {
+                                        double rMultiple = profit / risk;
+                                        pos.RMultiple = rMultiple.ToString("F2") + "R";
+                                    }
+                                    else
+                                    {
+                                        pos.RMultiple = "N/A";
+                                    }
                                 }
                                 else
                                 {
                                     pos.RMultiple = "N/A";
                                 }
 
-                                // Risk amount (not in file)
-                                pos.Risk = "N/A";
+                                // Risk amount (approximate based on SL)
+                                if (double.TryParse(entryStr, out double e) &&
+                                    double.TryParse(slStr, out double s) &&
+                                    double.TryParse(lotsStr, out double lots))
+                                {
+                                    double riskPips = Math.Abs(e - s);
+                                    double riskAmount = riskPips * lots * 100000 * 0.0001; // Simplified
+                                    pos.Risk = "$" + riskAmount.ToString("F2");
+                                }
+                                else
+                                {
+                                    pos.Risk = "N/A";
+                                }
 
                                 positionsList.Add(pos);
                                 activePositionCount++;
@@ -1330,6 +1376,9 @@ namespace JcampForexTrader
                     AccountBalanceLargeText.Text = "$" + balance.ToString("N2");
                 }
                 ActiveTradesText.Text = activePositionCount.ToString();
+
+                // Update position slots bar
+                PositionSlotsBar.Value = activePositionCount;
 
                 // Update the DataGrid
                 ActivePositionsGrid.ItemsSource = null;

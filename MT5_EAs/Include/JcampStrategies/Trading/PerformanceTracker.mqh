@@ -162,8 +162,11 @@ public:
          ENUM_POSITION_TYPE posType = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
          double openPrice = PositionGetDouble(POSITION_PRICE_OPEN);
          double currentPrice = PositionGetDouble(POSITION_PRICE_CURRENT);
+         double sl = PositionGetDouble(POSITION_SL);
+         double tp = PositionGetDouble(POSITION_TP);
          double lots = PositionGetDouble(POSITION_VOLUME);
          double profit = PositionGetDouble(POSITION_PROFIT);
+         datetime openTime = (datetime)PositionGetInteger(POSITION_TIME);
 
          string typeStr = (posType == POSITION_TYPE_BUY) ? "BUY" : "SELL";
 
@@ -172,7 +175,10 @@ public:
                     " | Lots: " + DoubleToString(lots, 2) +
                     " | Entry: " + DoubleToString(openPrice, 5) +
                     " | Current: " + DoubleToString(currentPrice, 5) +
-                    " | P&L: $" + DoubleToString(profit, 2) + "\n";
+                    " | SL: " + DoubleToString(sl, 5) +
+                    " | TP: " + DoubleToString(tp, 5) +
+                    " | P&L: $" + DoubleToString(profit, 2) +
+                    " | Time: " + TimeToString(openTime, TIME_DATE|TIME_MINUTES) + "\n";
 
          positionCount++;
       }
