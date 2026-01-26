@@ -114,10 +114,33 @@ public:
          return 0;
       }
 
-      // Calculate SL/TP based on ATR or fixed pips (simple version: use CSM-based logic)
-      double sl = CalculateStopLoss(signal.symbol, orderType, price);
-      double tp = CalculateTakeProfit(signal.symbol, orderType, price);
+     // Use ATR-based SL/TP from signal if available (Gold strategy)
+        double sl = 0, tp = 0;
 
+        if(signal.stopLossDollars > 0 && signal.takeProfitDollars > 0)
+        {
+           // Use ATR-based SL/TP from signal (Gold strategy)
+           if(orderType == ORDER_TYPE_BUY)
+           {
+              sl = price - signal.stopLossDollars;
+              tp = price + signal.takeProfitDollars;
+           }
+           else
+           {
+              sl = price + signal.stopLossDollars;
+              tp = price - signal.takeProfitDollars;
+           }
+
+           if(verboseLogging)
+              Print("📊 Using ATR-based SL/TP: SL=$", signal.stopLossDollars, " TP=$", signal.takeProfitDollars);
+        }
+        else
+        {
+           // Use default calculation for forex pairs
+           sl = CalculateStopLoss(signal.symbol, orderType, price);
+           tp = CalculateTakeProfit(signal.symbol, orderType, price);
+        }
+        
       // Execute order
       string comment = tradeComment + "|" + signal.strategy + "|C" + IntegerToString(signal.confidence);
 

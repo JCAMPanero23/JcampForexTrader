@@ -379,16 +379,50 @@ private:
          confidence = (int)StringToInteger(StringSubstr(confStr, 1));
       }
    }
+     //+------------------------------------------------------------------+
+     //| Load ALL Historical Trades from MT5 Account History             |
+     //| Exports all closed trades on EA startup                          |
+     //+------------------------------------------------------------------+
+     void LoadTradeHistory()
+     {
+        // Select all history from start of 2020
+        datetime startTime = D'2020.01.01';
+        HistorySelect(startTime, TimeCurrent());
 
-   //+------------------------------------------------------------------+
-   //| Load Existing Trade History (optional - for now, start fresh)   |
-   //+------------------------------------------------------------------+
-   void LoadTradeHistory()
-   {
-      // For now, we'll start fresh each time EA is loaded
-      // In future, could load from trade_history.json
-      HistorySelect(0, TimeCurrent());
-      lastHistoryTotal = HistoryDealsTotal();
-   }
+        int totalDeals = HistoryDealsTotal();
+
+        if(verboseLogging)
+           Print("📜 Scanning ", totalDeals, " historical deals for magic ", magic);
+
+        // Scan all deals for position exits with our magic number
+        for(int i = 0; i < totalDeals; i++)
+        {
+           ulong ticket = HistoryDealGetTicket(i);
+           if(ticket <= 0) continue;
+
+           // Only our EA's trades
+           if(HistoryDealGetInteger(ticket, DEAL_MAGIC) != magic)
+              continue;
+
+           // Only position exits
+           if(HistoryDealGetInteger(ticket, DEAL_ENTRY) != DEAL_ENTRY_OUT)
+              continue;
+
+           // Record this closed trade
+           RecordClosedTrade(ticket);
+        }
+
+        Print("✅ Loaded ", ArraySize(closedTrades), " historical trades");
+
+        // Export immediately for CSMMonitor
+        if(ArraySize(closedTrades) > 0)
+        {
+           ExportTradeHistory();
+        }
+
+        // Track future deals from this point
+        lastHistoryTotal = totalDeals;
+     }
+
 };
 //+------------------------------------------------------------------+

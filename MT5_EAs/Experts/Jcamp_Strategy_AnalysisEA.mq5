@@ -20,6 +20,7 @@
 #include <JcampStrategies/Indicators/RsiCalculator.mqh>
 #include <JcampStrategies/RegimeDetector.mqh>
 #include <JcampStrategies/Strategies/TrendRiderStrategy.mqh>
+#include <JcampStrategies/Strategies/GoldTrendRiderStrategy.mqh>
 #include <JcampStrategies/Strategies/RangeRiderStrategy.mqh>
 #include <JcampStrategies/SignalExporter.mqh>
 
@@ -115,8 +116,8 @@ struct PairData
 //| GLOBAL VARIABLES                                                  |
 //+------------------------------------------------------------------+
 // Strategies
-TrendRiderStrategy* trendRider;
-RangeRiderStrategy* rangeRider;
+  IStrategy* trendRider;  // Changed to base class for polymorphism
+  RangeRiderStrategy* rangeRider;
 
 // Signal exporter
 SignalExporter* signalExporter;
@@ -150,16 +151,19 @@ int OnInit()
     //═══════════════════════════════════════════════════════════════
     // Initialize strategies
     //═══════════════════════════════════════════════════════════════
-    trendRider = new TrendRiderStrategy(
-        (int)MinConfidenceScore,
-        MinCSMDifferential,
-        VerboseLogging
-    );
-
-    rangeRider = new RangeRiderStrategy(
-        RangeRiderMinConfidence,
-        VerboseLogging
-    );
+     if(StringFind(_Symbol, "XAU") >= 0 || StringFind(_Symbol, "GOLD") >= 0)
+     {
+        // Use Gold-specific TrendRider with ATR-based SL/TP
+        trendRider = new GoldTrendRiderStrategy((int)MinConfidenceScore, MinCSMDifferential, VerboseLogging);
+        Print("✨ Using GOLD_TREND_RIDER strategy for ", _Symbol);
+     }
+     else
+     {
+        // Use standard TrendRider for forex pairs
+        trendRider = new TrendRiderStrategy((int)MinConfidenceScore, MinCSMDifferential, VerboseLogging);
+     }
+     rangeRider = new RangeRiderStrategy(RangeRiderMinConfidence, VerboseLogging);
+     // RangeRiderStrategy only takes 2 params: (int minConf, bool verbose)
 
     Print("✓ Strategies initialized");
     Print("  - TrendRider: ", EnableTrendRider ? "ENABLED" : "DISABLED");

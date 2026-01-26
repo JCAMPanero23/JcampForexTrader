@@ -6,6 +6,18 @@ using Newtonsoft.Json;
 
 namespace JcampForexTrader
 {
+    // Wrapper for the MT5 exported JSON structure
+    public class TradeHistoryFile
+    {
+        [JsonProperty("exported_at")]
+        public string ExportedAt { get; set; }
+
+        [JsonProperty("total_trades")]
+        public int TotalTrades { get; set; }
+
+        [JsonProperty("trades")]
+        public List<TradeRecord> Trades { get; set; }
+    }
     // Matches the JSON format from Main EA exactly
     public class TradeRecord
     {
@@ -179,17 +191,17 @@ namespace JcampForexTrader
                     jsonContent;
                 System.Diagnostics.Debug.WriteLine($"📋 Content preview: {preview}");
 
-                var loadedTrades = JsonConvert.DeserializeObject<List<TradeRecord>>(jsonContent);
+                  var historyFile = JsonConvert.DeserializeObject<TradeHistoryFile>(jsonContent);
 
-                if (loadedTrades == null)
-                {
-                    System.Diagnostics.Debug.WriteLine("⚠ Deserialization returned null");
-                    allTrades = new List<TradeRecord>();
-                }
-                else
-                {
-                    allTrades = loadedTrades;
-                    System.Diagnostics.Debug.WriteLine($"✓ Successfully loaded {allTrades.Count} trades");
+                  if (historyFile == null || historyFile.Trades == null)
+                  {
+                      System.Diagnostics.Debug.WriteLine("⚠ Deserialization returned null");
+                      allTrades = new List<TradeRecord>();
+                  }
+                  else
+                  {
+                      allTrades = historyFile.Trades;
+                      System.Diagnostics.Debug.WriteLine($"✓ Successfully loaded {allTrades.Count} trades (from {historyFile.TotalTrades} total)");
 
                     // Show details of loaded trades
                     if (allTrades.Count > 0)

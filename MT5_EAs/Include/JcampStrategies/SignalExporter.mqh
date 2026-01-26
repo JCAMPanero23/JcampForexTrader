@@ -23,6 +23,8 @@ struct SignalExportData
    string   analysis;        // Breakdown of scoring
    double   csmDiff;         // CSM difference used
    string   regime;          // TRENDING/RANGING/TRANSITIONAL
+   double   stopLossDollars;    // ATR-based stop loss (0 = use default) 
+   double   takeProfitDollars;  // ATR-based take profit (0 = use default) 
 };
 
 //+------------------------------------------------------------------+
@@ -93,7 +95,9 @@ public:
       data.analysis = signal.analysis;
       data.csmDiff = csmDiff;
       data.regime = regime;
-
+      data.stopLossDollars = 0;  
+      data.takeProfitDollars = 0;  
+      
       return ExportSignal(data);
    }
 
@@ -144,6 +148,8 @@ private:
       json += "  \"analysis\": \"" + data.analysis + "\",\n";
       json += "  \"csm_diff\": " + DoubleToString(data.csmDiff, 2) + ",\n";
       json += "  \"regime\": \"" + data.regime + "\",\n";
+      json += "  \"stop_loss_dollars\": " + DoubleToString(data.stopLossDollars, 2) + ",\n";  
+      json += "  \"take_profit_dollars\": " + DoubleToString(data.takeProfitDollars, 2) + ",\n";       
       json += "  \"exported_at\": \"" + TimeToString(TimeCurrent(), TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "\"\n";
       json += "}";
 

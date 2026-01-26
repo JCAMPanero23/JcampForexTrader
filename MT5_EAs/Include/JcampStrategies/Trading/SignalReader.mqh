@@ -26,6 +26,8 @@ struct SignalData
    string   regime;          // "TRENDING", "RANGING", "TRANSITIONAL"
    datetime exportedAt;
    bool     isValid;         // True if signal was successfully read
+   double   stopLossDollars;     
+   double   takeProfitDollars;   
 };
 
 //+------------------------------------------------------------------+
@@ -220,7 +222,8 @@ private:
       data.csmDiff = ExtractDoubleValue(json, "csm_diff");
       data.regime = ExtractStringValue(json, "regime");
       data.exportedAt = StringToTime(ExtractStringValue(json, "exported_at"));
-
+      data.stopLossDollars = ExtractDoubleValue(json, "stop_loss_dollars");     
+      data.takeProfitDollars = ExtractDoubleValue(json, "take_profit_dollars");  
       // Validate required fields
       if(StringLen(data.symbol) == 0 || StringLen(data.signalText) == 0)
          return false;

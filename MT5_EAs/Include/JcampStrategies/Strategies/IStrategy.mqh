@@ -17,6 +17,10 @@ struct StrategySignal
    int      confidence;      // Confidence score (0-100 or 0-135 depending on strategy)
    string   analysis;        // Breakdown of scoring components
    string   strategyName;    // Name of the strategy that generated this signal
+
+   // Optional: ATR-based SL/TP (used by Gold strategy)
+   double   stopLossDollars;    // Stop loss in dollars (0 = use default)
+   double   takeProfitDollars;  // Take profit in dollars (0 = use default)
 };
 
 //+------------------------------------------------------------------+
