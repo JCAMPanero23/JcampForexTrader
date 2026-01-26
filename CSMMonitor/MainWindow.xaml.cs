@@ -56,6 +56,7 @@ namespace JcampForexTrader
             // Additional JSON fields
             public double CsmDifferential { get; set; } = 0;
             public string CsmTrend { get; set; } = "";
+            public string Analysis { get; set; } = "";  // CSM Alpha analysis breakdown: "EMA+30 ADX+20 RSI+5 CSM+25"
         }
 
         public class PositionDisplay
@@ -595,6 +596,9 @@ namespace JcampForexTrader
                 string analysis = signal.analysis?.ToString() ?? "";
                 double csmDiff = (double)(signal.csm_diff ?? 0.0);
                 string regime = signal.regime?.ToString() ?? "";
+
+                // Store analysis breakdown for Signal Analysis tab
+                signalData.Analysis = analysis;
 
                 // Map to display format based on strategy
                 if (strategy == "TREND_RIDER")
@@ -1939,7 +1943,10 @@ namespace JcampForexTrader
 
             var signalData = pairSignals[pair];
 
-            // Update Trend Rider Details
+            // Update Signal Analysis tab controls (CSM Alpha format)
+            UpdateSignalAnalysisTab(pair, signalData);
+
+            // Update Trend Rider Details (legacy)
             UpdateStrategySection(pair, "TR",
                 signalData.TrendRiderSignal,
                 signalData.TrendRiderConfidence,
@@ -1948,7 +1955,7 @@ namespace JcampForexTrader
                 new string[] { "EMA_ALIGN", "ADX", "RSI", "CSM" },
                 new int[] { 35, 25, 20, 25 });
 
-            // Update Impulse Pullback Details
+            // Update Impulse Pullback Details (legacy)
             UpdateStrategySection(pair, "IP",
                 signalData.ImpulsePullbackSignal,
                 signalData.ImpulsePullbackConfidence,
@@ -1957,7 +1964,7 @@ namespace JcampForexTrader
                 new string[] { "IMPULSE", "FIB", "RSI", "CSM" },
                 new int[] { 35, 25, 20, 20 });
 
-            // Update Breakout Retest Details
+            // Update Breakout Retest Details (legacy)
             UpdateStrategySection(pair, "BR",
                 signalData.BreakoutRetestSignal,
                 signalData.BreakoutRetestConfidence,
@@ -1965,6 +1972,74 @@ namespace JcampForexTrader
                 signalData.BreakoutRetestReasoning,
                 new string[] { "LEVEL", "BREAKOUT", "VOLUME", "CSM" },
                 new int[] { 30, 25, 25, 20 });
+        }
+
+        private void UpdateSignalAnalysisTab(string pair, SignalData signalData)
+        {
+            // Update TrendRider section
+            var trSignal = FindName($"{pair}_TR_Signal_SA") as TextBlock;
+            var trConf = FindName($"{pair}_TR_Conf_SA") as TextBlock;
+            var trBar = FindName($"{pair}_TR_Bar_SA") as ProgressBar;
+            var trAnalysis = FindName($"{pair}_TR_Analysis_SA") as TextBlock;
+
+            if (trSignal != null) trSignal.Text = signalData.BestSignal;
+            if (trConf != null) trConf.Text = $"{signalData.TrendRiderConfidence}%";
+            if (trBar != null)
+            {
+                trBar.Value = signalData.TrendRiderConfidence;
+                trBar.Foreground = GetSignalBrush(signalData.BestSignal);
+            }
+            if (trAnalysis != null)
+            {
+                trAnalysis.Text = string.IsNullOrEmpty(signalData.Analysis) ? "—" : signalData.Analysis.Trim();
+            }
+
+            // Update RangeRider section (currently shows 0% for CSM Alpha - only TrendRider used)
+            var rrSignal = FindName($"{pair}_RR_Signal_SA") as TextBlock;
+            var rrConf = FindName($"{pair}_RR_Conf_SA") as TextBlock;
+            var rrBar = FindName($"{pair}_RR_Bar_SA") as ProgressBar;
+            var rrAnalysis = FindName($"{pair}_RR_Analysis_SA") as TextBlock;
+
+            if (rrSignal != null) rrSignal.Text = "HOLD";
+            if (rrConf != null) rrConf.Text = "0%";
+            if (rrBar != null) rrBar.Value = 0;
+            if (rrAnalysis != null) rrAnalysis.Text = "—";
+        }
+
+        private Dictionary<string, int> ParseAnalysisString(string analysis)
+        {
+            var scores = new Dictionary<string, int>();
+            if (string.IsNullOrEmpty(analysis)) return scores;
+
+            // Parse "EMA+30 ADX+20 RSI+5 CSM+25 MTF+10 "
+            var parts = analysis.Trim().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var part in parts)
+            {
+                var tokens = part.Split(new[] { '+', '-' });
+                if (tokens.Length == 2)
+                {
+                    string key = tokens[0];
+                    if (int.TryParse(tokens[1], out int value))
+                    {
+                        scores[key] = value;
+                    }
+                }
+            }
+
+            return scores;
+        }
+
+        private SolidColorBrush GetSignalBrush(string signal)
+        {
+            switch (signal)
+            {
+                case "BUY":
+                    return new SolidColorBrush(Color.FromRgb(78, 201, 176));  // Green
+                case "SELL":
+                    return new SolidColorBrush(Color.FromRgb(244, 135, 113));  // Red
+                default:
+                    return new SolidColorBrush(Color.FromRgb(150, 150, 150));  // Gray
+            }
         }
 
         private void UpdateStrategySection(string pair, string strategy, string signal,

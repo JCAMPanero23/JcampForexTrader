@@ -1133,13 +1133,9 @@
                                 <StackPanel Grid.Row="2">
                                     <!-- TrendRider Strategy -->
                                     <Border Background="#2D2D30" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="3" Padding="8,6" Margin="0,0,0,6">
-                                        <Grid>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                            </Grid.RowDefinitions>
-
-                                            <Grid Grid.Row="0">
+                                        <StackPanel>
+                                            <!-- Header -->
+                                            <Grid>
                                                 <TextBlock Text="TrendRider" FontSize="13" FontWeight="Bold" Foreground="#E0E0E0" HorizontalAlignment="Left"/>
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                                     <TextBlock x:Name="EURUSD_TR_Signal_SA" Text="HOLD" FontSize="13" Foreground="#DCDCAA" Margin="0,0,4,0"/>
@@ -1147,20 +1143,20 @@
                                                 </StackPanel>
                                             </Grid>
 
-                                            <ProgressBar Grid.Row="1" x:Name="EURUSD_TR_Bar_SA" Height="4" Minimum="0" Maximum="100" Value="0"
-                                                        Foreground="#4EC9B0" Background="#1A1A1A" BorderThickness="0" Margin="0,4,0,0"/>
-                                        </Grid>
+                                            <!-- Overall Progress Bar -->
+                                            <ProgressBar x:Name="EURUSD_TR_Bar_SA" Height="4" Minimum="0" Maximum="135" Value="0"
+                                                        Foreground="#4EC9B0" Background="#1A1A1A" BorderThickness="0" Margin="0,4,0,6"/>
+
+                                            <!-- Score Breakdown -->
+                                            <TextBlock x:Name="EURUSD_TR_Analysis_SA" Text="EMA+30 ADX+20 RSI+5 CSM+25" FontSize="10" Foreground="#9CDCFE" Opacity="0.7"/>
+                                        </StackPanel>
                                     </Border>
 
                                     <!-- RangeRider Strategy -->
                                     <Border Background="#2D2D30" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="3" Padding="8,6">
-                                        <Grid>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                            </Grid.RowDefinitions>
-
-                                            <Grid Grid.Row="0">
+                                        <StackPanel>
+                                            <!-- Header -->
+                                            <Grid>
                                                 <TextBlock Text="RangeRider" FontSize="13" FontWeight="Bold" Foreground="#E0E0E0" HorizontalAlignment="Left"/>
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                                     <TextBlock x:Name="EURUSD_RR_Signal_SA" Text="HOLD" FontSize="13" Foreground="#DCDCAA" Margin="0,0,4,0"/>
@@ -1168,9 +1164,13 @@
                                                 </StackPanel>
                                             </Grid>
 
-                                            <ProgressBar Grid.Row="1" x:Name="EURUSD_RR_Bar_SA" Height="4" Minimum="0" Maximum="100" Value="0"
-                                                        Foreground="#CE9178" Background="#1A1A1A" BorderThickness="0" Margin="0,4,0,0"/>
-                                        </Grid>
+                                            <!-- Overall Progress Bar -->
+                                            <ProgressBar x:Name="EURUSD_RR_Bar_SA" Height="4" Minimum="0" Maximum="100" Value="0"
+                                                        Foreground="#CE9178" Background="#1A1A1A" BorderThickness="0" Margin="0,4,0,6"/>
+
+                                            <!-- Score Breakdown -->
+                                            <TextBlock x:Name="EURUSD_RR_Analysis_SA" Text="—" FontSize="10" Foreground="#9CDCFE" Opacity="0.7"/>
+                                        </StackPanel>
                                     </Border>
                                 </StackPanel>
                             </Grid>
@@ -1197,13 +1197,9 @@
 
                                 <StackPanel Grid.Row="2">
                                     <Border Background="#2D2D30" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="3" Padding="8,6" Margin="0,0,0,6">
-                                        <Grid>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                            </Grid.RowDefinitions>
-
-                                            <Grid Grid.Row="0">
+                                        <StackPanel>
+                                            <!-- Header -->
+                                            <Grid>
                                                 <TextBlock Text="TrendRider" FontSize="13" FontWeight="Bold" Foreground="#E0E0E0" HorizontalAlignment="Left"/>
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                                     <TextBlock x:Name="GBPUSD_TR_Signal_SA" Text="HOLD" FontSize="13" Foreground="#DCDCAA" Margin="0,0,4,0"/>
@@ -1211,19 +1207,19 @@
                                                 </StackPanel>
                                             </Grid>
 
-                                            <ProgressBar Grid.Row="1" x:Name="GBPUSD_TR_Bar_SA" Height="4" Minimum="0" Maximum="100" Value="0"
-                                                        Foreground="#4EC9B0" Background="#1A1A1A" BorderThickness="0" Margin="0,4,0,0"/>
-                                        </Grid>
+                                            <!-- Overall Progress Bar -->
+                                            <ProgressBar x:Name="GBPUSD_TR_Bar_SA" Height="4" Minimum="0" Maximum="135" Value="0"
+                                                        Foreground="#4EC9B0" Background="#1A1A1A" BorderThickness="0" Margin="0,4,0,6"/>
+
+                                            <!-- Score Breakdown -->
+                                            <TextBlock x:Name="GBPUSD_TR_Analysis_SA" Text="—" FontSize="10" Foreground="#9CDCFE" Opacity="0.7"/>
+                                        </StackPanel>
                                     </Border>
 
                                     <Border Background="#2D2D30" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="3" Padding="8,6">
-                                        <Grid>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                            </Grid.RowDefinitions>
-
-                                            <Grid Grid.Row="0">
+                                        <StackPanel>
+                                            <!-- Header -->
+                                            <Grid>
                                                 <TextBlock Text="RangeRider" FontSize="13" FontWeight="Bold" Foreground="#E0E0E0" HorizontalAlignment="Left"/>
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                                     <TextBlock x:Name="GBPUSD_RR_Signal_SA" Text="HOLD" FontSize="13" Foreground="#DCDCAA" Margin="0,0,4,0"/>
@@ -1231,9 +1227,13 @@
                                                 </StackPanel>
                                             </Grid>
 
-                                            <ProgressBar Grid.Row="1" x:Name="GBPUSD_RR_Bar_SA" Height="4" Minimum="0" Maximum="100" Value="0"
-                                                        Foreground="#CE9178" Background="#1A1A1A" BorderThickness="0" Margin="0,4,0,0"/>
-                                        </Grid>
+                                            <!-- Overall Progress Bar -->
+                                            <ProgressBar x:Name="GBPUSD_RR_Bar_SA" Height="4" Minimum="0" Maximum="100" Value="0"
+                                                        Foreground="#CE9178" Background="#1A1A1A" BorderThickness="0" Margin="0,4,0,6"/>
+
+                                            <!-- Score Breakdown -->
+                                            <TextBlock x:Name="GBPUSD_RR_Analysis_SA" Text="—" FontSize="10" Foreground="#9CDCFE" Opacity="0.7"/>
+                                        </StackPanel>
                                     </Border>
                                 </StackPanel>
                             </Grid>
@@ -1260,13 +1260,9 @@
 
                                 <StackPanel Grid.Row="2">
                                     <Border Background="#2D2D30" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="3" Padding="8,6" Margin="0,0,0,6">
-                                        <Grid>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                            </Grid.RowDefinitions>
-
-                                            <Grid Grid.Row="0">
+                                        <StackPanel>
+                                            <!-- Header -->
+                                            <Grid>
                                                 <TextBlock Text="TrendRider" FontSize="13" FontWeight="Bold" Foreground="#E0E0E0" HorizontalAlignment="Left"/>
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                                     <TextBlock x:Name="AUDJPY_TR_Signal_SA" Text="HOLD" FontSize="13" Foreground="#DCDCAA" Margin="0,0,4,0"/>
@@ -1274,19 +1270,19 @@
                                                 </StackPanel>
                                             </Grid>
 
-                                            <ProgressBar Grid.Row="1" x:Name="AUDJPY_TR_Bar_SA" Height="4" Minimum="0" Maximum="100" Value="0"
-                                                        Foreground="#4EC9B0" Background="#1A1A1A" BorderThickness="0" Margin="0,4,0,0"/>
-                                        </Grid>
+                                            <!-- Overall Progress Bar -->
+                                            <ProgressBar x:Name="AUDJPY_TR_Bar_SA" Height="4" Minimum="0" Maximum="135" Value="0"
+                                                        Foreground="#4EC9B0" Background="#1A1A1A" BorderThickness="0" Margin="0,4,0,6"/>
+
+                                            <!-- Score Breakdown -->
+                                            <TextBlock x:Name="AUDJPY_TR_Analysis_SA" Text="—" FontSize="10" Foreground="#9CDCFE" Opacity="0.7"/>
+                                        </StackPanel>
                                     </Border>
 
                                     <Border Background="#2D2D30" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="3" Padding="8,6">
-                                        <Grid>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                            </Grid.RowDefinitions>
-
-                                            <Grid Grid.Row="0">
+                                        <StackPanel>
+                                            <!-- Header -->
+                                            <Grid>
                                                 <TextBlock Text="RangeRider" FontSize="13" FontWeight="Bold" Foreground="#E0E0E0" HorizontalAlignment="Left"/>
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                                     <TextBlock x:Name="AUDJPY_RR_Signal_SA" Text="HOLD" FontSize="13" Foreground="#DCDCAA" Margin="0,0,4,0"/>
@@ -1294,9 +1290,13 @@
                                                 </StackPanel>
                                             </Grid>
 
-                                            <ProgressBar Grid.Row="1" x:Name="AUDJPY_RR_Bar_SA" Height="4" Minimum="0" Maximum="100" Value="0"
-                                                        Foreground="#CE9178" Background="#1A1A1A" BorderThickness="0" Margin="0,4,0,0"/>
-                                        </Grid>
+                                            <!-- Overall Progress Bar -->
+                                            <ProgressBar x:Name="AUDJPY_RR_Bar_SA" Height="4" Minimum="0" Maximum="100" Value="0"
+                                                        Foreground="#CE9178" Background="#1A1A1A" BorderThickness="0" Margin="0,4,0,6"/>
+
+                                            <!-- Score Breakdown -->
+                                            <TextBlock x:Name="AUDJPY_RR_Analysis_SA" Text="—" FontSize="10" Foreground="#9CDCFE" Opacity="0.7"/>
+                                        </StackPanel>
                                     </Border>
                                 </StackPanel>
                             </Grid>
@@ -1326,14 +1326,9 @@
 
                                 <StackPanel Grid.Row="2">
                                     <Border Background="#2D2D30" BorderBrush="#FFD700" BorderThickness="1" CornerRadius="3" Padding="8,6">
-                                        <Grid>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                            </Grid.RowDefinitions>
-
-                                            <Grid Grid.Row="0">
+                                        <StackPanel>
+                                            <!-- Header -->
+                                            <Grid>
                                                 <TextBlock Text="TrendRider" FontSize="13" FontWeight="Bold" Foreground="#E0E0E0" HorizontalAlignment="Left"/>
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                                     <TextBlock x:Name="XAUUSD_TR_Signal_SA" Text="HOLD" FontSize="13" Foreground="#DCDCAA" Margin="0,0,4,0"/>
@@ -1341,11 +1336,16 @@
                                                 </StackPanel>
                                             </Grid>
 
-                                            <ProgressBar Grid.Row="1" x:Name="XAUUSD_TR_Bar_SA" Height="4" Minimum="0" Maximum="100" Value="0"
-                                                        Foreground="#FFD700" Background="#1A1A1A" BorderThickness="0" Margin="0,4,0,0"/>
+                                            <!-- Overall Progress Bar -->
+                                            <ProgressBar x:Name="XAUUSD_TR_Bar_SA" Height="4" Minimum="0" Maximum="135" Value="0"
+                                                        Foreground="#FFD700" Background="#1A1A1A" BorderThickness="0" Margin="0,4,0,6"/>
 
-                                            <TextBlock Grid.Row="2" Text="Gold trends only - no range trading" FontSize="13" Foreground="#AAAAAA" FontStyle="Italic" Margin="0,8,0,0" TextWrapping="Wrap"/>
-                                        </Grid>
+                                            <!-- Score Breakdown -->
+                                            <TextBlock x:Name="XAUUSD_TR_Analysis_SA" Text="—" FontSize="10" Foreground="#9CDCFE" Opacity="0.7"/>
+
+                                            <!-- Note about Gold -->
+                                            <TextBlock Text="Gold trends only - no range trading" FontSize="10" Foreground="#AAAAAA" FontStyle="Italic" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                                        </StackPanel>
                                     </Border>
                                 </StackPanel>
                             </Grid>
