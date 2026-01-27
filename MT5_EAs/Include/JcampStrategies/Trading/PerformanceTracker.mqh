@@ -275,32 +275,71 @@ private:
    //+------------------------------------------------------------------+
    void CheckForNewClosedTrades()
    {
+      // Re-select history to get latest deals
+      HistorySelect(0, TimeCurrent());
+
       int totalNow = HistoryDealsTotal();
 
       // Only check if there are new deals
       if(totalNow == lastHistoryTotal)
+      {
+         if(verboseLogging)
+            Print("🔄 No new deals (still ", totalNow, ")");
          return;
+      }
 
-      HistorySelect(0, TimeCurrent());
+      Print("========================================");
+      Print("🆕 NEW DEALS DETECTED!");
+      Print("Previous count: ", lastHistoryTotal);
+      Print("Current count: ", totalNow);
+      Print("New deals to process: ", totalNow - lastHistoryTotal);
+      Print("========================================");
 
       for(int i = lastHistoryTotal; i < totalNow; i++)
       {
          ulong ticket = HistoryDealGetTicket(i);
-         if(ticket <= 0) continue;
+         if(ticket <= 0)
+         {
+            Print("❌ Deal #", i, ": Invalid ticket");
+            continue;
+         }
+
+         long dealMagic = HistoryDealGetInteger(ticket, DEAL_MAGIC);
+         long dealEntry = HistoryDealGetInteger(ticket, DEAL_ENTRY);
+         string dealSymbol = HistoryDealGetString(ticket, DEAL_SYMBOL);
+         datetime dealTime = (datetime)HistoryDealGetInteger(ticket, DEAL_TIME);
+         double dealProfit = HistoryDealGetDouble(ticket, DEAL_PROFIT);
+         string entryType = (dealEntry == DEAL_ENTRY_IN ? "IN" : (dealEntry == DEAL_ENTRY_OUT ? "OUT" : "INOUT"));
+
+         Print("🔍 New Deal #", i, ": Ticket=", ticket,
+               " | Magic=", dealMagic, (dealMagic == magic ? " ✅ MATCH" : " ❌ NO MATCH"),
+               " | Entry=", entryType,
+               " | Symbol=", dealSymbol,
+               " | Profit=$", DoubleToString(dealProfit, 2));
 
          // Only track deals from this EA
-         if(HistoryDealGetInteger(ticket, DEAL_MAGIC) != magic)
+         if(dealMagic != magic)
+         {
+            Print("   → Skipped: Wrong magic (expected ", magic, ")");
             continue;
+         }
 
          // Only track position exits
-         if(HistoryDealGetInteger(ticket, DEAL_ENTRY) != DEAL_ENTRY_OUT)
+         if(dealEntry != DEAL_ENTRY_OUT)
+         {
+            Print("   → Skipped: Not a position exit (entry type = ", entryType, ")");
             continue;
+         }
 
          // Record this trade
+         Print("   ✅ Recording trade!");
          RecordClosedTrade(ticket);
       }
 
       lastHistoryTotal = totalNow;
+      Print("========================================");
+      Print("✅ New deals check complete");
+      Print("========================================");
    }
 
    //+------------------------------------------------------------------+
@@ -413,7 +452,7 @@ private:
         int totalDeals = HistoryDealsTotal();
 
         Print("========================================");
-        Print("🔍 TRADE HISTORY DIAGNOSTIC SCAN");
+        Print("🔍 TRADE HISTORY DIAGNOSTIC SCAN (DETAILED)");
         Print("========================================");
         Print("Total deals in MT5 history: ", totalDeals);
         Print("Filtering for Magic Number: ", magic);
@@ -424,15 +463,35 @@ private:
         int dealsWithWrongMagic = 0;
         int positionExits = 0;
         int positionEntries = 0;
+        int invalidTickets = 0;
+
+        Print("📋 DETAILED DEAL SCAN (showing ALL deals):");
+        Print("----------------------------------------");
 
         // Scan all deals for position exits with our magic number
         for(int i = 0; i < totalDeals; i++)
         {
            ulong ticket = HistoryDealGetTicket(i);
-           if(ticket <= 0) continue;
+           if(ticket <= 0)
+           {
+              invalidTickets++;
+              continue;
+           }
 
            long dealMagic = HistoryDealGetInteger(ticket, DEAL_MAGIC);
            long dealEntry = HistoryDealGetInteger(ticket, DEAL_ENTRY);
+           string dealSymbol = HistoryDealGetString(ticket, DEAL_SYMBOL);
+           datetime dealTime = (datetime)HistoryDealGetInteger(ticket, DEAL_TIME);
+           double dealProfit = HistoryDealGetDouble(ticket, DEAL_PROFIT);
+           string entryType = (dealEntry == DEAL_ENTRY_IN ? "IN" : (dealEntry == DEAL_ENTRY_OUT ? "OUT" : "INOUT"));
+
+           // Print EVERY valid deal
+           Print("Deal #", i, ": Ticket=", ticket,
+                 " | Magic=", dealMagic, (dealMagic == magic ? " ✅" : " ❌"),
+                 " | Entry=", entryType,
+                 " | Symbol=", dealSymbol,
+                 " | Time=", TimeToString(dealTime, TIME_DATE|TIME_MINUTES),
+                 " | Profit=$", DoubleToString(dealProfit, 2));
 
            // Check magic number
            if(dealMagic != magic)
@@ -457,8 +516,10 @@ private:
         }
 
         Print("========================================");
-        Print("📊 DIAGNOSTIC RESULTS:");
+        Print("📊 DIAGNOSTIC SUMMARY:");
         Print("  - Total deals scanned: ", totalDeals);
+        Print("  - Invalid tickets (skipped): ", invalidTickets);
+        Print("  - Valid deals: ", totalDeals - invalidTickets);
         Print("  - Deals with magic ", magic, ": ", dealsWithCorrectMagic);
         Print("  - Deals with other magic: ", dealsWithWrongMagic);
         Print("  - Position entries (IN): ", positionEntries);
