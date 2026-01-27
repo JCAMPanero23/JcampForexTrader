@@ -317,17 +317,25 @@ private:
                " | Symbol=", dealSymbol,
                " | Profit=$", DoubleToString(dealProfit, 2));
 
-         // Only track deals from this EA
-         if(dealMagic != magic)
-         {
-            Print("   → Skipped: Wrong magic (expected ", magic, ")");
-            continue;
-         }
-
          // Only track position exits
          if(dealEntry != DEAL_ENTRY_OUT)
          {
             Print("   → Skipped: Not a position exit (entry type = ", entryType, ")");
+            continue;
+         }
+
+         // ✅ FIX: Check position's opening deal magic, not closing deal magic
+         // When positions close by SL/TP/Manual, closing deal often has Magic=0
+         // We need to verify the POSITION was opened by our EA
+         ulong positionId = HistoryDealGetInteger(ticket, DEAL_POSITION_ID);
+         long positionMagic = GetPositionOpeningMagic(positionId);
+
+         Print("   → Position ID: ", positionId, " | Opening Magic: ", positionMagic,
+               (positionMagic == magic ? " ✅ MATCH" : " ❌ NO MATCH"));
+
+         if(positionMagic != magic)
+         {
+            Print("   → Skipped: Position not opened by this EA (magic ", positionMagic, " vs ", magic, ")");
             continue;
          }
 
@@ -417,6 +425,35 @@ private:
    }
 
    //+------------------------------------------------------------------+
+   //| Get Magic Number of Position Opening Deal                        |
+   //| Returns magic number of the deal that opened this position      |
+   //+------------------------------------------------------------------+
+   long GetPositionOpeningMagic(ulong positionId)
+   {
+      // Select position history
+      if(!HistorySelectByPosition(positionId))
+         return 0;
+
+      // Find the opening deal (ENTRY_IN)
+      int dealsTotal = HistoryDealsTotal();
+      for(int i = 0; i < dealsTotal; i++)
+      {
+         ulong dealTicket = HistoryDealGetTicket(i);
+         if(dealTicket <= 0) continue;
+
+         long dealEntry = HistoryDealGetInteger(dealTicket, DEAL_ENTRY);
+         if(dealEntry == DEAL_ENTRY_IN)
+         {
+            // Found the opening deal
+            long dealMagic = HistoryDealGetInteger(dealTicket, DEAL_MAGIC);
+            return dealMagic;
+         }
+      }
+
+      return 0; // No opening deal found
+   }
+
+   //+------------------------------------------------------------------+
    //| Parse Comment to Extract Strategy and Confidence                 |
    //+------------------------------------------------------------------+
    void ParseComment(string comment, string &strategy, int &confidence)
@@ -493,22 +530,36 @@ private:
                  " | Time=", TimeToString(dealTime, TIME_DATE|TIME_MINUTES),
                  " | Profit=$", DoubleToString(dealProfit, 2));
 
-           // Check magic number
-           if(dealMagic != magic)
+           // Skip non-exits (we only track closed positions)
+           if(dealEntry != DEAL_ENTRY_OUT)
+           {
+              if(dealMagic == magic)
+              {
+                 dealsWithCorrectMagic++;
+                 positionEntries++;
+              }
+              else
+              {
+                 dealsWithWrongMagic++;
+              }
+              continue;
+           }
+
+           // ✅ FIX: For position exits, check the OPENING deal's magic, not closing deal magic
+           // Closing deals often have Magic=0 even when opened by EA with magic number
+           ulong positionId = HistoryDealGetInteger(ticket, DEAL_POSITION_ID);
+           long positionMagic = GetPositionOpeningMagic(positionId);
+
+           Print("   → Position ID: ", positionId, " | Opening Magic: ", positionMagic,
+                 (positionMagic == magic ? " ✅ OUR EA" : " ❌ NOT OURS"));
+
+           if(positionMagic != magic)
            {
               dealsWithWrongMagic++;
               continue;
            }
 
            dealsWithCorrectMagic++;
-
-           // Check if position exit
-           if(dealEntry != DEAL_ENTRY_OUT)
-           {
-              positionEntries++;
-              continue;
-           }
-
            positionExits++;
 
            // Record this closed trade
