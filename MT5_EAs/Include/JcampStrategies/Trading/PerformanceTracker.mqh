@@ -373,9 +373,10 @@ private:
       trade.closePrice = HistoryDealGetDouble(dealTicket, DEAL_PRICE);
       trade.lots = HistoryDealGetDouble(dealTicket, DEAL_VOLUME);
       trade.profit = HistoryDealGetDouble(dealTicket, DEAL_PROFIT);
-      trade.comment = HistoryDealGetString(dealTicket, DEAL_COMMENT);
+      trade.comment = ""; // Will be set from opening deal
 
-      // Get open price from position history
+      // ✅ FIX: Get open price AND comment from opening deal (DEAL_ENTRY_IN)
+      // Closing deals often lose the original comment, especially with SL/TP
       if(HistorySelectByPosition(positionTicket))
       {
          int dealsTotal = HistoryDealsTotal();
@@ -386,6 +387,7 @@ private:
             {
                trade.openTime = (datetime)HistoryDealGetInteger(ticket, DEAL_TIME);
                trade.openPrice = HistoryDealGetDouble(ticket, DEAL_PRICE);
+               trade.comment = HistoryDealGetString(ticket, DEAL_COMMENT); // ✅ Get comment from opening deal
                break;
             }
          }
