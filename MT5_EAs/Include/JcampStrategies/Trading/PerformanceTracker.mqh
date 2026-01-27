@@ -308,9 +308,17 @@ private:
    //+------------------------------------------------------------------+
    void RecordClosedTrade(ulong dealTicket)
    {
-      TradeRecord trade;
-
       ulong positionTicket = HistoryDealGetInteger(dealTicket, DEAL_POSITION_ID);
+
+      // ✅ FIX: Check if this trade already exists (prevent duplicates on EA restart)
+      if(IsTradeAlreadyRecorded(positionTicket))
+      {
+         if(verboseLogging)
+            Print("Trade #", positionTicket, " already recorded, skipping duplicate");
+         return;
+      }
+
+      TradeRecord trade;
       trade.ticket = positionTicket;
       trade.symbol = HistoryDealGetString(dealTicket, DEAL_SYMBOL);
       trade.type = (HistoryDealGetInteger(dealTicket, DEAL_TYPE) == DEAL_TYPE_BUY) ? "SELL" : "BUY"; // Reversed
@@ -357,6 +365,19 @@ private:
    }
 
    //+------------------------------------------------------------------+
+   //| Check if Trade Already Recorded (Prevent Duplicates)            |
+   //+------------------------------------------------------------------+
+   bool IsTradeAlreadyRecorded(ulong positionTicket)
+   {
+      for(int i = 0; i < ArraySize(closedTrades); i++)
+      {
+         if(closedTrades[i].ticket == positionTicket)
+            return true;
+      }
+      return false;
+   }
+
+   //+------------------------------------------------------------------+
    //| Parse Comment to Extract Strategy and Confidence                 |
    //+------------------------------------------------------------------+
    void ParseComment(string comment, string &strategy, int &confidence)
@@ -391,8 +412,18 @@ private:
 
         int totalDeals = HistoryDealsTotal();
 
-        if(verboseLogging)
-           Print("📜 Scanning ", totalDeals, " historical deals for magic ", magic);
+        Print("========================================");
+        Print("🔍 TRADE HISTORY DIAGNOSTIC SCAN");
+        Print("========================================");
+        Print("Total deals in MT5 history: ", totalDeals);
+        Print("Filtering for Magic Number: ", magic);
+        Print("========================================");
+
+        // Diagnostic counters
+        int dealsWithCorrectMagic = 0;
+        int dealsWithWrongMagic = 0;
+        int positionExits = 0;
+        int positionEntries = 0;
 
         // Scan all deals for position exits with our magic number
         for(int i = 0; i < totalDeals; i++)
@@ -400,19 +431,42 @@ private:
            ulong ticket = HistoryDealGetTicket(i);
            if(ticket <= 0) continue;
 
-           // Only our EA's trades
-           if(HistoryDealGetInteger(ticket, DEAL_MAGIC) != magic)
-              continue;
+           long dealMagic = HistoryDealGetInteger(ticket, DEAL_MAGIC);
+           long dealEntry = HistoryDealGetInteger(ticket, DEAL_ENTRY);
 
-           // Only position exits
-           if(HistoryDealGetInteger(ticket, DEAL_ENTRY) != DEAL_ENTRY_OUT)
+           // Check magic number
+           if(dealMagic != magic)
+           {
+              dealsWithWrongMagic++;
               continue;
+           }
+
+           dealsWithCorrectMagic++;
+
+           // Check if position exit
+           if(dealEntry != DEAL_ENTRY_OUT)
+           {
+              positionEntries++;
+              continue;
+           }
+
+           positionExits++;
 
            // Record this closed trade
            RecordClosedTrade(ticket);
         }
 
-        Print("✅ Loaded ", ArraySize(closedTrades), " historical trades");
+        Print("========================================");
+        Print("📊 DIAGNOSTIC RESULTS:");
+        Print("  - Total deals scanned: ", totalDeals);
+        Print("  - Deals with magic ", magic, ": ", dealsWithCorrectMagic);
+        Print("  - Deals with other magic: ", dealsWithWrongMagic);
+        Print("  - Position entries (IN): ", positionEntries);
+        Print("  - Position exits (OUT): ", positionExits);
+        Print("  - Trades recorded: ", ArraySize(closedTrades));
+        Print("========================================");
+        Print("✅ Trade history scan complete");
+        Print("========================================");
 
         // Export immediately for CSMMonitor
         if(ArraySize(closedTrades) > 0)
