@@ -1,7 +1,7 @@
 ﻿<Window x:Class="JcampForexTrader.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Advanced Currency Strength Trading System (ACSTS) Monitor" 
+        Title="Jcamp Forex Trader" 
         Height="900" Width="1400"
         WindowStartupLocation="CenterScreen"
         Background="#1E1E1E"
@@ -127,7 +127,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        
+
         <Style TargetType="TextBlock" x:Key="HeaderStyle">
             <Setter Property="FontSize" Value="16"/>
             <Setter Property="FontWeight" Value="Bold"/>
@@ -186,7 +186,7 @@
         <!-- Panel background -->
         <SolidColorBrush x:Key="DarkBorder" Color="#3E3E42"/>
         <!-- Border color -->
-        
+
         <Style x:Key="DarkDataGridStyle" TargetType="DataGrid">
             <!-- Main Grid Appearance -->
             <Setter Property="Background" Value="{StaticResource DarkBackground}"/>
@@ -277,7 +277,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        
+
         <Style TargetType="TabItem" x:Key="TabStyle">
             <Setter Property="Background" Value="#3E3E42"/>
             <Setter Property="Foreground" Value="White"/>
@@ -972,8 +972,8 @@
             <TabItem Header="ACTIVE TRADES &amp; HISTORY" Style="{StaticResource TabStyle}">
                 <Grid Margin="10">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.2*"/>
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="805*"/>
+                        <ColumnDefinition Width="569*"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- LEFT COLUMN: Active Positions + Risk Management -->
@@ -985,74 +985,74 @@
 
                         <!-- Active Positions List -->
                         <Border Grid.Row="0" Background="#252526" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="4" Margin="0,0,0,6">
-                        <Grid Margin="12">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
+                            <Grid Margin="12">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0" Text="ACTIVE POSITIONS" FontSize="13" FontWeight="Bold" Foreground="#E0E0E0" Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="0" Text="ACTIVE POSITIONS" FontSize="13" FontWeight="Bold" Foreground="#E0E0E0" Margin="0,0,0,8"/>
 
-                            <DataGrid Grid.Row="1" x:Name="ActivePositionsGrid"
+                                <DataGrid x:Name="ActivePositionsGrid"
                                      Style="{StaticResource DarkDataGridStyle}"
-                                     Margin="0,0,0,0">
+                                     Margin="0,25,0,148" Grid.RowSpan="2">
 
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Ticket" Binding="{Binding Ticket}" Width="80"/>
-                                    <DataGridTextColumn Header="Symbol" Binding="{Binding Symbol}" Width="80"/>
-                                    <DataGridTextColumn Header="Strategy" Binding="{Binding Strategy}" Width="120"/>
-                                    <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="50"/>
-                                    <DataGridTextColumn Header="Entry" Binding="{Binding EntryPrice}" Width="80"/>
-                                    <DataGridTextColumn Header="Current" Binding="{Binding CurrentPrice}" Width="80"/>
-                                    <DataGridTextColumn Header="Stop" Binding="{Binding StopLoss}" Width="80"/>
-                                    <DataGridTextColumn Header="Target" Binding="{Binding TakeProfit}" Width="80"/>
-                                    <DataGridTextColumn Header="Size" Binding="{Binding Size}" Width="60"/>
-                                    <DataGridTextColumn Header="PnL" Binding="{Binding PnL}" Width="80"/>
-                                    <DataGridTextColumn Header="R-Multiple" Binding="{Binding RMultiple}" Width="80"/>
-                                    <DataGridTextColumn Header="Risk Amount" Binding="{Binding Risk}" Width="80"/>
-                                    <DataGridTextColumn Header="Entry Time" Binding="{Binding EntryTime}" Width="120"/>
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </Grid>
-                    </Border>
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Ticket" Binding="{Binding Ticket}" Width="80"/>
+                                        <DataGridTextColumn Header="Symbol" Binding="{Binding Symbol}" Width="80"/>
+                                        <DataGridTextColumn Header="Strategy" Binding="{Binding Strategy}" Width="120"/>
+                                        <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="50"/>
+                                        <DataGridTextColumn Header="Entry" Binding="{Binding EntryPrice}" Width="80"/>
+                                        <DataGridTextColumn Header="Current" Binding="{Binding CurrentPrice}" Width="80"/>
+                                        <DataGridTextColumn Header="Stop" Binding="{Binding StopLoss}" Width="80"/>
+                                        <DataGridTextColumn Header="Target" Binding="{Binding TakeProfit}" Width="80"/>
+                                        <DataGridTextColumn Header="Size" Binding="{Binding Size}" Width="60"/>
+                                        <DataGridTextColumn Header="PnL" Binding="{Binding PnL}" Width="80"/>
+                                        <DataGridTextColumn Header="R-Multiple" Binding="{Binding RMultiple}" Width="80"/>
+                                        <DataGridTextColumn Header="Risk Amount" Binding="{Binding Risk}" Width="80"/>
+                                        <DataGridTextColumn Header="Entry Time" Binding="{Binding EntryTime}" Width="120"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+                        </Border>
 
                         <!-- Risk Dashboard (LEFT COLUMN, BOTTOM) -->
-                        <Border Grid.Row="1" Background="#252526" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="4">
-                        <Grid Margin="12,10">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
+                        <Border Background="#252526" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="4" Margin="0,390,0,0" Grid.RowSpan="2">
+                            <Grid Margin="12,10">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0" Text="RISK MANAGEMENT" FontSize="13" FontWeight="Bold" Foreground="#E0E0E0" Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="0" Text="RISK MANAGEMENT" FontSize="13" FontWeight="Bold" Foreground="#E0E0E0" Margin="0,0,0,8"/>
 
-                            <UniformGrid Grid.Row="1" Columns="2" Rows="2">
-                                <StackPanel Margin="0,0,8,0">
-                                    <TextBlock Text="Daily Risk Used" FontSize="13" Foreground="#E0E0E0" Margin="0,0,0,4"/>
-                                    <ProgressBar x:Name="DailyRiskProgressBar" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="100" Value="0" Height="6"/>
-                                    <TextBlock x:Name="DailyRiskText" Text="0% / 3%" HorizontalAlignment="Center" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" FontFamily="Consolas" Margin="0,4,0,0"/>
-                                </StackPanel>
+                                <UniformGrid Grid.Row="1" Columns="2" Rows="2">
+                                    <StackPanel Margin="0,0,8,0">
+                                        <TextBlock Text="Daily Risk Used" FontSize="13" Foreground="#E0E0E0" Margin="0,0,0,4"/>
+                                        <ProgressBar x:Name="DailyRiskProgressBar" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="100" Value="0" Height="6"/>
+                                        <TextBlock x:Name="DailyRiskText" Text="0% / 3%" HorizontalAlignment="Center" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" FontFamily="Consolas" Margin="0,4,0,0"/>
+                                    </StackPanel>
 
-                                <StackPanel Margin="0,0,8,0">
-                                    <TextBlock Text="Portfolio Risk" FontSize="13" Foreground="#E0E0E0" Margin="0,0,0,4"/>
-                                    <ProgressBar x:Name="PortfolioRiskProgressBar" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="100" Value="0" Height="6"/>
-                                    <TextBlock x:Name="PortfolioRiskText" Text="0% / 5%" HorizontalAlignment="Center" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" FontFamily="Consolas" Margin="0,4,0,0"/>
-                                </StackPanel>
+                                    <StackPanel Margin="0,0,8,0">
+                                        <TextBlock Text="Portfolio Risk" FontSize="13" Foreground="#E0E0E0" Margin="0,0,0,4"/>
+                                        <ProgressBar x:Name="PortfolioRiskProgressBar" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="100" Value="0" Height="6"/>
+                                        <TextBlock x:Name="PortfolioRiskText" Text="0% / 5%" HorizontalAlignment="Center" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" FontFamily="Consolas" Margin="0,4,0,0"/>
+                                    </StackPanel>
 
-                                <StackPanel Margin="0,0,8,0">
-                                    <TextBlock Text="Position Slots" FontSize="13" Foreground="#E0E0E0" Margin="0,0,0,4"/>
-                                    <ProgressBar x:Name="PositionSlotsProgressBar" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="2" Value="0" Height="6"/>
-                                    <TextBlock x:Name="PositionSlotsText" Text="0 / 2" HorizontalAlignment="Center" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" FontFamily="Consolas" Margin="0,4,0,0"/>
-                                </StackPanel>
+                                    <StackPanel Margin="0,0,8,0">
+                                        <TextBlock Text="Position Slots" FontSize="13" Foreground="#E0E0E0" Margin="0,0,0,4"/>
+                                        <ProgressBar x:Name="PositionSlotsProgressBar" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="2" Value="0" Height="6"/>
+                                        <TextBlock x:Name="PositionSlotsText" Text="0 / 2" HorizontalAlignment="Center" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" FontFamily="Consolas" Margin="0,4,0,0"/>
+                                    </StackPanel>
 
-                                <StackPanel>
-                                    <TextBlock Text="Margin Level" FontSize="13" Foreground="#E0E0E0" Margin="0,0,0,4"/>
-                                    <TextBlock x:Name="MarginLevelText" Text="N/A" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" Foreground="#FFFFFF" FontFamily="Consolas" Margin="0,6,0,0"/>
-                                    <TextBlock Text="(Healthy: >500%)" FontSize="13" Foreground="#AAAAAA" HorizontalAlignment="Center"/>
-                                </StackPanel>
-                            </UniformGrid>
-                        </Grid>
-                    </Border>
+                                    <StackPanel>
+                                        <TextBlock Text="Margin Level" FontSize="13" Foreground="#E0E0E0" Margin="0,0,0,4"/>
+                                        <TextBlock x:Name="MarginLevelText" Text="N/A" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" Foreground="#FFFFFF" FontFamily="Consolas" Margin="0,6,0,0"/>
+                                        <TextBlock Text="(Healthy: >500%)" FontSize="13" Foreground="#AAAAAA" HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </UniformGrid>
+                            </Grid>
+                        </Border>
                     </Grid>
                     <!-- End LEFT COLUMN -->
 
@@ -1375,7 +1375,7 @@
                     <Border Grid.Row="0" Background="{StaticResource DarkBackground}" 
                             BorderBrush="{StaticResource DarkBorder}" 
                             BorderThickness="1" CornerRadius="8" Margin="5">
-                        
+
                         <Grid Margin="15">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -1426,38 +1426,65 @@
                         </Grid>
                     </Border>
 
-                    <!-- Strategy Performance Breakdown -->
-                    <Border Grid.Row="1" Background="#252526" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="8" Margin="5">
-                        <Grid Margin="15">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
+                    <!-- Performance Breakdown (2 Columns: Strategy | Pair) -->
+                    <Grid Grid.Row="1" Margin="5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
 
-                            <TextBlock Grid.Row="0" Text="Strategy Performance Comparison" Style="{StaticResource HeaderStyle}"/>
+                        <!-- LEFT: Strategy Performance -->
+                        <Border Grid.Column="0" Background="#252526" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="8" Margin="0,0,4,0">
+                            <Grid Margin="15">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
 
-                            <!-- ═══════════════════════════════════════════════════════════ -->
-                            <!--        Strategy Performance Grid - Dark Mode Applied        -->
-                            <!-- ═══════════════════════════════════════════════════════════ -->
-                            <DataGrid Grid.Row="1" x:Name="StrategyPerformanceGrid" 
-                                     Style="{StaticResource DarkDataGridStyle}"
-                                     Margin="0,10">
+                                <TextBlock Grid.Row="0" Text="Strategy Performance" Style="{StaticResource HeaderStyle}"/>
 
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Strategy" Binding="{Binding Strategy}" Width="150"/>
-                                    <DataGridTextColumn Header="Trades" Binding="{Binding TotalTrades}" Width="80"/>
-                                    <DataGridTextColumn Header="Wins" Binding="{Binding Wins}" Width="60"/>
-                                    <DataGridTextColumn Header="Losses" Binding="{Binding Losses}" Width="60"/>
-                                    <DataGridTextColumn Header="Win Rate" Binding="{Binding WinRate}" Width="80"/>
-                                    <DataGridTextColumn Header="Avg R" Binding="{Binding AvgR}" Width="80"/>
-                                    <DataGridTextColumn Header="Best R" Binding="{Binding BestR}" Width="80"/>
-                                    <DataGridTextColumn Header="Worst R" Binding="{Binding WorstR}" Width="80"/>
-                                    <DataGridTextColumn Header="Total Profit" Binding="{Binding TotalPnL}" Width="100"/>
-                                    <DataGridTextColumn Header="Profit Factor" Binding="{Binding ProfitFactor}" Width="100"/>
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </Grid>
-                    </Border>
+                                <DataGrid Grid.Row="1" x:Name="StrategyPerformanceGrid"
+                                         Style="{StaticResource DarkDataGridStyle}"
+                                         Margin="0,10">
+
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Strategy" Binding="{Binding Strategy}" Width="120"/>
+                                        <DataGridTextColumn Header="Trades" Binding="{Binding TotalTrades}" Width="60"/>
+                                        <DataGridTextColumn Header="Win%" Binding="{Binding WinRate}" Width="60"/>
+                                        <DataGridTextColumn Header="Avg R" Binding="{Binding AvgR}" Width="60"/>
+                                        <DataGridTextColumn Header="Profit" Binding="{Binding TotalPnL}" Width="80"/>
+                                        <DataGridTextColumn Header="PF" Binding="{Binding ProfitFactor}" Width="60"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+                        </Border>
+
+                        <!-- RIGHT: Pair Performance -->
+                        <Border Grid.Column="1" Background="#252526" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="8" Margin="4,0,0,0">
+                            <Grid Margin="15">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Text="Pair Performance" Style="{StaticResource HeaderStyle}"/>
+
+                                <DataGrid Grid.Row="1" x:Name="PairPerformanceGrid"
+                                         Style="{StaticResource DarkDataGridStyle}"
+                                         Margin="0,10">
+
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Pair" Binding="{Binding Pair}" Width="120"/>
+                                        <DataGridTextColumn Header="Trades" Binding="{Binding TotalTrades}" Width="60"/>
+                                        <DataGridTextColumn Header="Win%" Binding="{Binding WinRate}" Width="60"/>
+                                        <DataGridTextColumn Header="Avg R" Binding="{Binding AvgR}" Width="60"/>
+                                        <DataGridTextColumn Header="Profit" Binding="{Binding TotalPnL}" Width="80"/>
+                                        <DataGridTextColumn Header="PF" Binding="{Binding ProfitFactor}" Width="60"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+                        </Border>
+                    </Grid>
                 </Grid>
             </TabItem>
 

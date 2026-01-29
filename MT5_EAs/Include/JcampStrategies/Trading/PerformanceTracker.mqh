@@ -159,6 +159,7 @@ public:
             continue;
 
          string symbol = PositionGetString(POSITION_SYMBOL);
+         string comment = PositionGetString(POSITION_COMMENT);
          ENUM_POSITION_TYPE posType = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
          double openPrice = PositionGetDouble(POSITION_PRICE_OPEN);
          double currentPrice = PositionGetDouble(POSITION_PRICE_CURRENT);
@@ -170,8 +171,19 @@ public:
 
          string typeStr = (posType == POSITION_TYPE_BUY) ? "BUY" : "SELL";
 
+         // Extract strategy from comment (format: "JcampCSM|TREND_RIDER|C88")
+         string strategy = "UNKNOWN";
+         if(StringFind(comment, "|") >= 0)
+         {
+            string parts[];
+            int count = StringSplit(comment, '|', parts);
+            if(count >= 2)
+               strategy = parts[1];
+         }
+
          content += "Ticket: " + IntegerToString((int)ticket) +
                     " | " + symbol + " " + typeStr +
+                    " | Strategy: " + strategy +
                     " | Lots: " + DoubleToString(lots, 2) +
                     " | Entry: " + DoubleToString(openPrice, 5) +
                     " | Current: " + DoubleToString(currentPrice, 5) +

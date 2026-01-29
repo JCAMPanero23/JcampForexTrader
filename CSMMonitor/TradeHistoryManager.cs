@@ -353,6 +353,21 @@ namespace JcampForexTrader
             return result;
         }
 
+        public Dictionary<string, TradeStatistics> GetStatisticsBySymbol()
+        {
+            var result = new Dictionary<string, TradeStatistics>();
+
+            var symbols = allTrades.Select(t => t.Symbol).Distinct();
+
+            foreach (var symbol in symbols)
+            {
+                var symbolTrades = allTrades.Where(t => t.Symbol == symbol).ToList();
+                result[symbol] = GetStatistics(symbolTrades);
+            }
+
+            return result;
+        }
+
         public bool ExportToCSV(string filename, DateTime? startDate = null, DateTime? endDate = null,
                                 string symbol = null, string strategy = null)
         {

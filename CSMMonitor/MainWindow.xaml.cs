@@ -294,6 +294,7 @@ namespace JcampForexTrader
                         AverageRText.Text = "0.00R";
 
                         StrategyPerformanceGrid.ItemsSource = null;
+                        PairPerformanceGrid.ItemsSource = null;
                     });
                     return;
                 }
@@ -365,6 +366,23 @@ namespace JcampForexTrader
                     }).ToList();
 
                     StrategyPerformanceGrid.ItemsSource = strategyDisplay;
+
+                    // Pair Performance Grid
+                    var pairStats = tradeHistoryManager.GetStatisticsBySymbol();
+                    if (ENABLE_VERBOSE_DEBUG)
+                        System.Diagnostics.Debug.WriteLine($"📈 Pair stats: {pairStats.Count} pairs");
+
+                    var pairDisplay = pairStats.Select(kvp => new
+                    {
+                        Pair = kvp.Key.Replace(".sml", "").Replace(".ecn", "").Replace(".raw", ""), // Clean broker suffix
+                        TotalTrades = kvp.Value.TotalTrades,
+                        WinRate = kvp.Value.WinRate.ToString("F1") + "%",
+                        AvgR = kvp.Value.AverageRMultiple.ToString("F2") + "R",
+                        TotalPnL = "$" + kvp.Value.TotalProfit.ToString("F2"),
+                        ProfitFactor = kvp.Value.ProfitFactor.ToString("F2")
+                    }).ToList();
+
+                    PairPerformanceGrid.ItemsSource = pairDisplay;
 
                     if (ENABLE_VERBOSE_DEBUG)
                         System.Diagnostics.Debug.WriteLine("✓ All performance metrics updated successfully");
@@ -1269,11 +1287,11 @@ namespace JcampForexTrader
                     var lines = File.ReadAllLines(posFile);
                     foreach (var line in lines)
                     {
-                        // NEW FORMAT: Ticket: 32815798 | EURUSD.sml BUY | Lots: 0.19 | Entry: 1.17912 | Current: 1.18288 | SL: 1.17412 | TP: 1.18912 | P&L: $71.44 | Time: 2026.01.23 15:30
+                        // NEW FORMAT: Ticket: 32965218 | AUDJPY BUY | Strategy: TREND_RIDER | Lots: 0.29 | Entry: 107.74800 | Current: 107.85400 | SL: 107.24800 | TP: 108.74800 | P&L: $20.08 | Time: 2026.01.29 22:43
                         if (line.StartsWith("Ticket:"))
                         {
                             string[] parts = line.Split('|');
-                            if (parts.Length >= 6) // At minimum we need ticket, symbol, lots, entry, current, P&L
+                            if (parts.Length >= 7) // At minimum we need ticket, symbol, strategy, lots, entry, current, P&L
                             {
                                 // Parse ticket: "Ticket: 32815798"
                                 string ticketStr = parts[0].Replace("Ticket:", "").Trim();
@@ -1283,20 +1301,23 @@ namespace JcampForexTrader
                                 string symbol = symbolTypeParts.Length > 0 ? symbolTypeParts[0] : "";
                                 string type = symbolTypeParts.Length > 1 ? symbolTypeParts[1] : "";
 
+                                // Parse strategy: "Strategy: TREND_RIDER"
+                                string strategy = parts[2].Replace("Strategy:", "").Trim();
+
                                 // Parse lots: "Lots: 0.19"
-                                string lotsStr = parts[2].Replace("Lots:", "").Trim();
+                                string lotsStr = parts[3].Replace("Lots:", "").Trim();
 
                                 // Parse entry: "Entry: 1.17912"
-                                string entryStr = parts[3].Replace("Entry:", "").Trim();
+                                string entryStr = parts[4].Replace("Entry:", "").Trim();
 
                                 // Parse current: "Current: 1.18288"
-                                string currentStr = parts[4].Replace("Current:", "").Trim();
+                                string currentStr = parts[5].Replace("Current:", "").Trim();
 
                                 // Parse SL (if exists): "SL: 1.17412"
                                 string slStr = "N/A";
-                                if (parts.Length >= 7 && parts[5].Contains("SL:"))
+                                if (parts.Length >= 8 && parts[6].Contains("SL:"))
                                 {
-                                    string slValue = parts[5].Replace("SL:", "").Trim();
+                                    string slValue = parts[6].Replace("SL:", "").Trim();
                                     if (double.TryParse(slValue, out double slDouble) && slDouble > 0)
                                         slStr = slValue;
                                 }
@@ -1310,9 +1331,9 @@ namespace JcampForexTrader
 
                                 // Parse TP (if exists): "TP: 1.18912"
                                 string tpStr = "N/A";
-                                if (parts.Length >= 7 && parts[6].Contains("TP:"))
+                                if (parts.Length >= 9 && parts[7].Contains("TP:"))
                                 {
-                                    string tpValue = parts[6].Replace("TP:", "").Trim();
+                                    string tpValue = parts[7].Replace("TP:", "").Trim();
                                     if (double.TryParse(tpValue, out double tp) && tp > 0)
                                         tpStr = tpValue;
                                 }
@@ -1325,14 +1346,14 @@ namespace JcampForexTrader
                                 }
 
                                 // Parse P&L: "P&L: $71.44"
-                                int pnlIndex = parts.Length >= 8 ? 7 : 5; // With or without SL/TP
+                                int pnlIndex = parts.Length >= 10 ? 8 : 6; // With or without SL/TP
                                 string pnlStr = parts[pnlIndex].Replace("P&L:", "").Replace("$", "").Trim();
 
                                 // Parse Time (if exists): "Time: 2026.01.23 15:30"
                                 string timeStr = "N/A";
-                                if (parts.Length >= 9 && parts[8].Contains("Time:"))
+                                if (parts.Length >= 11 && parts[9].Contains("Time:"))
                                 {
-                                    timeStr = parts[8].Replace("Time:", "").Trim();
+                                    timeStr = parts[9].Replace("Time:", "").Trim();
                                 }
                                 // TEMPORARY FALLBACK: Use "Estimated" if not in file
                                 else
@@ -1344,7 +1365,7 @@ namespace JcampForexTrader
                                 {
                                     Ticket = ticketStr,
                                     Symbol = symbol,
-                                    Strategy = "CSM", // Not in file, use default
+                                    Strategy = strategy,
                                     Type = type,
                                     EntryPrice = entryStr,
                                     CurrentPrice = currentStr,
@@ -2487,6 +2508,11 @@ namespace JcampForexTrader
                 return new SolidColorBrush(Color.FromRgb(0x7A, 0x5A, 0x4A)); // Orange - Low
             else
                 return new SolidColorBrush(Color.FromRgb(0x7A, 0x4A, 0x4A)); // Red - Very Low
+        }
+
+        private void ActivePositionsGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
         }
     }
 }
