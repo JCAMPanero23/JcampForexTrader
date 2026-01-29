@@ -1287,11 +1287,13 @@ namespace JcampForexTrader
                     var lines = File.ReadAllLines(posFile);
                     foreach (var line in lines)
                     {
-                        // NEW FORMAT: Ticket: 32965218 | AUDJPY BUY | Strategy: TREND_RIDER | Lots: 0.29 | Entry: 107.74800 | Current: 107.85400 | SL: 107.24800 | TP: 108.74800 | P&L: $20.08 | Time: 2026.01.29 22:43
+                        // AUTO-DETECT FORMAT:
+                        // NEW: Ticket: X | SYMBOL TYPE | Strategy: TREND_RIDER | Lots: ... (has Strategy field)
+                        // OLD: Ticket: X | SYMBOL TYPE | Lots: ... (no Strategy field)
                         if (line.StartsWith("Ticket:"))
                         {
                             string[] parts = line.Split('|');
-                            if (parts.Length >= 7) // At minimum we need ticket, symbol, strategy, lots, entry, current, P&L
+                            if (parts.Length >= 6) // Minimum fields needed
                             {
                                 // Parse ticket: "Ticket: 32815798"
                                 string ticketStr = parts[0].Replace("Ticket:", "").Trim();
@@ -1301,64 +1303,50 @@ namespace JcampForexTrader
                                 string symbol = symbolTypeParts.Length > 0 ? symbolTypeParts[0] : "";
                                 string type = symbolTypeParts.Length > 1 ? symbolTypeParts[1] : "";
 
-                                // Parse strategy: "Strategy: TREND_RIDER"
-                                string strategy = parts[2].Replace("Strategy:", "").Trim();
+                                // Detect format by checking if parts[2] contains "Strategy:"
+                                bool hasStrategyField = parts[2].Contains("Strategy:");
+                                int offset = hasStrategyField ? 1 : 0; // Offset for all subsequent fields
+
+                                // Parse strategy (if new format)
+                                string strategy = hasStrategyField ? parts[2].Replace("Strategy:", "").Trim() : "CSM";
 
                                 // Parse lots: "Lots: 0.19"
-                                string lotsStr = parts[3].Replace("Lots:", "").Trim();
+                                string lotsStr = parts[2 + offset].Replace("Lots:", "").Trim();
 
                                 // Parse entry: "Entry: 1.17912"
-                                string entryStr = parts[4].Replace("Entry:", "").Trim();
+                                string entryStr = parts[3 + offset].Replace("Entry:", "").Trim();
 
                                 // Parse current: "Current: 1.18288"
-                                string currentStr = parts[5].Replace("Current:", "").Trim();
+                                string currentStr = parts[4 + offset].Replace("Current:", "").Trim();
 
                                 // Parse SL (if exists): "SL: 1.17412"
                                 string slStr = "N/A";
-                                if (parts.Length >= 8 && parts[6].Contains("SL:"))
+                                if (parts.Length >= (6 + offset) && parts[5 + offset].Contains("SL:"))
                                 {
-                                    string slValue = parts[6].Replace("SL:", "").Trim();
+                                    string slValue = parts[5 + offset].Replace("SL:", "").Trim();
                                     if (double.TryParse(slValue, out double slDouble) && slDouble > 0)
                                         slStr = slValue;
-                                }
-                                // TEMPORARY FALLBACK: Estimate SL if not in file (for old format testing)
-                                else if (double.TryParse(entryStr, out double entryForSL))
-                                {
-                                    double slDistance = symbol.Contains("XAU") ? 50.0 : 0.0050; // $50 for Gold, 50 pips for Forex
-                                    double estimatedSL = type == "BUY" ? entryForSL - slDistance : entryForSL + slDistance;
-                                    slStr = estimatedSL.ToString("F5");
                                 }
 
                                 // Parse TP (if exists): "TP: 1.18912"
                                 string tpStr = "N/A";
-                                if (parts.Length >= 9 && parts[7].Contains("TP:"))
+                                if (parts.Length >= (7 + offset) && parts[6 + offset].Contains("TP:"))
                                 {
-                                    string tpValue = parts[7].Replace("TP:", "").Trim();
+                                    string tpValue = parts[6 + offset].Replace("TP:", "").Trim();
                                     if (double.TryParse(tpValue, out double tp) && tp > 0)
                                         tpStr = tpValue;
                                 }
-                                // TEMPORARY FALLBACK: Estimate TP if not in file (for old format testing)
-                                else if (double.TryParse(entryStr, out double entryForTP))
-                                {
-                                    double tpDistance = symbol.Contains("XAU") ? 100.0 : 0.0100; // $100 for Gold, 100 pips for Forex
-                                    double estimatedTP = type == "BUY" ? entryForTP + tpDistance : entryForTP - tpDistance;
-                                    tpStr = estimatedTP.ToString("F5");
-                                }
 
                                 // Parse P&L: "P&L: $71.44"
-                                int pnlIndex = parts.Length >= 10 ? 8 : 6; // With or without SL/TP
-                                string pnlStr = parts[pnlIndex].Replace("P&L:", "").Replace("$", "").Trim();
+                                string pnlStr = "0.00";
+                                if (parts.Length >= (8 + offset))
+                                    pnlStr = parts[7 + offset].Replace("P&L:", "").Replace("$", "").Trim();
 
                                 // Parse Time (if exists): "Time: 2026.01.23 15:30"
                                 string timeStr = "N/A";
-                                if (parts.Length >= 11 && parts[9].Contains("Time:"))
+                                if (parts.Length >= (9 + offset) && parts[8 + offset].Contains("Time:"))
                                 {
-                                    timeStr = parts[9].Replace("Time:", "").Trim();
-                                }
-                                // TEMPORARY FALLBACK: Use "Estimated" if not in file
-                                else
-                                {
-                                    timeStr = "Jan 23 23:58"; // Approximate from file timestamp
+                                    timeStr = parts[8 + offset].Replace("Time:", "").Trim();
                                 }
 
                                 var pos = new PositionDisplay
