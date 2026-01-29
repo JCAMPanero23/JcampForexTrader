@@ -203,6 +203,19 @@ namespace JcampForexTrader
 
             return new SolidColorBrush(Color.FromRgb(r, g, b));
         }
+
+        private string CalculateDuration(DateTime entryTime, DateTime exitTime)
+        {
+            TimeSpan duration = exitTime - entryTime;
+
+            if (duration.TotalDays >= 1)
+                return $"{(int)duration.TotalDays}d {duration.Hours}h";
+            else if (duration.TotalHours >= 1)
+                return $"{(int)duration.TotalHours}h {duration.Minutes}m";
+            else
+                return $"{(int)duration.TotalMinutes}m";
+        }
+
         private void InitializeTimer()
         {
             refreshTimer = new DispatcherTimer();
@@ -321,9 +334,11 @@ namespace JcampForexTrader
                         Symbol = t.Symbol,
                         Strategy = t.Strategy,
                         Type = t.Type,
+                        EntryPrice = t.EntryPrice.ToString("F5"),
+                        ExitPrice = t.ExitPrice.ToString("F5"),
                         PnL = t.DisplayProfit,
                         RMultiple = t.DisplayRMultiple,
-                        Risk = "2%"
+                        Duration = CalculateDuration(t.EntryTime, t.ExitTime)
                     }).ToList();
 
                     TradeHistoryGrid.ItemsSource = displayTrades;

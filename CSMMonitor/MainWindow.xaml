@@ -971,14 +971,20 @@
             <!-- Active Trades & History Tab (Combined) -->
             <TabItem Header="ACTIVE TRADES &amp; HISTORY" Style="{StaticResource TabStyle}">
                 <Grid Margin="10">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="150"/>
-                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.2*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-                    <!-- Active Positions List -->
-                    <Border Grid.Row="0" Background="#252526" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="4" Margin="0,0,0,6">
+                    <!-- LEFT COLUMN: Active Positions + Risk Management -->
+                    <Grid Grid.Column="0" Margin="0,0,6,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="180"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Active Positions List -->
+                        <Border Grid.Row="0" Background="#252526" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="4" Margin="0,0,0,6">
                         <Grid Margin="12">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -1010,38 +1016,8 @@
                         </Grid>
                     </Border>
 
-                    <!-- Recent Trade History -->
-                    <Border Grid.Row="1" Background="#252526" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="4" Margin="0,0,0,6">
-                        <Grid Margin="12">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-
-                            <TextBlock Grid.Row="0" Text="RECENT TRADE HISTORY" FontSize="13" FontWeight="Bold" Foreground="#E0E0E0" Margin="0,0,0,8"/>
-
-                            <DataGrid Grid.Row="1" x:Name="TradeHistoryGrid"
-                                     Style="{StaticResource DarkDataGridStyle}"
-                                     Margin="0,0,0,0">
-
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Date" Binding="{Binding Date}" Width="100"/>
-                                    <DataGridTextColumn Header="Symbol" Binding="{Binding Symbol}" Width="80"/>
-                                    <DataGridTextColumn Header="Strategy" Binding="{Binding Strategy}" Width="120"/>
-                                    <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="50"/>
-                                    <DataGridTextColumn Header="Entry" Binding="{Binding EntryPrice}" Width="80"/>
-                                    <DataGridTextColumn Header="Exit" Binding="{Binding ExitPrice}" Width="80"/>
-                                    <DataGridTextColumn Header="Profit" Binding="{Binding PnL}" Width="80"/>
-                                    <DataGridTextColumn Header="R" Binding="{Binding RMultiple}" Width="60"/>
-                                    <DataGridTextColumn Header="Risk" Binding="{Binding Risk}" Width="80"/>
-                                    <DataGridTextColumn Header="Duration" Binding="{Binding Duration}" Width="80"/>
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </Grid>
-                    </Border>
-
-                    <!-- Risk Dashboard -->
-                    <Border Grid.Row="2" Background="#252526" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="4">
+                        <!-- Risk Dashboard (LEFT COLUMN, BOTTOM) -->
+                        <Border Grid.Row="1" Background="#252526" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="4">
                         <Grid Margin="12,10">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -1050,7 +1026,7 @@
 
                             <TextBlock Grid.Row="0" Text="RISK MANAGEMENT" FontSize="13" FontWeight="Bold" Foreground="#E0E0E0" Margin="0,0,0,8"/>
 
-                            <UniformGrid Grid.Row="1" Columns="4" Rows="1">
+                            <UniformGrid Grid.Row="1" Columns="2" Rows="2">
                                 <StackPanel Margin="0,0,8,0">
                                     <TextBlock Text="Daily Risk Used" FontSize="13" Foreground="#E0E0E0" Margin="0,0,0,4"/>
                                     <ProgressBar x:Name="DailyRiskProgressBar" Style="{StaticResource DarkProgressBarStyle}" Minimum="0" Maximum="100" Value="0" Height="6"/>
@@ -1077,6 +1053,38 @@
                             </UniformGrid>
                         </Grid>
                     </Border>
+                    </Grid>
+                    <!-- End LEFT COLUMN -->
+
+                    <!-- RIGHT COLUMN: Recent Trade History -->
+                    <Border Grid.Column="1" Background="#252526" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="4">
+                        <Grid Margin="12">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="RECENT TRADE HISTORY" FontSize="13" FontWeight="Bold" Foreground="#E0E0E0" Margin="0,0,0,8"/>
+
+                            <DataGrid Grid.Row="1" x:Name="TradeHistoryGrid"
+                                     Style="{StaticResource DarkDataGridStyle}"
+                                     Margin="0,0,0,0">
+
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Date" Binding="{Binding Date}" Width="120"/>
+                                    <DataGridTextColumn Header="Symbol" Binding="{Binding Symbol}" Width="80"/>
+                                    <DataGridTextColumn Header="Strategy" Binding="{Binding Strategy}" Width="120"/>
+                                    <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="50"/>
+                                    <DataGridTextColumn Header="Entry" Binding="{Binding EntryPrice}" Width="80"/>
+                                    <DataGridTextColumn Header="Exit" Binding="{Binding ExitPrice}" Width="80"/>
+                                    <DataGridTextColumn Header="Profit" Binding="{Binding PnL}" Width="80"/>
+                                    <DataGridTextColumn Header="R" Binding="{Binding RMultiple}" Width="60"/>
+                                    <DataGridTextColumn Header="Duration" Binding="{Binding Duration}" Width="100"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </Border>
+                    <!-- End RIGHT COLUMN -->
                 </Grid>
             </TabItem>
 
