@@ -148,8 +148,13 @@ private:
       json += "  \"analysis\": \"" + data.analysis + "\",\n";
       json += "  \"csm_diff\": " + DoubleToString(data.csmDiff, 2) + ",\n";
       json += "  \"regime\": \"" + data.regime + "\",\n";
-      json += "  \"stop_loss_dollars\": " + DoubleToString(data.stopLossDollars, 2) + ",\n";  
-      json += "  \"take_profit_dollars\": " + DoubleToString(data.takeProfitDollars, 2) + ",\n";       
+
+      // Prevent NaN values in JSON (invalid JSON format)
+      double slDollars = (data.stopLossDollars != data.stopLossDollars) ? 0.0 : data.stopLossDollars; // NaN check: NaN != NaN
+      double tpDollars = (data.takeProfitDollars != data.takeProfitDollars) ? 0.0 : data.takeProfitDollars; // NaN check: NaN != NaN
+
+      json += "  \"stop_loss_dollars\": " + DoubleToString(slDollars, 2) + ",\n";
+      json += "  \"take_profit_dollars\": " + DoubleToString(tpDollars, 2) + ",\n";
       json += "  \"exported_at\": \"" + TimeToString(TimeCurrent(), TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "\"\n";
       json += "}";
 
