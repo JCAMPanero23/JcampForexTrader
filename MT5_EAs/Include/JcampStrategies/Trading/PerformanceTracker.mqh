@@ -649,6 +649,10 @@ private:
          Print("💰 Trade Closed: #", trade.ticket, " | ", trade.symbol, " ", trade.type,
                " | Profit: $", trade.profit, " | Pips: ", trade.pips);
       }
+
+      // ✅ REAL-TIME FIX: Export immediately for CSMMonitor real-time updates
+      ExportTradeHistory();
+      Print("📊 Trade history exported immediately (real-time update for monitor)");
    }
 
    //+------------------------------------------------------------------+
