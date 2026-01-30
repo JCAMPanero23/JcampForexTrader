@@ -292,13 +292,9 @@ private:
 
       int totalNow = HistoryDealsTotal();
 
-      // Only check if there are new deals
+      // Only check if there are new deals (silent return - no log spam)
       if(totalNow == lastHistoryTotal)
-      {
-         if(verboseLogging)
-            Print("🔄 No new deals (still ", totalNow, ")");
          return;
-      }
 
       Print("========================================");
       Print("🆕 NEW DEALS DETECTED!");

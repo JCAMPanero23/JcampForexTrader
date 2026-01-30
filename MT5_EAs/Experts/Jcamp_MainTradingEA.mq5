@@ -137,10 +137,6 @@ void OnTick()
    if(positionManager != NULL)
       positionManager.UpdatePositions();
 
-   // Always check for new closed trades (lightweight, returns early if no new deals)
-   if(performanceTracker != NULL)
-      performanceTracker.Update();
-
    // Check for new signals (throttled)
    datetime currentTime = TimeCurrent();
 
@@ -156,7 +152,10 @@ void OnTick()
       lastExport = currentTime;
 
       if(performanceTracker != NULL)
+      {
+         performanceTracker.Update();  // Check for closed trades before export
          performanceTracker.ExportAll();
+      }
    }
 }
 
