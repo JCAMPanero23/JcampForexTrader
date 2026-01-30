@@ -2,10 +2,15 @@
 //|                                      PerformanceTracker.mqh       |
 //|                                            JcampForexTrader       |
 //|                                                                   |
+//| ✅ FIX (Jan 30, 2026): Persistent Trade History                  |
+//| - JSON Import: Loads existing trades on startup                  |
+//| - Merge Strategy: Adds new MT5 trades to JSON (no overwrites)    |
+//| - Backup System: Creates backup before each export               |
+//| - Source of Truth: trade_history.json (not volatile MT5)         |
 //+------------------------------------------------------------------+
 #property copyright "JcampForexTrader"
 #property link      ""
-#property version   "1.00"
+#property version   "2.00"
 #property strict
 
 //+------------------------------------------------------------------+
@@ -54,7 +59,7 @@ public:
       lastHistoryCheck = 0;
       lastHistoryTotal = 0;
 
-      // Load existing trade history
+      // ✅ FIX: Load existing trade history (JSON import + MT5 scan)
       LoadTradeHistory();
    }
 
@@ -82,10 +87,14 @@ public:
 
    //+------------------------------------------------------------------+
    //| Export Trade History to JSON                                     |
+   //| ✅ FIX: Creates backup before overwriting                        |
    //+------------------------------------------------------------------+
    bool ExportTradeHistory()
    {
       string filename = exportFolder + "\\trade_history.json";
+
+      // ✅ Create backup before overwriting (safety net)
+      CreateBackup();
 
       // Build JSON
       string json = "{\n";
@@ -282,6 +291,227 @@ public:
    }
 
 private:
+   //+------------------------------------------------------------------+
+   //| Create Backup of Trade History JSON                              |
+   //+------------------------------------------------------------------+
+   void CreateBackup()
+   {
+      string sourceFile = exportFolder + "\\trade_history.json";
+      string backupFile = exportFolder + "\\trade_history_backup.json";
+
+      // Check if source exists
+      if(!FileIsExist(sourceFile))
+         return;
+
+      // Read source
+      int sourceHandle = FileOpen(sourceFile, FILE_READ|FILE_TXT|FILE_ANSI);
+      if(sourceHandle == INVALID_HANDLE)
+         return;
+
+      string content = "";
+      while(!FileIsEnding(sourceHandle))
+      {
+         content += FileReadString(sourceHandle);
+      }
+      FileClose(sourceHandle);
+
+      // Write backup
+      int backupHandle = FileOpen(backupFile, FILE_WRITE|FILE_TXT|FILE_ANSI);
+      if(backupHandle == INVALID_HANDLE)
+         return;
+
+      FileWriteString(backupHandle, content);
+      FileClose(backupHandle);
+
+      if(verboseLogging)
+         Print("💾 Backup created: trade_history_backup.json");
+   }
+
+   //+------------------------------------------------------------------+
+   //| Load Trade History from JSON (Persistent Storage)                |
+   //| Returns number of trades loaded from JSON file                   |
+   //+------------------------------------------------------------------+
+   int LoadTradeHistoryFromJSON()
+   {
+      string filename = exportFolder + "\\trade_history.json";
+
+      // Check if file exists
+      if(!FileIsExist(filename))
+      {
+         Print("ℹ️ No existing trade history JSON found (first run)");
+         return 0;
+      }
+
+      // Open file
+      int handle = FileOpen(filename, FILE_READ|FILE_TXT|FILE_ANSI);
+      if(handle == INVALID_HANDLE)
+      {
+         Print("❌ Failed to open trade_history.json for reading");
+         return 0;
+      }
+
+      // Read entire file
+      string jsonContent = "";
+      while(!FileIsEnding(handle))
+      {
+         jsonContent += FileReadString(handle);
+      }
+      FileClose(handle);
+
+      if(StringLen(jsonContent) == 0)
+      {
+         Print("⚠️ trade_history.json is empty");
+         return 0;
+      }
+
+      // Parse JSON manually (MQL5 doesn't have native JSON parser)
+      int tradesLoaded = ParseTradeHistoryJSON(jsonContent);
+
+      if(tradesLoaded > 0)
+         Print("✅ Loaded ", tradesLoaded, " trades from persistent JSON storage");
+      else
+         Print("⚠️ No trades found in JSON (may be corrupted)");
+
+      return tradesLoaded;
+   }
+
+   //+------------------------------------------------------------------+
+   //| Parse Trade History JSON Content                                 |
+   //| Simple JSON parser for our specific format                       |
+   //+------------------------------------------------------------------+
+   int ParseTradeHistoryJSON(string json)
+   {
+      int tradesCount = 0;
+      int pos = 0;
+
+      // Find "trades": [ array
+      int tradesArrayStart = StringFind(json, "\"trades\":");
+      if(tradesArrayStart < 0)
+         return 0;
+
+      pos = tradesArrayStart;
+
+      // Find each trade object { }
+      while(true)
+      {
+         // Find next opening brace after current position
+         int tradeStart = StringFind(json, "{", pos + 1);
+         if(tradeStart < 0)
+            break;
+
+         // Find matching closing brace
+         int tradeEnd = StringFind(json, "}", tradeStart);
+         if(tradeEnd < 0)
+            break;
+
+         // Extract trade object
+         string tradeJson = StringSubstr(json, tradeStart, tradeEnd - tradeStart + 1);
+
+         // Parse this trade
+         TradeRecord trade;
+         if(ParseSingleTrade(tradeJson, trade))
+         {
+            // Add to array
+            int size = ArraySize(closedTrades);
+            ArrayResize(closedTrades, size + 1);
+            closedTrades[size] = trade;
+            tradesCount++;
+         }
+
+         // Move to next trade
+         pos = tradeEnd;
+
+         // Check if we've reached the end of trades array
+         int nextComma = StringFind(json, ",", pos);
+         int arrayEnd = StringFind(json, "]", pos);
+         if(arrayEnd >= 0 && (nextComma < 0 || arrayEnd < nextComma))
+            break; // End of array
+      }
+
+      return tradesCount;
+   }
+
+   //+------------------------------------------------------------------+
+   //| Parse Single Trade from JSON Object                              |
+   //+------------------------------------------------------------------+
+   bool ParseSingleTrade(string tradeJson, TradeRecord &trade)
+   {
+      // Extract ticket (required)
+      trade.ticket = (ulong)ExtractJSONNumber(tradeJson, "ticket");
+      if(trade.ticket == 0)
+         return false; // Invalid trade
+
+      // Extract all fields
+      trade.symbol = ExtractJSONString(tradeJson, "symbol");
+      trade.type = ExtractJSONString(tradeJson, "type");
+      trade.openTime = StringToTime(ExtractJSONString(tradeJson, "open_time"));
+      trade.closeTime = StringToTime(ExtractJSONString(tradeJson, "close_time"));
+      trade.openPrice = ExtractJSONNumber(tradeJson, "open_price");
+      trade.closePrice = ExtractJSONNumber(tradeJson, "close_price");
+      trade.lots = ExtractJSONNumber(tradeJson, "lots");
+      trade.profit = ExtractJSONNumber(tradeJson, "profit");
+      trade.pips = ExtractJSONNumber(tradeJson, "pips");
+      trade.strategy = ExtractJSONString(tradeJson, "strategy");
+      trade.confidence = (int)ExtractJSONNumber(tradeJson, "confidence");
+      trade.comment = ExtractJSONString(tradeJson, "comment");
+
+      return true;
+   }
+
+   //+------------------------------------------------------------------+
+   //| Extract String Value from JSON                                   |
+   //+------------------------------------------------------------------+
+   string ExtractJSONString(string json, string key)
+   {
+      string searchPattern = "\"" + key + "\":";
+      int pos = StringFind(json, searchPattern);
+      if(pos < 0)
+         return "";
+
+      // Find opening quote of value
+      int valueStart = StringFind(json, "\"", pos + StringLen(searchPattern));
+      if(valueStart < 0)
+         return "";
+
+      // Find closing quote
+      int valueEnd = StringFind(json, "\"", valueStart + 1);
+      if(valueEnd < 0)
+         return "";
+
+      return StringSubstr(json, valueStart + 1, valueEnd - valueStart - 1);
+   }
+
+   //+------------------------------------------------------------------+
+   //| Extract Number Value from JSON                                   |
+   //+------------------------------------------------------------------+
+   double ExtractJSONNumber(string json, string key)
+   {
+      string searchPattern = "\"" + key + "\":";
+      int pos = StringFind(json, searchPattern);
+      if(pos < 0)
+         return 0;
+
+      // Skip the pattern
+      pos += StringLen(searchPattern);
+
+      // Skip whitespace
+      while(pos < StringLen(json) && (StringGetCharacter(json, pos) == ' ' || StringGetCharacter(json, pos) == '\n'))
+         pos++;
+
+      // Find end of number (comma, newline, or closing brace)
+      int valueEnd = pos;
+      while(valueEnd < StringLen(json))
+      {
+         ushort ch = StringGetCharacter(json, valueEnd);
+         if(ch == ',' || ch == '\n' || ch == '\r' || ch == '}' || ch == ' ')
+            break;
+         valueEnd++;
+      }
+
+      string numStr = StringSubstr(json, pos, valueEnd - pos);
+      return StringToDouble(numStr);
+   }
+
    //+------------------------------------------------------------------+
    //| Check for New Closed Trades                                      |
    //+------------------------------------------------------------------+
@@ -487,35 +717,37 @@ private:
       }
    }
      //+------------------------------------------------------------------+
-     //| Load ALL Historical Trades from MT5 Account History             |
-     //| Exports all closed trades on EA startup                          |
+     //| Load ALL Historical Trades (JSON + MT5 Merge Strategy)          |
+     //| ✅ FIX: Import from JSON first, then scan MT5 for new trades    |
      //+------------------------------------------------------------------+
      void LoadTradeHistory()
      {
-        // Select all history from start of 2020
+        Print("========================================");
+        Print("🔄 LOADING TRADE HISTORY (PERSISTENT + MT5)");
+        Print("========================================");
+
+        // ✅ STEP 1: Load from persistent JSON storage (source of truth)
+        int jsonTrades = LoadTradeHistoryFromJSON();
+        Print("📁 Loaded from JSON: ", jsonTrades, " trades");
+
+        // ✅ STEP 2: Scan MT5 for NEW trades not in JSON
         datetime startTime = D'2020.01.01';
         HistorySelect(startTime, TimeCurrent());
 
         int totalDeals = HistoryDealsTotal();
+        int newTradesFound = 0;
 
-        Print("========================================");
-        Print("🔍 TRADE HISTORY DIAGNOSTIC SCAN (DETAILED)");
-        Print("========================================");
-        Print("Total deals in MT5 history: ", totalDeals);
+        Print("🔍 Scanning MT5 history for new trades...");
+        Print("MT5 deals in history: ", totalDeals);
         Print("Filtering for Magic Number: ", magic);
         Print("========================================");
 
         // Diagnostic counters
-        int dealsWithCorrectMagic = 0;
-        int dealsWithWrongMagic = 0;
-        int positionExits = 0;
-        int positionEntries = 0;
         int invalidTickets = 0;
+        int positionExits = 0;
+        int alreadyRecorded = 0;
 
-        Print("📋 DETAILED DEAL SCAN (showing ALL deals):");
-        Print("----------------------------------------");
-
-        // Scan all deals for position exits with our magic number
+        // Scan MT5 for trades not already in our JSON
         for(int i = 0; i < totalDeals; i++)
         {
            ulong ticket = HistoryDealGetTicket(i);
@@ -525,74 +757,68 @@ private:
               continue;
            }
 
-           long dealMagic = HistoryDealGetInteger(ticket, DEAL_MAGIC);
            long dealEntry = HistoryDealGetInteger(ticket, DEAL_ENTRY);
-           string dealSymbol = HistoryDealGetString(ticket, DEAL_SYMBOL);
-           datetime dealTime = (datetime)HistoryDealGetInteger(ticket, DEAL_TIME);
-           double dealProfit = HistoryDealGetDouble(ticket, DEAL_PROFIT);
-           string entryType = (dealEntry == DEAL_ENTRY_IN ? "IN" : (dealEntry == DEAL_ENTRY_OUT ? "OUT" : "INOUT"));
-
-           // Print EVERY valid deal
-           Print("Deal #", i, ": Ticket=", ticket,
-                 " | Magic=", dealMagic, (dealMagic == magic ? " ✅" : " ❌"),
-                 " | Entry=", entryType,
-                 " | Symbol=", dealSymbol,
-                 " | Time=", TimeToString(dealTime, TIME_DATE|TIME_MINUTES),
-                 " | Profit=$", DoubleToString(dealProfit, 2));
 
            // Skip non-exits (we only track closed positions)
            if(dealEntry != DEAL_ENTRY_OUT)
-           {
-              if(dealMagic == magic)
-              {
-                 dealsWithCorrectMagic++;
-                 positionEntries++;
-              }
-              else
-              {
-                 dealsWithWrongMagic++;
-              }
               continue;
-           }
 
-           // ✅ FIX: For position exits, check the OPENING deal's magic, not closing deal magic
-           // Closing deals often have Magic=0 even when opened by EA with magic number
+           positionExits++;
+
+           // Get position ID and check opening magic
            ulong positionId = HistoryDealGetInteger(ticket, DEAL_POSITION_ID);
            long positionMagic = GetPositionOpeningMagic(positionId);
 
-           Print("   → Position ID: ", positionId, " | Opening Magic: ", positionMagic,
-                 (positionMagic == magic ? " ✅ OUR EA" : " ❌ NOT OURS"));
-
+           // Skip if not our EA
            if(positionMagic != magic)
-           {
-              dealsWithWrongMagic++;
               continue;
+
+           // ✅ KEY FIX: Check if this trade is already in our JSON
+           if(IsTradeAlreadyRecorded(positionId))
+           {
+              alreadyRecorded++;
+              continue; // Skip duplicates (already in persistent storage)
            }
 
-           dealsWithCorrectMagic++;
-           positionExits++;
-
-           // Record this closed trade
+           // This is a NEW trade from MT5 that's not in JSON yet
            RecordClosedTrade(ticket);
+           newTradesFound++;
+
+           if(verboseLogging)
+           {
+              Print("🆕 New trade found in MT5: Position #", positionId,
+                    " (not in JSON, adding now)");
+           }
         }
 
         Print("========================================");
-        Print("📊 DIAGNOSTIC SUMMARY:");
-        Print("  - Total deals scanned: ", totalDeals);
+        Print("📊 LOAD SUMMARY:");
+        Print("  - Loaded from JSON (persistent): ", jsonTrades);
+        Print("  - MT5 deals scanned: ", totalDeals);
         Print("  - Invalid tickets (skipped): ", invalidTickets);
-        Print("  - Valid deals: ", totalDeals - invalidTickets);
-        Print("  - Deals with magic ", magic, ": ", dealsWithCorrectMagic);
-        Print("  - Deals with other magic: ", dealsWithWrongMagic);
-        Print("  - Position entries (IN): ", positionEntries);
-        Print("  - Position exits (OUT): ", positionExits);
-        Print("  - Trades recorded: ", ArraySize(closedTrades));
-        Print("========================================");
-        Print("✅ Trade history scan complete");
+        Print("  - Position exits found: ", positionExits);
+        Print("  - Already recorded (in JSON): ", alreadyRecorded);
+        Print("  - NEW trades from MT5: ", newTradesFound);
+        Print("  - TOTAL trades now: ", ArraySize(closedTrades));
         Print("========================================");
 
-        // Export immediately for CSMMonitor
+        if(newTradesFound > 0)
+        {
+           Print("✅ ", newTradesFound, " new trades merged from MT5");
+        }
+
+        if(jsonTrades == 0 && newTradesFound == 0)
+        {
+           Print("ℹ️ No trade history found (clean account or first run)");
+        }
+
+        Print("✅ Trade history load complete");
+        Print("========================================");
+
+        // ✅ STEP 3: Export merged result to JSON (backup first)
         if(ArraySize(closedTrades) > 0)
         {
+           CreateBackup(); // Backup old JSON before overwriting
            ExportTradeHistory();
         }
 
