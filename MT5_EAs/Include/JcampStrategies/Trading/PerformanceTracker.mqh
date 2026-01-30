@@ -66,56 +66,7 @@ public:
    //+------------------------------------------------------------------+
    void Update()
    {
-      // Verify trade count every 5 minutes (safety check)
-      static datetime lastVerifyTime = 0;
-      if(TimeCurrent() - lastVerifyTime > 300) // 5 minutes
-      {
-         VerifyTradeCount();
-         lastVerifyTime = TimeCurrent();
-      }
-
       CheckForNewClosedTrades();
-   }
-
-   //+------------------------------------------------------------------+
-   //| Verify Trade Count - Reload if Missing Trades                    |
-   //+------------------------------------------------------------------+
-   void VerifyTradeCount()
-   {
-      // Count how many closed trades SHOULD be in history
-      HistorySelect(D'2020.01.01', TimeCurrent());
-      int totalDeals = HistoryDealsTotal();
-      int expectedTrades = 0;
-
-      for(int i = 0; i < totalDeals; i++)
-      {
-         ulong ticket = HistoryDealGetTicket(i);
-         if(ticket <= 0) continue;
-
-         long dealEntry = HistoryDealGetInteger(ticket, DEAL_ENTRY);
-         if(dealEntry != DEAL_ENTRY_OUT) continue; // Only count exit deals
-
-         // Check if this is OUR trade
-         ulong positionId = HistoryDealGetInteger(ticket, DEAL_POSITION_ID);
-         long openingMagic = GetPositionOpeningMagic(positionId);
-         if(openingMagic == magic)
-            expectedTrades++;
-      }
-
-      int actualTrades = ArraySize(closedTrades);
-
-      // If we're missing trades, reload the full history
-      if(actualTrades < expectedTrades)
-      {
-         Print("⚠ TRADE COUNT MISMATCH DETECTED!");
-         Print("  Expected: ", expectedTrades, " trades");
-         Print("  Actually have: ", actualTrades, " trades");
-         Print("  Missing: ", expectedTrades - actualTrades, " trades");
-         Print("🔄 Reloading full trade history...");
-
-         ArrayResize(closedTrades, 0); // Clear array
-         LoadTradeHistory(); // Reload everything
-      }
    }
 
    //+------------------------------------------------------------------+
