@@ -46,6 +46,7 @@ input int TrailingStartPips = 30;                      // Start trailing after X
 
 // --- Performance Export ---
 input string ExportFolder = "CSM_Data";                // Folder for performance data export
+input int TradeHistoryCheckIntervalSeconds = 5;        // Check for closed trades every X seconds (real-time detection)
 input int ExportIntervalSeconds = 300;                 // Export performance data every X seconds (5 min)
 
 // --- System Settings ---
@@ -61,6 +62,7 @@ PositionManager*    positionManager;
 PerformanceTracker* performanceTracker;
 
 datetime lastSignalCheck = 0;
+datetime lastTradeHistoryCheck = 0;
 datetime lastExport = 0;
 
 //+------------------------------------------------------------------+
@@ -76,6 +78,8 @@ int OnInit()
    Print("Risk Per Trade: ", RiskPercent, "%");
    Print("Min Confidence: ", MinConfidence);
    Print("Magic Number: ", MagicNumber);
+   Print("Trade History Check: Every ", TradeHistoryCheckIntervalSeconds, " seconds (real-time)");
+   Print("Performance Export: Every ", ExportIntervalSeconds, " seconds");
    Print("========================================");
 
    // Initialize modules
@@ -137,25 +141,31 @@ void OnTick()
    if(positionManager != NULL)
       positionManager.UpdatePositions();
 
-   // Check for new signals (throttled)
    datetime currentTime = TimeCurrent();
 
+   // ✅ NEW: Check for closed trades frequently (every 5 seconds for real-time detection)
+   if(currentTime - lastTradeHistoryCheck >= TradeHistoryCheckIntervalSeconds)
+   {
+      lastTradeHistoryCheck = currentTime;
+
+      if(performanceTracker != NULL)
+         performanceTracker.Update();  // Check for new closed trades (lightweight, returns early if none)
+   }
+
+   // Check for new signals (throttled)
    if(currentTime - lastSignalCheck >= SignalCheckIntervalSeconds)
    {
       lastSignalCheck = currentTime;
       CheckAndExecuteSignals();
    }
 
-   // Export performance data periodically
+   // Export performance data periodically (separate from checking for trades)
    if(currentTime - lastExport >= ExportIntervalSeconds)
    {
       lastExport = currentTime;
 
       if(performanceTracker != NULL)
-      {
-         performanceTracker.Update();  // Check for closed trades before export
-         performanceTracker.ExportAll();
-      }
+         performanceTracker.ExportAll();  // Export files (Update already called above)
    }
 }
 
