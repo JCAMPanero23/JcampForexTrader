@@ -102,6 +102,10 @@ int lastConfidence = 0;
 string lastStrategy = "";
 string lastRegimeStr = "";
 
+// Debug tracking
+datetime lastDebugPrint = 0;
+int tickCounter = 0;
+
 //+------------------------------------------------------------------+
 //| Expert initialization function                                    |
 //+------------------------------------------------------------------+
@@ -186,6 +190,21 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void OnTick()
 {
+   tickCounter++;
+
+   // Periodic status update (every 1 hour of backtest time)
+   if(VerboseLogging && (TimeCurrent() - lastDebugPrint >= 3600))
+   {
+      Print("========================================");
+      Print("⏰ HOURLY STATUS UPDATE");
+      Print("Time: ", TimeToString(TimeCurrent(), TIME_DATE|TIME_MINUTES));
+      Print("Regime: ", lastRegimeStr, " (checked every ", RegimeCheckMinutes, " min)");
+      Print("Trades: ", totalTrades, " | PF: ", (totalLoss > 0 ? DoubleToString(totalProfit/totalLoss, 2) : "N/A"));
+      Print("Ticks processed: ", tickCounter);
+      Print("========================================");
+      lastDebugPrint = TimeCurrent();
+   }
+
    // Check regime periodically (every RegimeCheckMinutes)
    if(TimeCurrent() - lastRegimeCheck >= RegimeCheckMinutes * 60)
    {
@@ -376,14 +395,7 @@ void CalculateCSM()
          csmStrengths[i] = 50.0;  // Neutral if no data
    }
 
-   if(VerboseLogging)
-   {
-      Print("💹 CSM: USD=", DoubleToString(csmStrengths[0], 1),
-            " EUR=", DoubleToString(csmStrengths[1], 1),
-            " GBP=", DoubleToString(csmStrengths[2], 1),
-            " JPY=", DoubleToString(csmStrengths[3], 1),
-            " XAU=", DoubleToString(csmStrengths[8], 1));
-   }
+   // CSM logging is done in EvaluateAndTrade() to avoid log spam
 }
 
 //+------------------------------------------------------------------+
