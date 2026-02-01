@@ -50,7 +50,10 @@ input int      TrailingStartPips = 30;      // Start trailing after profit (pips
 input group "=== Strategy Settings ==="
 input int      RegimeCheckMinutes = 15;     // Regime check interval (minutes)
 input bool     UseRangeRider = false;       // Enable RangeRider (needs range detection)
-input bool     VerboseLogging = false;      // Enable detailed logs
+
+input group "=== Debug Settings ==="
+input bool     ShowChartInfo = true;        // Show CSM/Regime on chart
+input bool     VerboseLogging = true;       // Enable detailed logs (CRITICAL for debugging!)
 
 input group "=== Backtest Settings ==="
 input int      MagicNumber = 999999;        // Magic number for backtest
@@ -92,6 +95,12 @@ datetime lastTradeTime = 0;
 
 // Trailing Stop Tracking
 double trailingHighWaterMark = 0;
+
+// Last signal data (for chart display)
+int lastSignal = 0;
+int lastConfidence = 0;
+string lastStrategy = "";
+string lastRegimeStr = "";
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                    |
@@ -151,6 +160,9 @@ int OnInit()
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason)
 {
+   // Clear chart display objects
+   ClearChartDisplay();
+
    Print("========================================");
    Print("📊 BACKTEST RESULTS SUMMARY");
    Print("========================================");
@@ -180,11 +192,15 @@ void OnTick()
       currentRegime = DetectMarketRegime(currentSymbol, PERIOD_H1, VerboseLogging);
       lastRegimeCheck = TimeCurrent();
 
+      lastRegimeStr = (currentRegime == REGIME_TRENDING) ? "TRENDING" :
+                      (currentRegime == REGIME_RANGING) ? "RANGING" : "TRANSITIONAL";
+
       if(VerboseLogging)
       {
-         string regimeStr = (currentRegime == REGIME_TRENDING) ? "TRENDING" :
-                           (currentRegime == REGIME_RANGING) ? "RANGING" : "TRANSITIONAL";
-         Print("🔍 Regime: ", regimeStr);
+         Print("========================================");
+         Print("🔍 Regime Detection: ", lastRegimeStr);
+         Print("Time: ", TimeToString(TimeCurrent(), TIME_DATE|TIME_MINUTES));
+         Print("========================================");
       }
    }
 
@@ -204,6 +220,9 @@ void OnTick()
       // Look for new trade opportunity
       EvaluateAndTrade();
    }
+
+   // Update chart display
+   UpdateChartDisplay();
 }
 
 //+------------------------------------------------------------------+
@@ -421,6 +440,12 @@ void EvaluateAndTrade()
    // Calculate CSM difference
    double csmDiff = baseStrength - quoteStrength;
 
+   if(VerboseLogging)
+   {
+      Print("💹 CSM for ", currentSymbol, ": Base=", DoubleToString(baseStrength, 1),
+            " Quote=", DoubleToString(quoteStrength, 1), " Diff=", DoubleToString(csmDiff, 1));
+   }
+
    // Prepare signal result
    StrategySignal result;
    result.signal = 0;
@@ -431,13 +456,20 @@ void EvaluateAndTrade()
    result.takeProfitDollars = 0;
 
    bool analyzed = false;
+   string strategyUsed = "NONE";
 
    if(isGoldSymbol)
    {
       // Gold: TrendRider only
       if(currentRegime == REGIME_TRENDING)
       {
+         strategyUsed = "TrendRider (Gold)";
          analyzed = trendRider.Analyze(currentSymbol, PERIOD_H1, csmDiff, result);
+      }
+      else
+      {
+         if(VerboseLogging)
+            Print("⏭️  Gold skipped - Regime not TRENDING (", lastRegimeStr, ")");
       }
    }
    else
@@ -446,33 +478,79 @@ void EvaluateAndTrade()
       if(UseRangeRider && currentRegime == REGIME_RANGING)
       {
          // RangeRider (requires range detection - currently disabled)
+         strategyUsed = "RangeRider";
          analyzed = rangeRider.Analyze(currentSymbol, PERIOD_H1, csmDiff, result);
       }
       else if(currentRegime == REGIME_TRENDING)
       {
          // TrendRider for trending markets
+         strategyUsed = "TrendRider";
          analyzed = trendRider.Analyze(currentSymbol, PERIOD_H1, csmDiff, result);
       }
-      // Note: TRANSITIONAL regime is skipped (no strategy)
+      else
+      {
+         if(VerboseLogging)
+            Print("⏭️  Skipped - Regime: ", lastRegimeStr, " (not suitable for trading)");
+      }
    }
 
+   if(VerboseLogging && analyzed)
+   {
+      Print("📊 Strategy: ", strategyUsed, " | Signal: ", (result.signal > 0 ? "BUY" : (result.signal < 0 ? "SELL" : "NEUTRAL")),
+            " | Confidence: ", result.confidence, " | Analysis: ", result.analysis);
+   }
+
+   // Store last signal for chart display
+   lastSignal = result.signal;
+   lastConfidence = result.confidence;
+   lastStrategy = result.strategyName;
+
    // Check if strategy returned valid signal
-   if(!analyzed || result.signal == 0 || result.confidence < MinConfidence)
+   if(!analyzed)
+   {
+      if(VerboseLogging)
+         Print("❌ No strategy analyzed (regime: ", lastRegimeStr, ")");
       return;
+   }
+
+   if(result.signal == 0)
+   {
+      if(VerboseLogging)
+         Print("⚪ Neutral signal - no trade");
+      return;
+   }
+
+   if(result.confidence < MinConfidence)
+   {
+      if(VerboseLogging)
+         Print("❌ Confidence too low: ", result.confidence, " < ", MinConfidence);
+      return;
+   }
 
    // Check spread
    if(!CheckSpread())
    {
       if(VerboseLogging)
-         Print("⚠️ Spread too high, skipping trade");
+      {
+         double spread = SymbolInfoInteger(currentSymbol, SYMBOL_SPREAD) * SymbolInfoDouble(currentSymbol, SYMBOL_POINT);
+         double spreadPips = spread / SymbolInfoDouble(currentSymbol, SYMBOL_POINT) / 10.0;
+         Print("⚠️ Spread too high: ", DoubleToString(spreadPips, 1), " pips");
+      }
       return;
    }
 
    // Prevent rapid-fire trades (min 1 hour between trades)
    if(TimeCurrent() - lastTradeTime < 3600)
+   {
+      if(VerboseLogging)
+         Print("⏰ Trade throttle - last trade was ", (TimeCurrent() - lastTradeTime) / 60, " min ago");
       return;
+   }
 
    // Execute trade
+   if(VerboseLogging)
+      Print("✅ All checks passed - executing trade!");
+
    ExecuteTrade(result.signal, result.confidence, result.strategyName);
 }
 
@@ -727,6 +805,87 @@ void ManagePosition()
          }
       }
    }
+}
+
+//+------------------------------------------------------------------+
+//| Update Chart Display (Top Left Corner)                          |
+//+------------------------------------------------------------------+
+void UpdateChartDisplay()
+{
+   if(!ShowChartInfo)
+      return;
+
+   int y_offset = 20;
+   int line_height = 18;
+   int x_pos = 10;
+
+   // CSM Display
+   string csmText = StringFormat("CSM: USD=%.1f EUR=%.1f GBP=%.1f JPY=%.1f XAU=%.1f",
+                                 csmStrengths[0], csmStrengths[1], csmStrengths[2],
+                                 csmStrengths[3], csmStrengths[8]);
+   CreateLabel("CSM_Display", csmText, x_pos, y_offset, clrWhite, 9);
+   y_offset += line_height;
+
+   // Regime Display
+   color regimeColor = (currentRegime == REGIME_TRENDING) ? clrLime :
+                       (currentRegime == REGIME_RANGING) ? clrYellow : clrOrange;
+   CreateLabel("Regime_Display", "Regime: " + lastRegimeStr, x_pos, y_offset, regimeColor, 9);
+   y_offset += line_height;
+
+   // Last Signal Display
+   if(lastConfidence > 0)
+   {
+      string signalText = StringFormat("Signal: %s | Confidence: %d | Strategy: %s",
+                                      (lastSignal > 0 ? "BUY" : (lastSignal < 0 ? "SELL" : "NEUTRAL")),
+                                      lastConfidence, lastStrategy);
+      color signalColor = (lastSignal > 0) ? clrLime : (lastSignal < 0) ? clrRed : clrGray;
+      CreateLabel("Signal_Display", signalText, x_pos, y_offset, signalColor, 9);
+   }
+   else
+   {
+      CreateLabel("Signal_Display", "Signal: WAITING...", x_pos, y_offset, clrGray, 9);
+   }
+   y_offset += line_height;
+
+   // Trades Display
+   string tradesText = StringFormat("Trades: %d | Winners: %d | PF: %s",
+                                   totalTrades, winningTrades,
+                                   (totalLoss > 0 ? DoubleToString(totalProfit / totalLoss, 2) : "N/A"));
+   CreateLabel("Trades_Display", tradesText, x_pos, y_offset, clrCyan, 9);
+
+   ChartRedraw();
+}
+
+//+------------------------------------------------------------------+
+//| Create or Update Label on Chart                                 |
+//+------------------------------------------------------------------+
+void CreateLabel(string name, string text, int x, int y, color clr, int fontSize)
+{
+   if(ObjectFind(0, name) < 0)
+   {
+      ObjectCreate(0, name, OBJ_LABEL, 0, 0, 0);
+      ObjectSetInteger(0, name, OBJPROP_CORNER, CORNER_LEFT_UPPER);
+      ObjectSetInteger(0, name, OBJPROP_ANCHOR, ANCHOR_LEFT_UPPER);
+      ObjectSetInteger(0, name, OBJPROP_XDISTANCE, x);
+      ObjectSetInteger(0, name, OBJPROP_YDISTANCE, y);
+      ObjectSetInteger(0, name, OBJPROP_FONTSIZE, fontSize);
+      ObjectSetString(0, name, OBJPROP_FONT, "Consolas");
+   }
+
+   ObjectSetString(0, name, OBJPROP_TEXT, text);
+   ObjectSetInteger(0, name, OBJPROP_COLOR, clr);
+}
+
+//+------------------------------------------------------------------+
+//| Clear Chart Display Objects                                     |
+//+------------------------------------------------------------------+
+void ClearChartDisplay()
+{
+   ObjectDelete(0, "CSM_Display");
+   ObjectDelete(0, "Regime_Display");
+   ObjectDelete(0, "Signal_Display");
+   ObjectDelete(0, "Trades_Display");
+   ChartRedraw();
 }
 
 //+------------------------------------------------------------------+
