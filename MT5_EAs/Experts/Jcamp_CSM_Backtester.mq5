@@ -51,6 +51,11 @@ input group "=== Strategy Settings ==="
 input int      RegimeCheckMinutes = 15;     // Regime check interval (minutes)
 input bool     UseRangeRider = false;       // Enable RangeRider (needs range detection)
 
+input group "=== Regime Detection Tuning ==="
+input double   TrendingThreshold = 55.0;    // Trending classification threshold (%)
+input double   RangingThreshold = 40.0;     // Ranging classification threshold (%)
+input double   MinADXForTrending = 20.0;    // Min ADX for strong trend (lowered from 30)
+
 input group "=== Debug Settings ==="
 input bool     ShowChartInfo = true;        // Show CSM/Regime on chart
 input bool     VerboseLogging = true;       // Enable detailed logs (CRITICAL for debugging!)
@@ -208,7 +213,7 @@ void OnTick()
    // Check regime periodically (every RegimeCheckMinutes)
    if(TimeCurrent() - lastRegimeCheck >= RegimeCheckMinutes * 60)
    {
-      currentRegime = DetectMarketRegime(currentSymbol, PERIOD_H1, VerboseLogging);
+      currentRegime = DetectMarketRegime(currentSymbol, TrendingThreshold, RangingThreshold, MinADXForTrending, VerboseLogging);
       lastRegimeCheck = TimeCurrent();
 
       lastRegimeStr = (currentRegime == REGIME_TRENDING) ? "TRENDING" :
