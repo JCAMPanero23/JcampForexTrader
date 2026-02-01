@@ -49,6 +49,7 @@ input int      TrailingStartPips = 30;      // Start trailing after profit (pips
 
 input group "=== Strategy Settings ==="
 input int      RegimeCheckMinutes = 15;     // Regime check interval (minutes)
+input bool     UseRangeRider = false;       // Enable RangeRider (needs range detection)
 input bool     VerboseLogging = false;      // Enable detailed logs
 
 input group "=== Backtest Settings ==="
@@ -122,9 +123,14 @@ int OnInit()
    // Initialize strategies (indicators and regime are functions, not classes)
    trendRider = new TrendRiderStrategy(MinConfidence, 15.0, VerboseLogging);
 
-   if(!isGoldSymbol)
+   if(!isGoldSymbol && UseRangeRider)
    {
       rangeRider = new RangeRiderStrategy(MinConfidence, VerboseLogging);
+      Print("RangeRider: ENABLED (requires range detection)");
+   }
+   else
+   {
+      Print("RangeRider: DISABLED (TrendRider only mode)");
    }
 
    // Initialize regime to TRANSITIONAL
@@ -437,14 +443,17 @@ void EvaluateAndTrade()
    else
    {
       // Other pairs: TrendRider or RangeRider based on regime
-      if(currentRegime == REGIME_TRENDING)
+      if(UseRangeRider && currentRegime == REGIME_RANGING)
       {
-         analyzed = trendRider.Analyze(currentSymbol, PERIOD_H1, csmDiff, result);
-      }
-      else if(currentRegime == REGIME_RANGING)
-      {
+         // RangeRider (requires range detection - currently disabled)
          analyzed = rangeRider.Analyze(currentSymbol, PERIOD_H1, csmDiff, result);
       }
+      else if(currentRegime == REGIME_TRENDING)
+      {
+         // TrendRider for trending markets
+         analyzed = trendRider.Analyze(currentSymbol, PERIOD_H1, csmDiff, result);
+      }
+      // Note: TRANSITIONAL regime is skipped (no strategy)
    }
 
    // Check if strategy returned valid signal
