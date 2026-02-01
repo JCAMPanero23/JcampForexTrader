@@ -9,7 +9,7 @@
 //| - Optimization ready (OnTester returns Profit Factor)            |
 //|                                                                   |
 //| USAGE:                                                            |
-//| 1. Attach to chart: EURUSD, GBPUSD, AUDJPY, or XAUUSD           |
+//| 1. Attach to M15 chart: EURUSD, GBPUSD, AUDJPY, or XAUUSD           |
 //| 2. Run Strategy Tester (Ctrl+R)                                  |
 //| 3. Set date range (e.g., 1 year: 2024.01.01 - 2025.01.01)       |
 //| 4. Enable "Every tick" mode for accuracy                         |
@@ -17,7 +17,8 @@
 //+------------------------------------------------------------------+
 #property copyright "JcampForexTrader"
 #property link      ""
-#property version   "2.00"
+#property version   "2.10"
+#property description "M15 Timeframe Optimized (H1 CSM + M15 Signals)"
 #property description "CSM Alpha Backtester - Modular Strategy Validation"
 #property strict
 
@@ -97,6 +98,10 @@ double peakBalance = 0;
 // Timing
 datetime lastRegimeCheck = 0;
 datetime lastTradeTime = 0;
+
+// Bar tracking for M15/H1 optimization (matches live system)
+datetime lastM15Bar = 0;
+datetime lastH1Bar = 0;
 
 // Trailing Stop Tracking
 double trailingHighWaterMark = 0;
@@ -191,7 +196,30 @@ void OnDeinit(const int reason)
 }
 
 //+------------------------------------------------------------------+
+//| Helper: Detect New Bar (M15 or H1)                              |
+//+------------------------------------------------------------------+
+bool isNewBar(ENUM_TIMEFRAMES tf)
+{
+   datetime currentBar = iTime(_Symbol, tf, 0);
+
+   if(tf == PERIOD_M15 && currentBar != lastM15Bar)
+   {
+      lastM15Bar = currentBar;
+      return true;
+   }
+
+   if(tf == PERIOD_H1 && currentBar != lastH1Bar)
+   {
+      lastH1Bar = currentBar;
+      return true;
+   }
+
+   return false;
+}
+
+//+------------------------------------------------------------------+
 //| Expert tick function                                              |
+//| OPTIMIZED: M15 signal evaluation + H1 CSM calculation           |
 //+------------------------------------------------------------------+
 void OnTick()
 {
@@ -210,44 +238,68 @@ void OnTick()
       lastDebugPrint = TimeCurrent();
    }
 
-   // Check regime periodically (every RegimeCheckMinutes)
-   if(TimeCurrent() - lastRegimeCheck >= RegimeCheckMinutes * 60)
+   //═══════════════════════════════════════════════════════════════
+   // STEP 1: Check for M15 new bar (matches live system frequency)
+   //═══════════════════════════════════════════════════════════════
+   if(isNewBar(PERIOD_M15))
    {
-      currentRegime = DetectMarketRegime(currentSymbol, TrendingThreshold, RangingThreshold, MinADXForTrending, VerboseLogging);
-      lastRegimeCheck = TimeCurrent();
-
-      lastRegimeStr = (currentRegime == REGIME_TRENDING) ? "TRENDING" :
-                      (currentRegime == REGIME_RANGING) ? "RANGING" : "TRANSITIONAL";
-
-      if(VerboseLogging)
+      //────────────────────────────────────────────────────────────
+      // STEP 2: Update CSM only on H1 bar close (expensive operation)
+      //────────────────────────────────────────────────────────────
+      if(isNewBar(PERIOD_H1))
       {
-         Print("========================================");
-         Print("🔍 Regime Detection: ", lastRegimeStr);
-         Print("Time: ", TimeToString(TimeCurrent(), TIME_DATE|TIME_MINUTES));
-         Print("========================================");
+         CalculateCSM();  // 9 currencies + synthetic Gold pairs
+
+         if(VerboseLogging)
+            Print("📊 CSM Updated (H1 bar close)");
+      }
+
+      //────────────────────────────────────────────────────────────
+      // STEP 3: Update regime check (every RegimeCheckMinutes)
+      //────────────────────────────────────────────────────────────
+      if(TimeCurrent() - lastRegimeCheck >= RegimeCheckMinutes * 60)
+      {
+         currentRegime = DetectMarketRegime(currentSymbol, TrendingThreshold, RangingThreshold, MinADXForTrending, VerboseLogging);
+         lastRegimeCheck = TimeCurrent();
+
+         lastRegimeStr = (currentRegime == REGIME_TRENDING) ? "TRENDING" :
+                         (currentRegime == REGIME_RANGING) ? "RANGING" : "TRANSITIONAL";
+
+         if(VerboseLogging)
+         {
+            Print("========================================");
+            Print("🔍 Regime Detection: ", lastRegimeStr);
+            Print("Time: ", TimeToString(TimeCurrent(), TIME_DATE|TIME_MINUTES));
+            Print("========================================");
+         }
+      }
+
+      //────────────────────────────────────────────────────────────
+      // STEP 4: Evaluate strategies every M15 bar (matches live system)
+      //────────────────────────────────────────────────────────────
+      bool hasPosition = HasOpenPosition();
+
+      if(!hasPosition)
+      {
+         // Look for new trade opportunity
+         EvaluateAndTrade();
       }
    }
 
-   // Calculate CSM (9 currencies)
-   CalculateCSM();
-
-   // Check if we have an open position
-   bool hasPosition = HasOpenPosition();
-
-   if(hasPosition)
+   //═══════════════════════════════════════════════════════════════
+   // STEP 5: Manage open positions on every tick (precise execution)
+   //═══════════════════════════════════════════════════════════════
+   if(HasOpenPosition())
    {
-      // Manage existing position
-      ManagePosition();
-   }
-   else
-   {
-      // Look for new trade opportunity
-      EvaluateAndTrade();
+      ManagePosition();  // Trailing stops need tick-level precision
    }
 
-   // Update chart display
+   //═══════════════════════════════════════════════════════════════
+   // STEP 6: Update chart display
+   //═══════════════════════════════════════════════════════════════
    UpdateChartDisplay();
 }
+
 
 //+------------------------------------------------------------------+
 //| Calculate CSM for 9 Currencies                                   |
