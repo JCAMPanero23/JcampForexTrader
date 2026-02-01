@@ -60,16 +60,12 @@ CTrade trade;
 string currentSymbol;
 bool isGoldSymbol;
 
-// Indicator Modules
-EmaCalculator* emaCalc;
-AtrCalculator* atrCalc;
-AdxCalculator* adxCalc;
-RsiCalculator* rsiCalc;
-
-// Strategy Modules
-RegimeDetector* regimeDetector;
+// Strategy Modules (indicators and regime are functions, not classes)
 TrendRiderStrategy* trendRider;
 RangeRiderStrategy* rangeRider;
+
+// Current regime (cached from DetectMarketRegime function)
+MARKET_REGIME currentRegime;
 
 // CSM Data (9 currencies)
 double csmStrengths[9];
@@ -122,60 +118,16 @@ int OnInit()
    trade.SetTypeFillingBySymbol(currentSymbol);
    trade.SetDeviationInPoints(10);
 
-   // Initialize indicator modules
-   emaCalc = new EmaCalculator();
-   if(!emaCalc.Init(currentSymbol, PERIOD_H1))
-   {
-      Print("ERROR: Failed to initialize EMA Calculator");
-      return INIT_FAILED;
-   }
-
-   atrCalc = new AtrCalculator();
-   if(!atrCalc.Init(currentSymbol, PERIOD_H1, 14))
-   {
-      Print("ERROR: Failed to initialize ATR Calculator");
-      return INIT_FAILED;
-   }
-
-   adxCalc = new AdxCalculator();
-   if(!adxCalc.Init(currentSymbol, PERIOD_H1, 14))
-   {
-      Print("ERROR: Failed to initialize ADX Calculator");
-      return INIT_FAILED;
-   }
-
-   rsiCalc = new RsiCalculator();
-   if(!rsiCalc.Init(currentSymbol, PERIOD_H1, 14))
-   {
-      Print("ERROR: Failed to initialize RSI Calculator");
-      return INIT_FAILED;
-   }
-
-   // Initialize regime detector
-   regimeDetector = new RegimeDetector();
-   if(!regimeDetector.Init(currentSymbol, PERIOD_H1))
-   {
-      Print("ERROR: Failed to initialize Regime Detector");
-      return INIT_FAILED;
-   }
-
-   // Initialize strategies
-   trendRider = new TrendRiderStrategy();
-   if(!trendRider.Init(currentSymbol, PERIOD_H1))
-   {
-      Print("ERROR: Failed to initialize TrendRider Strategy");
-      return INIT_FAILED;
-   }
+   // Initialize strategies (indicators and regime are functions, not classes)
+   trendRider = new TrendRiderStrategy(MinConfidence, 15.0, VerboseLogging);
 
    if(!isGoldSymbol)
    {
-      rangeRider = new RangeRiderStrategy();
-      if(!rangeRider.Init(currentSymbol, PERIOD_H1))
-      {
-         Print("ERROR: Failed to initialize RangeRider Strategy");
-         return INIT_FAILED;
-      }
+      rangeRider = new RangeRiderStrategy(MinConfidence, 15.0, VerboseLogging);
    }
+
+   // Initialize regime to TRANSITIONAL
+   currentRegime = REGIME_TRANSITIONAL;
 
    Print("✅ All modules initialized successfully");
    Print("========================================");
@@ -205,12 +157,7 @@ void OnDeinit(const int reason)
    Print("Max Drawdown: $", DoubleToString(maxDrawdown, 2));
    Print("========================================");
 
-   // Cleanup
-   if(emaCalc != NULL) delete emaCalc;
-   if(atrCalc != NULL) delete atrCalc;
-   if(adxCalc != NULL) delete adxCalc;
-   if(rsiCalc != NULL) delete rsiCalc;
-   if(regimeDetector != NULL) delete regimeDetector;
+   // Cleanup strategies only (indicators and regime are functions, not classes)
    if(trendRider != NULL) delete trendRider;
    if(rangeRider != NULL && !isGoldSymbol) delete rangeRider;
 }
@@ -220,22 +167,17 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void OnTick()
 {
-   // Update indicators (calculate latest values)
-   emaCalc.Update();
-   atrCalc.Update();
-   adxCalc.Update();
-   rsiCalc.Update();
-
    // Check regime periodically (every RegimeCheckMinutes)
    if(TimeCurrent() - lastRegimeCheck >= RegimeCheckMinutes * 60)
    {
-      regimeDetector.Update();
+      currentRegime = DetectMarketRegime(currentSymbol, PERIOD_H1, VerboseLogging);
       lastRegimeCheck = TimeCurrent();
 
       if(VerboseLogging)
       {
-         string regime = regimeDetector.GetCurrentRegimeString();
-         Print("🔍 Regime: ", regime);
+         string regimeStr = (currentRegime == REGIME_TRENDING) ? "TRENDING" :
+                           (currentRegime == REGIME_RANGING) ? "RANGING" : "TRANSITIONAL";
+         Print("🔍 Regime: ", regimeStr);
       }
    }
 
@@ -472,40 +414,43 @@ void EvaluateAndTrade()
    double baseStrength = 0, quoteStrength = 0;
    GetCSMForPair(baseStrength, quoteStrength);
 
-   // Get current regime
-   string currentRegime = regimeDetector.GetCurrentRegimeString();
+   // Calculate CSM difference
+   double csmDiff = baseStrength - quoteStrength;
 
-   // Evaluate strategies based on regime
-   int signal = 0;
-   int confidence = 0;
-   string strategyUsed = "";
+   // Prepare signal result
+   StrategySignal result;
+   result.signal = 0;
+   result.confidence = 0;
+   result.analysis = "";
+   result.strategyName = "";
+   result.stopLossDollars = 0;
+   result.takeProfitDollars = 0;
+
+   bool analyzed = false;
 
    if(isGoldSymbol)
    {
       // Gold: TrendRider only
-      if(currentRegime == "TRENDING")
+      if(currentRegime == REGIME_TRENDING)
       {
-         signal = trendRider.Evaluate(baseStrength, quoteStrength, confidence);
-         strategyUsed = "TREND_RIDER";
+         analyzed = trendRider.Analyze(currentSymbol, PERIOD_H1, csmDiff, result);
       }
    }
    else
    {
       // Other pairs: TrendRider or RangeRider based on regime
-      if(currentRegime == "TRENDING")
+      if(currentRegime == REGIME_TRENDING)
       {
-         signal = trendRider.Evaluate(baseStrength, quoteStrength, confidence);
-         strategyUsed = "TREND_RIDER";
+         analyzed = trendRider.Analyze(currentSymbol, PERIOD_H1, csmDiff, result);
       }
-      else if(currentRegime == "RANGING")
+      else if(currentRegime == REGIME_RANGING)
       {
-         signal = rangeRider.Evaluate(baseStrength, quoteStrength, confidence);
-         strategyUsed = "RANGE_RIDER";
+         analyzed = rangeRider.Analyze(currentSymbol, PERIOD_H1, csmDiff, result);
       }
    }
 
-   // Check if signal meets requirements
-   if(signal == 0 || confidence < MinConfidence)
+   // Check if strategy returned valid signal
+   if(!analyzed || result.signal == 0 || result.confidence < MinConfidence)
       return;
 
    // Check spread
@@ -521,7 +466,7 @@ void EvaluateAndTrade()
       return;
 
    // Execute trade
-   ExecuteTrade(signal, confidence, strategyUsed);
+   ExecuteTrade(result.signal, result.confidence, result.strategyName);
 }
 
 //+------------------------------------------------------------------+
