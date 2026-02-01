@@ -123,7 +123,7 @@ int OnInit()
 
    if(!isGoldSymbol)
    {
-      rangeRider = new RangeRiderStrategy(MinConfidence, 15.0, VerboseLogging);
+      rangeRider = new RangeRiderStrategy(MinConfidence, VerboseLogging);
    }
 
    // Initialize regime to TRANSITIONAL
@@ -210,9 +210,6 @@ void CalculateCSM()
       "EURUSD", "GBPUSD", "AUDUSD", "NZDUSD", "USDCAD", "USDCHF", "USDJPY",  // 7 USD pairs
       "EURGBP", "EURJPY", "GBPJPY", "AUDJPY", "CADJPY", "CHFJPY"            // 6 cross pairs
    };
-
-   // Synthetic Gold pairs (calculated from cross-rates)
-   string goldPairs[] = {"XAUEUR", "XAUJPY", "XAUGBP", "XAUAUD"};
 
    // Initialize scores (0-100 competitive scale)
    for(int i = 0; i < 9; i++)
