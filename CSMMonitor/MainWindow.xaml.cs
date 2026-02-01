@@ -57,6 +57,8 @@ namespace JcampForexTrader
             public double CsmDifferential { get; set; } = 0;
             public string CsmTrend { get; set; } = "";
             public string Analysis { get; set; } = "";  // CSM Alpha analysis breakdown: "EMA+30 ADX+20 RSI+5 CSM+25"
+            public string Regime { get; set; } = "UNKNOWN";  // TRENDING/RANGING/TRANSITIONAL
+            public bool DynamicRegimeTriggered { get; set; } = false;  // True if dynamic detection changed regime
         }
 
         public class PositionDisplay
@@ -628,10 +630,13 @@ namespace JcampForexTrader
                 int confidence = (int)(signal.confidence ?? 0);
                 string analysis = signal.analysis?.ToString() ?? "";
                 double csmDiff = (double)(signal.csm_diff ?? 0.0);
-                string regime = signal.regime?.ToString() ?? "";
+                string regime = signal.regime?.ToString() ?? "UNKNOWN";
+                bool dynamicRegimeTriggered = (bool)(signal.dynamic_regime_triggered ?? false);
 
                 // Store analysis breakdown for Signal Analysis tab
                 signalData.Analysis = analysis;
+                signalData.Regime = regime;
+                signalData.DynamicRegimeTriggered = dynamicRegimeTriggered;
 
                 // Map to display format based on strategy
                 if (strategy == "TREND_RIDER")
@@ -1165,6 +1170,28 @@ namespace JcampForexTrader
             }
             if (bestConf != null)
                 bestConf.Text = $"{signalData.BestConfidence}%";
+
+            // Update Regime Status
+            var regimeText = FindName($"{pair}_Regime") as TextBlock;
+            var dynamicText = FindName($"{pair}_Dynamic") as TextBlock;
+
+            if (regimeText != null)
+            {
+                regimeText.Text = signalData.Regime;
+                // Color-code regime: TRENDING = green, RANGING = blue, TRANSITIONAL = gray
+                regimeText.Foreground = signalData.Regime switch
+                {
+                    "TRENDING" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4EC9B0")),  // Cyan/Green
+                    "RANGING" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#569CD6")),   // Blue
+                    "TRANSITIONAL" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#888888")), // Gray
+                    _ => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#888888"))
+                };
+            }
+
+            if (dynamicText != null)
+            {
+                dynamicText.Text = signalData.DynamicRegimeTriggered ? "⚡DYNAMIC" : "";
+            }
 
             // ═══════════════════════════════════════════════════════════
             // UPDATE SIGNAL ANALYSIS TAB (2x2 Grid with _SA suffix)

@@ -23,8 +23,9 @@ struct SignalExportData
    string   analysis;        // Breakdown of scoring
    double   csmDiff;         // CSM difference used
    string   regime;          // TRENDING/RANGING/TRANSITIONAL
-   double   stopLossDollars;    // ATR-based stop loss (0 = use default) 
-   double   takeProfitDollars;  // ATR-based take profit (0 = use default) 
+   bool     dynamicRegimeTriggered;  // True if dynamic detection changed regime
+   double   stopLossDollars;    // ATR-based stop loss (0 = use default)
+   double   takeProfitDollars;  // ATR-based take profit (0 = use default)
 };
 
 //+------------------------------------------------------------------+
@@ -84,7 +85,8 @@ public:
    bool ExportSignalFromStrategy(string symbol,
                                   const StrategySignal &signal,
                                   double csmDiff,
-                                  string regime)
+                                  string regime,
+                                  bool dynamicRegimeTriggered = false)
    {
       SignalExportData data;
       data.symbol = symbol;
@@ -95,9 +97,10 @@ public:
       data.analysis = signal.analysis;
       data.csmDiff = csmDiff;
       data.regime = regime;
-      data.stopLossDollars = 0;  
-      data.takeProfitDollars = 0;  
-      
+      data.dynamicRegimeTriggered = dynamicRegimeTriggered;
+      data.stopLossDollars = 0;
+      data.takeProfitDollars = 0;
+
       return ExportSignal(data);
    }
 
@@ -115,6 +118,7 @@ public:
       data.analysis = "No valid signal";
       data.csmDiff = 0;
       data.regime = "UNKNOWN";
+      data.dynamicRegimeTriggered = false;
 
       return ExportSignal(data);
    }
@@ -148,6 +152,7 @@ private:
       json += "  \"analysis\": \"" + data.analysis + "\",\n";
       json += "  \"csm_diff\": " + DoubleToString(data.csmDiff, 2) + ",\n";
       json += "  \"regime\": \"" + data.regime + "\",\n";
+      json += "  \"dynamic_regime_triggered\": " + (data.dynamicRegimeTriggered ? "true" : "false") + ",\n";
 
       // Prevent NaN values in JSON (invalid JSON format)
       double slDollars = (data.stopLossDollars != data.stopLossDollars) ? 0.0 : data.stopLossDollars; // NaN check: NaN != NaN

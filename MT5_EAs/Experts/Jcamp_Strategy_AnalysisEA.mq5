@@ -138,6 +138,7 @@ int csm_update_interval = 3600;  // Update CSM hourly (matches BacktestEA)
 
 // Current regime
 MARKET_REGIME currentRegime = REGIME_TRANSITIONAL;
+bool dynamicRegimeTriggeredThisCycle = false;  // Track if dynamic regime detection changed regime this cycle
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                    |
@@ -352,6 +353,7 @@ void OnTick()
                         {
                             Print("⚡ DYNAMIC REGIME CHANGE: ", EnumToString(previousRegime),
                                   " → ", EnumToString(currentRegime));
+                            dynamicRegimeTriggeredThisCycle = true;  // Mark for export
                         }
                     }
                     // If weak ADX but regime is TRENDING, might need recheck
@@ -377,6 +379,7 @@ void OnTick()
                         {
                             Print("⚡ DYNAMIC REGIME CHANGE: ", EnumToString(previousRegime),
                                   " → ", EnumToString(currentRegime));
+                            dynamicRegimeTriggeredThisCycle = true;  // Mark for export
                         }
                     }
                 }
@@ -456,10 +459,14 @@ void OnTick()
     if(hasSignal && activeStrategy.IsValidSignal(signal))
     {
         signalExporter.ExportSignalFromStrategy(_Symbol, signal, csmDiff,
-                                                 EnumToString(currentRegime));
+                                                 EnumToString(currentRegime),
+                                                 dynamicRegimeTriggeredThisCycle);
 
         if(VerboseLogging)
             Print("✓ Valid signal exported");
+
+        // Reset dynamic regime flag after export
+        dynamicRegimeTriggeredThisCycle = false;
     }
     else
     {
@@ -468,6 +475,9 @@ void OnTick()
 
         if(VerboseLogging)
             Print("✗ No valid signal - signal file cleared");
+
+        // Reset dynamic regime flag
+        dynamicRegimeTriggeredThisCycle = false;
     }
 }
 

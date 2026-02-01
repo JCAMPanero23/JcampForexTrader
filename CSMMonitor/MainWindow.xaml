@@ -534,6 +534,7 @@
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
                                         <TextBlock Grid.Row="0" Text="EURUSD" FontSize="18" FontWeight="Bold"
                                                   Foreground="White" FontFamily="Segoe UI Semibold"/>
@@ -543,6 +544,12 @@
                                             <TextBlock x:Name="EURUSD_Best_Conf" Text="0%" FontSize="18" FontWeight="Bold"
                                                       Foreground="#FFFFFF" HorizontalAlignment="Right" FontFamily="Consolas"/>
                                         </Grid>
+                                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,4,0,0">
+                                            <TextBlock x:Name="EURUSD_Regime" Text="UNKNOWN" FontSize="11" FontWeight="SemiBold"
+                                                      Foreground="#888888" FontFamily="Consolas"/>
+                                            <TextBlock x:Name="EURUSD_Dynamic" Text="" FontSize="11" FontWeight="Bold"
+                                                      Foreground="#FFD700" Margin="6,0,0,0" FontFamily="Consolas"/>
+                                        </StackPanel>
                                     </Grid>
                                 </Border>
 
@@ -554,6 +561,7 @@
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
                                         <TextBlock Grid.Row="0" Text="GBPUSD" FontSize="18" FontWeight="Bold"
                                                   Foreground="White" FontFamily="Segoe UI Semibold"/>
@@ -563,6 +571,12 @@
                                             <TextBlock x:Name="GBPUSD_Best_Conf" Text="0%" FontSize="18" FontWeight="Bold"
                                                       Foreground="#FFFFFF" HorizontalAlignment="Right" FontFamily="Consolas"/>
                                         </Grid>
+                                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,4,0,0">
+                                            <TextBlock x:Name="GBPUSD_Regime" Text="UNKNOWN" FontSize="11" FontWeight="SemiBold"
+                                                      Foreground="#888888" FontFamily="Consolas"/>
+                                            <TextBlock x:Name="GBPUSD_Dynamic" Text="" FontSize="11" FontWeight="Bold"
+                                                      Foreground="#FFD700" Margin="6,0,0,0" FontFamily="Consolas"/>
+                                        </StackPanel>
                                     </Grid>
                                 </Border>
 
@@ -574,6 +588,7 @@
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
                                         <TextBlock Grid.Row="0" Text="AUDJPY" FontSize="18" FontWeight="Bold"
                                                   Foreground="White" FontFamily="Segoe UI Semibold"/>
@@ -583,6 +598,12 @@
                                             <TextBlock x:Name="AUDJPY_Best_Conf" Text="0%" FontSize="18" FontWeight="Bold"
                                                       Foreground="#FFFFFF" HorizontalAlignment="Right" FontFamily="Consolas"/>
                                         </Grid>
+                                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,4,0,0">
+                                            <TextBlock x:Name="AUDJPY_Regime" Text="UNKNOWN" FontSize="11" FontWeight="SemiBold"
+                                                      Foreground="#888888" FontFamily="Consolas"/>
+                                            <TextBlock x:Name="AUDJPY_Dynamic" Text="" FontSize="11" FontWeight="Bold"
+                                                      Foreground="#FFD700" Margin="6,0,0,0" FontFamily="Consolas"/>
+                                        </StackPanel>
                                     </Grid>
                                 </Border>
 
@@ -592,6 +613,7 @@
                                        MouseLeftButtonDown="AssetCard_Click" Tag="XAUUSD">
                                     <Grid>
                                         <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
@@ -606,6 +628,12 @@
                                             <TextBlock x:Name="XAUUSD_Best_Conf" Text="0%" FontSize="18" FontWeight="Bold"
                                                       Foreground="#FFFFFF" HorizontalAlignment="Right" FontFamily="Consolas"/>
                                         </Grid>
+                                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,4,0,0">
+                                            <TextBlock x:Name="XAUUSD_Regime" Text="UNKNOWN" FontSize="11" FontWeight="SemiBold"
+                                                      Foreground="#888888" FontFamily="Consolas"/>
+                                            <TextBlock x:Name="XAUUSD_Dynamic" Text="" FontSize="11" FontWeight="Bold"
+                                                      Foreground="#FFD700" Margin="6,0,0,0" FontFamily="Consolas"/>
+                                        </StackPanel>
                                     </Grid>
                                 </Border>
                             </Grid>
