@@ -278,13 +278,14 @@ void OpenTestTrade(string symbol, ENUM_ORDER_TYPE orderType)
     request.type_filling = ORDER_FILLING_FOK;
 
     // Try ORDER_FILLING_IOC if FOK fails
+    bool success = false;
     if(!OrderSend(request, result))
     {
         request.type_filling = ORDER_FILLING_IOC;
         if(!OrderSend(request, result))
         {
             request.type_filling = ORDER_FILLING_RETURN;
-            OrderSend(request, result);
+            success = OrderSend(request, result);
         }
     }
 
@@ -369,13 +370,14 @@ void ClosePosition(ulong ticket)
     request.type_filling = ORDER_FILLING_FOK;
 
     // Try ORDER_FILLING_IOC if FOK fails
+    bool success = false;
     if(!OrderSend(request, result))
     {
         request.type_filling = ORDER_FILLING_IOC;
         if(!OrderSend(request, result))
         {
             request.type_filling = ORDER_FILLING_RETURN;
-            OrderSend(request, result);
+            success = OrderSend(request, result);
         }
     }
 
@@ -437,7 +439,6 @@ string GetErrorDescription(uint errorCode)
         case TRADE_RETCODE_INVALID_STOPS: return "Invalid stops";
         case TRADE_RETCODE_TRADE_DISABLED: return "Trade disabled";
         case TRADE_RETCODE_MARKET_CLOSED: return "Market closed";
-        case TRADE_RETCODE_NO_CONNECTION: return "No connection";
         default: return "Unknown error";
     }
 }
