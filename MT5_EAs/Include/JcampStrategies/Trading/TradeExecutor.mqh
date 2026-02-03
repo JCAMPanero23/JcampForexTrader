@@ -297,11 +297,12 @@ public:
    //+------------------------------------------------------------------+
    double GetSpreadMultiplier(string symbol)
    {
-      // Remove broker suffix for matching (e.g., EURUSD.sml → EURUSD)
+      // Remove broker suffix for matching (e.g., EURUSD.sml → EURUSD, EURUSD.r → EURUSD)
       string cleanSymbol = symbol;
       StringReplace(cleanSymbol, ".sml", "");
       StringReplace(cleanSymbol, ".ecn", "");
       StringReplace(cleanSymbol, ".raw", "");
+      StringReplace(cleanSymbol, ".r", "");    // FP Markets Raw account
 
       // Find matching symbol multiplier
       for(int i = 0; i < ArraySize(spreadMultipliers); i++)

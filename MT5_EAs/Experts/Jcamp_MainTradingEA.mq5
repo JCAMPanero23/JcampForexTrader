@@ -21,7 +21,7 @@
 //+------------------------------------------------------------------+
 
 // --- Symbol Configuration ---
-input string TradedSymbols = "EURUSD.sml,GBPUSD.sml,AUDJPY,XAUUSD.sml";  // ✅ CSM Alpha: 4 assets (with broker suffix)
+input string TradedSymbols = "EURUSD.r,GBPUSD.r,AUDJPY.r,XAUUSD.r";  // ✅ CSM Alpha: 4 assets (FP Markets Raw account suffix)
 
 // --- Signal Settings ---
 input string SignalFolder = "CSM_Signals";             // Folder containing signal files

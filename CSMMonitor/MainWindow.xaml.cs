@@ -471,19 +471,19 @@ namespace JcampForexTrader
             // Signal files are in CSM_Signals folder (sibling to CSM_Data)
             string signalPath = csmDataPath.Replace("CSM_Data", "CSM_Signals");
 
-            // CSM Alpha: Handle broker suffix (.sml) for some symbols
+            // CSM Alpha: Handle broker suffix (.r for FP Markets Raw account)
             var pairMappings = new Dictionary<string, string>
             {
-                ["EURUSD"] = "EURUSD.sml",
-                ["GBPUSD"] = "GBPUSD.sml",
-                ["AUDJPY"] = "AUDJPY",
-                ["XAUUSD"] = "XAUUSD.sml"
+                ["EURUSD"] = "EURUSD.r",
+                ["GBPUSD"] = "GBPUSD.r",
+                ["AUDJPY"] = "AUDJPY.r",
+                ["XAUUSD"] = "XAUUSD.r"
             };
 
             foreach (var kvp in pairMappings)
             {
                 string displayPair = kvp.Key;      // EURUSD (for display)
-                string filePair = kvp.Value;        // EURUSD.sml (for file name)
+                string filePair = kvp.Value;        // EURUSD.r (for file name)
 
                 // Look for JSON file first, fallback to TXT if not found
                 string jsonFile = IOPath.Combine(signalPath, $"{filePair}_signals.json");
@@ -1780,13 +1780,13 @@ namespace JcampForexTrader
                 // CSM Alpha: Signal files are in CSM_Signals folder (sibling to CSM_Data)
                 string signalPath = pathToValidate.Replace("CSM_Data", "CSM_Signals");
 
-                // CSM Alpha: 4 assets with broker suffix mapping
+                // CSM Alpha: 4 assets with broker suffix mapping (.r for FP Markets Raw)
                 var pairMappings = new Dictionary<string, string>
                 {
-                    ["EURUSD"] = "EURUSD.sml",
-                    ["GBPUSD"] = "GBPUSD.sml",
-                    ["AUDJPY"] = "AUDJPY",
-                    ["XAUUSD"] = "XAUUSD.sml"
+                    ["EURUSD"] = "EURUSD.r",
+                    ["GBPUSD"] = "GBPUSD.r",
+                    ["AUDJPY"] = "AUDJPY.r",
+                    ["XAUUSD"] = "XAUUSD.r"
                 };
 
                 int jsonFilesFound = 0;
