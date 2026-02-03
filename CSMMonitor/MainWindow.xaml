@@ -1038,7 +1038,7 @@
                                         <DataGridTextColumn Header="PnL" Binding="{Binding PnL}" Width="80"/>
                                         <DataGridTextColumn Header="R-Multiple" Binding="{Binding RMultiple}" Width="80"/>
                                         <DataGridTextColumn Header="Risk Amount" Binding="{Binding Risk}" Width="80"/>
-                                        <DataGridTextColumn Header="Entry Time" Binding="{Binding EntryTime}" Width="120"/>
+                                        <DataGridTextColumn Header="Entry Time (UTC+2)" Binding="{Binding EntryTime}" Width="140"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </Grid>
@@ -1099,7 +1099,7 @@
                                      Margin="0,0,0,0">
 
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Date" Binding="{Binding Date}" Width="120"/>
+                                    <DataGridTextColumn Header="Date (UTC+2)" Binding="{Binding Date}" Width="140"/>
                                     <DataGridTextColumn Header="Symbol" Binding="{Binding Symbol}" Width="80"/>
                                     <DataGridTextColumn Header="Strategy" Binding="{Binding Strategy}" Width="120"/>
                                     <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="50"/>
