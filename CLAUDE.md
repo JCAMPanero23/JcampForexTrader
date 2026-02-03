@@ -2,7 +2,7 @@
 
 **Purpose:** Single authoritative reference for Claude Code
 **Project:** CSM Alpha - 4-Asset Trading System with Gold
-**Last Updated:** February 3, 2026 (Session 9 Complete - Gold Spread Optimization)
+**Last Updated:** February 4, 2026 (Session 10 Complete - Architecture Documentation)
 
 ---
 
@@ -868,6 +868,79 @@ Flow: Test strategies in CSM → Refine in backtesting → Deploy live
 - [ ] Monitor first 10 Gold trades
 - [ ] Verify no Asian session executions (22:00-09:00)
 - [ ] Validate spreads < 30 pips only
+
+### Session 10: Dashboard Issues & Architecture Discovery (February 4, 2026)
+**Duration:** ~3 hours | **Status:** ✅ Complete (Documentation Phase)
+
+**Issues Investigated:**
+1. ✅ **CSMMonitor Position Details Not Displaying**
+   - Dashboard showed "NO POSITION" despite active AUDJPY trade
+   - Root cause: Broker suffix `.r` not stripped in position matching
+   - Fix: Added `.Replace(".r", "")` to position matching logic
+   - Status: ✅ Fixed & deployed (commit: `8577f95`)
+
+2. ✅ **CSM_AnalysisEA Update Visibility**
+   - No logging to verify CSM updates happening
+   - Added comprehensive debugging and initialization logging
+   - First 3 ticks logged, update cycle visibility enhanced
+   - Status: ✅ Fixed & deployed (commit: `83d9ea5`)
+
+3. ✅ **Regime Showing as "UNKNOWN"**
+   - Dashboard couldn't show WHY pairs not tradable
+   - Identified as symptom of deeper architectural issue
+   - Led to discovery of CSM gatekeeper confusion
+
+**Critical Discovery: CSM Gatekeeper Architecture**
+- **Issue:** `MinCSMDifferential` parameter under "TREND RIDER STRATEGY" input group
+- **Problem:** Appears strategy-specific instead of global primary gatekeeper
+- **Impact:** AUDJPY trading with 8.49 CSM diff (below 15.0 threshold) - should be blocked!
+- **Root Cause:** CSM check happening too late OR being bypassed
+- **Correct Flow:**
+  ```
+  1. CSM Gate (PRIMARY) → CSM diff ≥ 15.0?
+     ├─ NO → NOT_TRADABLE ❌ (stop here)
+     └─ YES → Continue ✓
+  2. Regime Detection → TRENDING/RANGING/TRANSITIONAL?
+     ├─ TRANSITIONAL → NOT_TRADABLE ❌
+     ├─ TRENDING → Use TrendRider
+     └─ RANGING → Use RangeRider (not Gold)
+  3. Strategy Execution → BUY/SELL/HOLD
+  ```
+
+**Documentation Created:**
+- ✅ **CSM_GATEKEEPER_ARCHITECTURE.md** (comprehensive architecture doc)
+  - Defines correct signal generation flow
+  - Clarifies NOT_TRADABLE vs HOLD distinction
+  - Provides implementation requirements for next session
+  - Includes testing checklist and color-coding guide
+
+**Signal Type Definitions (Clarified):**
+- **NOT_TRADABLE** 🟠 (Orange): System blocking - CSM failed OR wrong regime
+- **HOLD** ⚪ (Gray): System allowing but waiting - strategy ran, conditions not met
+- **BUY/SELL** 🟢🔴 (Green/Red): Valid tradable signal
+
+**Commits (Session 10):**
+- `8577f95` - CSMMonitor broker suffix fix (.r support)
+- `83d9ea5` - CSM_AnalysisEA debugging enhancements
+
+**Design Decision:**
+- Reverted premature regime export changes (commit `969b885`)
+- Reset to clean slate for proper CSM gatekeeper refactoring
+- Architecture documented comprehensively before implementation
+
+**Next Session Tasks (Session 11 - CSM Gatekeeper Refactoring):**
+1. [ ] Move `MinCSMDifferential` to "CSM GATEKEEPER" input group
+2. [ ] Implement CSM check BEFORE regime detection
+3. [ ] Export "NOT_TRADABLE" for:
+   - CSM diff < 15.0
+   - TRANSITIONAL regime
+   - Gold in RANGING market
+4. [ ] Update SignalExporter to handle NOT_TRADABLE properly
+5. [ ] Update CSMMonitor color coding (orange for NOT_TRADABLE)
+6. [ ] Test all 4 pairs with different CSM/regime combinations
+7. [ ] Validate AUDJPY no longer trades with CSM diff < 15.0
+
+**Status:** Architecture understood and documented, ready for implementation
 
 ---
 
