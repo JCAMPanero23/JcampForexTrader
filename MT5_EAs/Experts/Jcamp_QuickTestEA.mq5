@@ -24,10 +24,8 @@ input bool   AlternateBuySell = true;                   // Alternate BUY/SELL di
 
 input group "═══ POSITION SETTINGS ═══"
 input double TestLotSize = 0.01;                        // Lot size (micro lots recommended)
-input int    StopLossPips = 30;                         // Stop loss in pips
-input int    TakeProfitPips = 60;                       // Take profit in pips (2R)
 input bool   EnableAutoClose = true;                    // Auto-close positions
-input int    AutoCloseMinutes = 3;                      // Auto-close after X minutes
+input int    AutoCloseMinutes = 3;                      // Auto-close after X minutes (no SL/TP)
 
 input group "═══ SAFETY SETTINGS ═══"
 input int    MaxTestPositions = 4;                      // Max total test positions
@@ -48,6 +46,7 @@ bool lastTradeWasBuy = false;
 // Timing
 datetime lastTradeTime = 0;
 datetime lastAutoCloseCheck = 0;
+datetime lastPositionExport = 0;
 
 // Performance tracker
 PerformanceTracker* perfTracker = NULL;
@@ -74,7 +73,7 @@ int OnInit()
     Print("  - Test All Symbols: ", TestAllSymbols ? "YES" : "NO (current symbol only)");
     Print("  - Alternate Buy/Sell: ", AlternateBuySell ? "YES" : "NO");
     Print("  - Lot Size: ", TestLotSize);
-    Print("  - SL/TP: ", StopLossPips, "/", TakeProfitPips, " pips");
+    Print("  - SL/TP: NONE (using auto-close instead)");
     Print("  - Auto-close: ", EnableAutoClose ? "YES (" : "NO", EnableAutoClose ? IntegerToString(AutoCloseMinutes) + " min)" : "");
     Print("");
     Print("🚨 WARNING: This EA will automatically trade every ", TestIntervalMinutes, " minutes!");
@@ -118,9 +117,18 @@ void OnTick()
         lastAutoCloseCheck = TimeCurrent();
     }
 
-    // Update performance tracker (exports history)
+    // Update performance tracker (check for closed trades)
     if(perfTracker != NULL)
         perfTracker.Update();
+
+    // ✅ NEW: Export positions in REAL-TIME (every 5 seconds for CSMMonitor)
+    if(TimeCurrent() - lastPositionExport >= 5)
+    {
+        lastPositionExport = TimeCurrent();
+
+        if(perfTracker != NULL)
+            perfTracker.ExportOpenPositions();  // Real-time position updates
+    }
 }
 
 //+------------------------------------------------------------------+
@@ -201,11 +209,6 @@ ENUM_ORDER_TYPE DetermineTradeDirection()
 //+------------------------------------------------------------------+
 void OpenTestTrade(string symbol, ENUM_ORDER_TYPE orderType)
 {
-    // Get symbol info
-    double point = SymbolInfoDouble(symbol, SYMBOL_POINT);
-    int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
-    double tickSize = SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_SIZE);
-
     // Adjust for broker suffix
     string tradingSymbol = symbol;
     if(!SymbolSelect(symbol, true))
@@ -218,6 +221,10 @@ void OpenTestTrade(string symbol, ENUM_ORDER_TYPE orderType)
             return;
         }
     }
+
+    // Get symbol info (AFTER we have correct symbol name)
+    double point = SymbolInfoDouble(tradingSymbol, SYMBOL_POINT);
+    int digits = (int)SymbolInfoInteger(tradingSymbol, SYMBOL_DIGITS);
 
     // Get current price
     double price;
@@ -232,30 +239,16 @@ void OpenTestTrade(string symbol, ENUM_ORDER_TYPE orderType)
         return;
     }
 
-    // Calculate SL/TP
-    double pipSize = point;
-    if(digits == 3 || digits == 5)
-        pipSize = point * 10;  // Account for 5-digit brokers
-
-    // Special handling for Gold (XAUUSD)
-    double sl, tp;
-    if(StringFind(symbol, "XAU") >= 0)
-    {
-        // Gold: dollar-based stops
-        sl = orderType == ORDER_TYPE_BUY ? price - StopLossPips : price + StopLossPips;
-        tp = orderType == ORDER_TYPE_BUY ? price + TakeProfitPips : price - TakeProfitPips;
-    }
-    else
-    {
-        // Forex: pip-based stops
-        sl = orderType == ORDER_TYPE_BUY ? price - (StopLossPips * pipSize) : price + (StopLossPips * pipSize);
-        tp = orderType == ORDER_TYPE_BUY ? price + (TakeProfitPips * pipSize) : price - (TakeProfitPips * pipSize);
-    }
-
-    // Normalize prices
+    // Normalize price
     price = NormalizeDouble(price, digits);
-    sl = NormalizeDouble(sl, digits);
-    tp = NormalizeDouble(tp, digits);
+
+    if(VerboseLogging)
+    {
+        Print("   Symbol: ", tradingSymbol);
+        Print("   Type: ", orderType == ORDER_TYPE_BUY ? "BUY" : "SELL");
+        Print("   Price: ", price);
+        Print("   Note: NO SL/TP (auto-close in ", AutoCloseMinutes, " min)");
+    }
 
     // Create comment
     string comment = StringFormat("QUICK_TEST %s @%d conf",
@@ -270,24 +263,18 @@ void OpenTestTrade(string symbol, ENUM_ORDER_TYPE orderType)
     request.volume = TestLotSize;
     request.type = orderType;
     request.price = price;
-    request.sl = sl;
-    request.tp = tp;
+    request.sl = 0;  // No SL - using auto-close instead
+    request.tp = 0;  // No TP - using auto-close instead
     request.deviation = 10;
     request.magic = MAGIC_NUMBER;
     request.comment = comment;
-    request.type_filling = ORDER_FILLING_FOK;
 
-    // Try ORDER_FILLING_IOC if FOK fails
-    bool success = false;
-    if(!OrderSend(request, result))
-    {
-        request.type_filling = ORDER_FILLING_IOC;
-        if(!OrderSend(request, result))
-        {
-            request.type_filling = ORDER_FILLING_RETURN;
-            success = OrderSend(request, result);
-        }
-    }
+    // Get supported filling mode for this symbol
+    ENUM_ORDER_TYPE_FILLING filling = GetSymbolFillingMode(tradingSymbol);
+    request.type_filling = filling;
+
+    // Send order
+    bool success = OrderSend(request, result);
 
     // Check result
     if(result.retcode == TRADE_RETCODE_DONE || result.retcode == TRADE_RETCODE_PLACED)
@@ -297,9 +284,9 @@ void OpenTestTrade(string symbol, ENUM_ORDER_TYPE orderType)
         Print("   Type: ", orderType == ORDER_TYPE_BUY ? "BUY" : "SELL");
         Print("   Ticket: #", result.order);
         Print("   Price: ", price);
-        Print("   SL: ", sl, " | TP: ", tp);
         Print("   Lot: ", TestLotSize);
         Print("   Strategy: ", TEST_STRATEGY);
+        Print("   Auto-close: ", AutoCloseMinutes, " minutes");
 
         // Export trade to history immediately
         if(perfTracker != NULL)
@@ -367,19 +354,13 @@ void ClosePosition(ulong ticket)
                     SymbolInfoDouble(symbol, SYMBOL_ASK);
     request.deviation = 10;
     request.magic = MAGIC_NUMBER;
-    request.type_filling = ORDER_FILLING_FOK;
 
-    // Try ORDER_FILLING_IOC if FOK fails
-    bool success = false;
-    if(!OrderSend(request, result))
-    {
-        request.type_filling = ORDER_FILLING_IOC;
-        if(!OrderSend(request, result))
-        {
-            request.type_filling = ORDER_FILLING_RETURN;
-            success = OrderSend(request, result);
-        }
-    }
+    // Get supported filling mode for this symbol
+    ENUM_ORDER_TYPE_FILLING filling = GetSymbolFillingMode(symbol);
+    request.type_filling = filling;
+
+    // Send order
+    bool success = OrderSend(request, result);
 
     if(result.retcode == TRADE_RETCODE_DONE)
     {
@@ -439,7 +420,28 @@ string GetErrorDescription(uint errorCode)
         case TRADE_RETCODE_INVALID_STOPS: return "Invalid stops";
         case TRADE_RETCODE_TRADE_DISABLED: return "Trade disabled";
         case TRADE_RETCODE_MARKET_CLOSED: return "Market closed";
+        case 10030: return "Invalid filling mode (broker doesn't support this fill type)";
         default: return "Unknown error";
     }
+}
+
+//+------------------------------------------------------------------+
+//| Get the correct order filling mode for a symbol                  |
+//+------------------------------------------------------------------+
+ENUM_ORDER_TYPE_FILLING GetSymbolFillingMode(string symbol)
+{
+    // Get filling modes supported by the symbol
+    int fillingModes = (int)SymbolInfoInteger(symbol, SYMBOL_FILLING_MODE);
+
+    // Check for FOK (Fill or Kill) - most restrictive
+    if((fillingModes & SYMBOL_FILLING_FOK) == SYMBOL_FILLING_FOK)
+        return ORDER_FILLING_FOK;
+
+    // Check for IOC (Immediate or Cancel)
+    if((fillingModes & SYMBOL_FILLING_IOC) == SYMBOL_FILLING_IOC)
+        return ORDER_FILLING_IOC;
+
+    // Default to RETURN (market execution)
+    return ORDER_FILLING_RETURN;
 }
 //+------------------------------------------------------------------+

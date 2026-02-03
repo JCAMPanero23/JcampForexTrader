@@ -47,7 +47,8 @@ input int TrailingStartPips = 30;                      // Start trailing after X
 // --- Performance Export ---
 input string ExportFolder = "CSM_Data";                // Folder for performance data export
 input int TradeHistoryCheckIntervalSeconds = 5;        // Check for closed trades every X seconds (real-time detection)
-input int ExportIntervalSeconds = 300;                 // Export performance data every X seconds (5 min)
+input int PositionExportIntervalSeconds = 5;           // Export positions.txt every X seconds (real-time for monitor)
+input int PerformanceExportIntervalSeconds = 300;      // Export performance.txt every X seconds (5 min)
 
 // --- System Settings ---
 input int MagicNumber = 100001;                        // Magic number for this EA
@@ -63,7 +64,8 @@ PerformanceTracker* performanceTracker;
 
 datetime lastSignalCheck = 0;
 datetime lastTradeHistoryCheck = 0;
-datetime lastExport = 0;
+datetime lastPositionExport = 0;
+datetime lastPerformanceExport = 0;
 
 //+------------------------------------------------------------------+
 //| Expert Initialization Function                                    |
@@ -79,7 +81,8 @@ int OnInit()
    Print("Min Confidence: ", MinConfidence);
    Print("Magic Number: ", MagicNumber);
    Print("Trade History Check: Every ", TradeHistoryCheckIntervalSeconds, " seconds (real-time)");
-   Print("Performance Export: Every ", ExportIntervalSeconds, " seconds");
+   Print("Position Export: Every ", PositionExportIntervalSeconds, " seconds (REAL-TIME for monitor)");
+   Print("Performance Export: Every ", PerformanceExportIntervalSeconds, " seconds");
    Print("========================================");
 
    // Initialize modules
@@ -159,13 +162,25 @@ void OnTick()
       CheckAndExecuteSignals();
    }
 
-   // Export performance data periodically (separate from checking for trades)
-   if(currentTime - lastExport >= ExportIntervalSeconds)
+   // ✅ NEW: Export positions.txt in REAL-TIME (every 5 seconds for CSMMonitor)
+   if(currentTime - lastPositionExport >= PositionExportIntervalSeconds)
    {
-      lastExport = currentTime;
+      lastPositionExport = currentTime;
 
       if(performanceTracker != NULL)
-         performanceTracker.ExportAll();  // Export files (Update already called above)
+         performanceTracker.ExportOpenPositions();  // Real-time position updates
+   }
+
+   // Export performance stats periodically (5 minutes - less frequently)
+   if(currentTime - lastPerformanceExport >= PerformanceExportIntervalSeconds)
+   {
+      lastPerformanceExport = currentTime;
+
+      if(performanceTracker != NULL)
+      {
+         performanceTracker.ExportTradeHistory();      // Update trade history
+         performanceTracker.ExportPerformanceStats();  // Update performance.txt
+      }
    }
 }
 
