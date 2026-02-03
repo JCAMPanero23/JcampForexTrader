@@ -57,7 +57,8 @@ namespace JcampForexTrader
             get
             {
                 DateTime.TryParse(EntryTimeString, out DateTime result);
-                return result;
+                // Convert from broker server time to local time (+2 hours offset)
+                return result.AddHours(2);
             }
         }
 
@@ -67,7 +68,8 @@ namespace JcampForexTrader
             get
             {
                 DateTime.TryParse(ExitTimeString, out DateTime result);
-                return result;
+                // Convert from broker server time to local time (+2 hours offset)
+                return result.AddHours(2);
             }
         }
 
