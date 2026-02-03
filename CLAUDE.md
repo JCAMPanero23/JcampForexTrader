@@ -790,17 +790,20 @@ Analyze Gold (XAUUSD) M1 data for spread patterns and validate system safety
   - QuickTestEA: Added 5-second position export
   - **Result:** CSMMonitor now updates positions within 5 seconds ✅
 
-- ✅ **Timezone Fix** (commit: `649d9c1`)
-  - Added +2 hour offset to trade times in CSMMonitor
-  - Fixes "Recent Trade" showing 2 hours behind local time
-  - Broker server time (GMT+2) → Local time conversion
+- ✅ **Broker Time Display** (commits: `649d9c1`, `13b084b`)
+  - Initial attempt: Added +2 hour offset to convert broker time → local time
+  - **Final solution:** Reverted offset, display raw broker time with clear labels
+  - Updated column headers:
+    - Active Positions: "Entry Time (UTC+2)"
+    - Recent History: "Date (UTC+2)"
+  - **Result:** All times consistent (broker time), no conversion confusion ✅
 
-**Commits:** `96bcc1a`, `649d9c1`
+**Commits:** `96bcc1a`, `649d9c1`, `13b084b`
 
 **Key Achievements:**
 - 🧪 **QuickTestEA operational** - Generates test trades without SL/TP complexity
 - ⚡ **Real-time monitoring** - Positions appear in CSMMonitor within 5 seconds
-- 🕐 **Correct timestamps** - Trade history shows accurate local time
+- 🕐 **Broker time clarity** - All timestamps show consistent UTC+2 (broker time)
 
 **Data Files:**
 - 📊 **XAUUSD M1 CSV added** - `Reference/XAUUSD.sml_M1_202501020105_202512312358.csv`
