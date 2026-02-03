@@ -12,6 +12,17 @@
 #include "SignalReader.mqh"
 
 //+------------------------------------------------------------------+
+//| Spread Quality Enum (Gold-specific)                              |
+//+------------------------------------------------------------------+
+enum SpreadQuality
+{
+   SPREAD_EXCELLENT,   // < 15 pips (rare, execute immediately)
+   SPREAD_GOOD,        // 15-25 pips (most common, acceptable)
+   SPREAD_ACCEPTABLE,  // 25-35 pips (acceptable for high confidence only)
+   SPREAD_POOR         // > 35 pips (reject trade)
+};
+
+//+------------------------------------------------------------------+
 //| Trade Executor Class                                              |
 //| Executes trades based on signals with risk management            |
 //+------------------------------------------------------------------+
@@ -227,8 +238,40 @@ public:
          return false;
       }
 
-      if(verboseLogging)
-         Print("✓ Spread OK for ", signal.symbol, ": ", spreadPips, " pips (max: ", maxSpreadForSymbol, " pips)");
+      // ✅ Gold-specific: Spread quality validation (require higher confidence for wider spreads)
+      if(StringFind(signal.symbol, "XAU") >= 0 || StringFind(signal.symbol, "GOLD") >= 0)
+      {
+         SpreadQuality quality = GetSpreadQuality(spreadPips);
+
+         // Require confidence 120+ for acceptable spreads (25-35 pips)
+         if(quality == SPREAD_ACCEPTABLE && signal.confidence < 120)
+         {
+            if(verboseLogging)
+               Print("⚠️ Gold spread ", spreadPips, " pips requires confidence 120+, got ", signal.confidence, " - REJECTED");
+            return false;
+         }
+
+         // Reject poor quality spreads (>35 pips) even if within multiplier
+         if(quality == SPREAD_POOR)
+         {
+            if(verboseLogging)
+               Print("⚠️ Gold spread ", spreadPips, " pips is POOR quality (>35 pips) - REJECTED");
+            return false;
+         }
+
+         string qualityText = (quality == SPREAD_EXCELLENT) ? "EXCELLENT" :
+                              (quality == SPREAD_GOOD) ? "GOOD" :
+                              (quality == SPREAD_ACCEPTABLE) ? "ACCEPTABLE (high conf)" : "POOR";
+
+         if(verboseLogging)
+            Print("✓ Gold spread quality: ", qualityText, " (", spreadPips, " pips) - Confidence: ", signal.confidence);
+      }
+      else
+      {
+         // Forex pairs: standard validation
+         if(verboseLogging)
+            Print("✓ Spread OK for ", signal.symbol, ": ", spreadPips, " pips (max: ", maxSpreadForSymbol, " pips)");
+      }
 
       // Check if market is open
       if(!IsMarketOpen(signal.symbol))
@@ -399,7 +442,20 @@ private:
    }
 
    //+------------------------------------------------------------------+
+   //| Get Spread Quality for Gold                                      |
+   //| Returns quality rating based on spread width                     |
+   //+------------------------------------------------------------------+
+   SpreadQuality GetSpreadQuality(double spreadPips)
+   {
+      if(spreadPips < 15.0)  return SPREAD_EXCELLENT;
+      if(spreadPips < 25.0)  return SPREAD_GOOD;
+      if(spreadPips < 35.0)  return SPREAD_ACCEPTABLE;
+      return SPREAD_POOR;
+   }
+
+   //+------------------------------------------------------------------+
    //| Check if Market is Open                                          |
+   //| Gold-specific: Block Asian/off-hours (22:00-09:00 UTC+2)        |
    //+------------------------------------------------------------------+
    bool IsMarketOpen(string symbol)
    {
@@ -409,6 +465,25 @@ private:
       // Simple check: avoid weekends
       if(dt.day_of_week == 0 || dt.day_of_week == 6)
          return false;
+
+      // ✅ Gold-specific trading hours restriction
+      // Block Asian session (22:00-09:00 UTC+2) where avg spread is 28.7 pips
+      // Allow London/NY sessions (09:00-22:00 UTC+2) where avg spread is 21-24 pips
+      if(StringFind(symbol, "XAU") >= 0 || StringFind(symbol, "GOLD") >= 0)
+      {
+         int hour = dt.hour; // Broker time (UTC+2)
+
+         // Block off-hours (22:00-09:00)
+         if(hour >= 22 || hour < 9)
+         {
+            if(verboseLogging)
+               Print("⏰ Gold trading blocked during Asian session: ", hour, ":00 UTC+2 (high spreads)");
+            return false;
+         }
+
+         if(verboseLogging)
+            Print("✓ Gold trading allowed during prime hours: ", hour, ":00 UTC+2");
+      }
 
       return true;
    }

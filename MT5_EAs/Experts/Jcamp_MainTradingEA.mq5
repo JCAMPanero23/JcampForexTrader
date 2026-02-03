@@ -35,7 +35,7 @@ input double MaxSpreadPips = 2.0;                      // Base spread limit (pip
 input double SpreadMultiplierEURUSD = 1.0;             // EURUSD spread multiplier (1x = 2.0 pips)
 input double SpreadMultiplierGBPUSD = 1.0;             // GBPUSD spread multiplier (1x = 2.0 pips)
 input double SpreadMultiplierAUDJPY = 1.0;             // AUDJPY spread multiplier (1x = 2.0 pips)
-input double SpreadMultiplierXAUUSD = 5.0;             // XAUUSD (Gold) spread multiplier (5x = 10.0 pips)
+input double SpreadMultiplierXAUUSD = 15.0;            // XAUUSD (Gold) spread multiplier (15x = 30.0 pips) ✅ Optimized
 input int MaxPositionsPerSymbol = 1;                   // Max simultaneous positions per symbol
 input int MaxTotalPositions = 3;                       // Max total open positions
 
