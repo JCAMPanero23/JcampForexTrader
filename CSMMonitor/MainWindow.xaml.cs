@@ -376,7 +376,7 @@ namespace JcampForexTrader
 
                     var pairDisplay = pairStats.Select(kvp => new
                     {
-                        Pair = kvp.Key.Replace(".sml", "").Replace(".ecn", "").Replace(".raw", ""), // Clean broker suffix
+                        Pair = kvp.Key.Replace(".sml", "").Replace(".ecn", "").Replace(".raw", "").Replace(".r", ""), // Clean broker suffix
                         TotalTrades = kvp.Value.TotalTrades,
                         WinRate = kvp.Value.WinRate.ToString("F1") + "%",
                         AvgR = kvp.Value.AverageRMultiple.ToString("F2") + "R",
@@ -1548,7 +1548,7 @@ namespace JcampForexTrader
 
                     // Find active position for this asset
                     var position = activePositions.FirstOrDefault(p =>
-                        p.Symbol.Replace(".sml", "").Replace(".ecn", "").Replace(".raw", "").ToUpper() == asset.ToUpper());
+                        p.Symbol.Replace(".sml", "").Replace(".ecn", "").Replace(".raw", "").Replace(".r", "").ToUpper() == asset.ToUpper());
 
                     bool hasPosition = position != null;
 

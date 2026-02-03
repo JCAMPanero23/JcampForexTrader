@@ -7,7 +7,7 @@
 #property link      ""
 #property version   "2.00"
 #property description "CSM Alpha Main Trading EA - 4 Asset System"
-#property description "Trades: EURUSD.sml, GBPUSD.sml, AUDJPY, XAUUSD.sml (with broker suffix)"
+#property description "Trades: EURUSD.r, GBPUSD.r, AUDJPY.r, XAUUSD.r (with broker suffix)"
 #property strict
 
 // Include modular components

@@ -480,7 +480,7 @@ void GetCSMForPair(double &baseStrength, double &quoteStrength)
    // Parse current symbol
    if(StringFind(currentSymbol, "XAU") >= 0)
    {
-      // Gold pair (XAUUSD, XAUUSD.sml, etc.)
+      // Gold pair (XAUUSD, XAUUSD.r, etc.)
       baseCcy = "XAU";
       quoteCcy = "USD";
    }
