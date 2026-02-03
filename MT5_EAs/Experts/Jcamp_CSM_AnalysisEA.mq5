@@ -152,10 +152,15 @@ int OnInit()
     {
         Print("✅ Initial CSM calculation successful");
         ExportCSM();
+        last_csm_update = TimeCurrent();  // ✅ FIX: Set initial timestamp
+        Print("🕐 Next update in ", UpdateIntervalMinutes, " minutes (", TimeToString(last_csm_update + update_interval_seconds, TIME_DATE|TIME_MINUTES), ")");
     }
     else
     {
         Print("⚠️  Initial CSM calculation returned no data");
+        Print("⚠️  Please check:");
+        Print("   - Chart is receiving price updates (ticks)");
+        Print("   - Symbols are available with suffix: ", BrokerSuffix);
     }
 
     Print("\n⏰ CSM will update every ", UpdateIntervalMinutes, " minutes");
@@ -181,11 +186,18 @@ void OnTick()
 {
     // Check if it's time to update CSM
     datetime currentTime = TimeCurrent();
+    static int tick_count = 0;
+    tick_count++;
+
+    // Log first few ticks for debugging
+    if(tick_count <= 3)
+        Print("🔔 Tick #", tick_count, " received at ", TimeToString(currentTime, TIME_DATE|TIME_MINUTES|TIME_SECONDS));
 
     if(currentTime - last_csm_update >= update_interval_seconds)
     {
-        if(VerboseLogging)
-            Print("\n⏰ [", TimeToString(currentTime, TIME_DATE|TIME_MINUTES), "] CSM Update Triggered");
+        Print("\n⏰ [", TimeToString(currentTime, TIME_DATE|TIME_MINUTES), "] CSM Update Triggered");
+        Print("   Last update: ", TimeToString(last_csm_update, TIME_DATE|TIME_MINUTES));
+        Print("   Time elapsed: ", (int)((currentTime - last_csm_update) / 60), " minutes");
 
         UpdateFullCSM();
 
@@ -193,9 +205,16 @@ void OnTick()
         {
             ExportCSM();
             last_csm_update = currentTime;
+            Print("✅ CSM exported successfully");
+            Print("🕐 Next update at: ", TimeToString(currentTime + update_interval_seconds, TIME_DATE|TIME_MINUTES));
 
             if(VerboseLogging)
                 PrintCSMSummary();
+        }
+        else
+        {
+            Print("❌ CSM calculation failed - no valid data");
+            Print("   Check if symbols are available and chart is receiving quotes");
         }
     }
 }
