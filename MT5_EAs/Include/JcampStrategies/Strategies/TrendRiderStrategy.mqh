@@ -89,6 +89,10 @@ public:
       result.rejectionScore = 0;
       result.stochasticScore = 0;
 
+      // ✅ Calculate universal components first (for dashboard visibility even on HOLD)
+      result.adxScore = ScoreADX(adx);
+      result.csmScore = ScoreCSM(MathAbs(csmDiff), true); // Score by absolute strength
+
       // Check EMA alignment AND price position
       // BUY: EMAs bullish aligned AND price above EMA20
       // SELL: EMAs bearish aligned AND price below EMA20
@@ -199,17 +203,25 @@ public:
       }
       else
       {
-         return false; // No clear trend
+         // ✅ No clear EMA trend - but still return signal struct with component data
+         // This allows dashboard to show what's missing (EMA = 0/30)
+         result.signal = 0;
+         result.analysis += "No EMA alignment";
+
+         if(verboseLogging)
+            Print("No EMA alignment - returning with partial component data");
       }
 
       if(verboseLogging)
       {
-         Print("Signal: ", result.signal > 0 ? "BUY" : "SELL");
+         string signalText = result.signal > 0 ? "BUY" : (result.signal < 0 ? "SELL" : "NEUTRAL");
+         Print("Signal: ", signalText);
          Print("Confidence: ", result.confidence, "/135");
          Print("Analysis: ", result.analysis);
       }
 
-      return IsValidSignal(result);
+      // ✅ Always return true now (with component data), let IsValidSignal() determine tradeability
+      return true;
    }
 
 private:
