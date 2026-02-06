@@ -1183,8 +1183,78 @@
                                             <ProgressBar x:Name="EURUSD_TR_Bar_SA" Height="4" Minimum="0" Maximum="135" Value="0"
                                                         Foreground="#4EC9B0" Background="#1A1A1A" BorderThickness="0" Margin="0,4,0,6"/>
 
-                                            <!-- Score Breakdown -->
-                                            <TextBlock x:Name="EURUSD_TR_Analysis_SA" Text="EMA+30 ADX+20 RSI+5 CSM+25" FontSize="10" Foreground="#9CDCFE" Opacity="0.7"/>
+                                            <!-- Component Breakdown -->
+                                            <StackPanel Margin="0,4,0,0">
+                                                <!-- EMA Alignment -->
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="EMA" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="EURUSD_TR_EMA_Bar"
+                                                                Height="12" Minimum="0" Maximum="30" Value="0"
+                                                                Foreground="#4EC9B0" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="EURUSD_TR_EMA_Text"
+                                                            Text="0/30" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- ADX Strength -->
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="ADX" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="EURUSD_TR_ADX_Bar"
+                                                                Height="12" Minimum="0" Maximum="25" Value="0"
+                                                                Foreground="#4EC9B0" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="EURUSD_TR_ADX_Text"
+                                                            Text="0/25" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- RSI Position -->
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="RSI" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="EURUSD_TR_RSI_Bar"
+                                                                Height="12" Minimum="0" Maximum="20" Value="0"
+                                                                Foreground="#4EC9B0" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="EURUSD_TR_RSI_Text"
+                                                            Text="0/20" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- CSM Support -->
+                                                <Grid Margin="0,0,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="CSM" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="EURUSD_TR_CSM_Bar"
+                                                                Height="12" Minimum="0" Maximum="25" Value="0"
+                                                                Foreground="#4EC9B0" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="EURUSD_TR_CSM_Text"
+                                                            Text="0/25" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- Bonus Scores (if non-zero) -->
+                                                <TextBlock x:Name="EURUSD_TR_Bonus_Text"
+                                                        Text="Bonus: PA+15 VOL+10 MTF+10"
+                                                        FontSize="9" Foreground="#FFAA00"
+                                                        Margin="0,4,0,0" Visibility="Collapsed"/>
+                                            </StackPanel>
                                         </StackPanel>
                                     </Border>
 
@@ -1204,8 +1274,94 @@
                                             <ProgressBar x:Name="EURUSD_RR_Bar_SA" Height="4" Minimum="0" Maximum="100" Value="0"
                                                         Foreground="#CE9178" Background="#1A1A1A" BorderThickness="0" Margin="0,4,0,6"/>
 
-                                            <!-- Score Breakdown -->
-                                            <TextBlock x:Name="EURUSD_RR_Analysis_SA" Text="—" FontSize="10" Foreground="#9CDCFE" Opacity="0.7"/>
+                                            <!-- Component Breakdown -->
+                                            <StackPanel Margin="0,4,0,0">
+                                                <!-- Proximity -->
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Proximity" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="EURUSD_RR_Prox_Bar"
+                                                                Height="12" Minimum="0" Maximum="15" Value="0"
+                                                                Foreground="#CE9178" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="EURUSD_RR_Prox_Text"
+                                                            Text="0/15" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- Rejection -->
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Rejection" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="EURUSD_RR_Rej_Bar"
+                                                                Height="12" Minimum="0" Maximum="15" Value="0"
+                                                                Foreground="#CE9178" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="EURUSD_RR_Rej_Text"
+                                                            Text="0/15" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- RSI -->
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="RSI" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="EURUSD_RR_RSI_Bar"
+                                                                Height="12" Minimum="0" Maximum="20" Value="0"
+                                                                Foreground="#CE9178" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="EURUSD_RR_RSI_Text"
+                                                            Text="0/20" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- Stochastic -->
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Stochastic" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="EURUSD_RR_Stoch_Bar"
+                                                                Height="12" Minimum="0" Maximum="15" Value="0"
+                                                                Foreground="#CE9178" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="EURUSD_RR_Stoch_Text"
+                                                            Text="0/15" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- CSM -->
+                                                <Grid Margin="0,0,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="CSM" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="EURUSD_RR_CSM_Bar"
+                                                                Height="12" Minimum="0" Maximum="25" Value="0"
+                                                                Foreground="#CE9178" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="EURUSD_RR_CSM_Text"
+                                                            Text="0/25" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- Bonus Scores (if non-zero) -->
+                                                <TextBlock x:Name="EURUSD_RR_Bonus_Text"
+                                                        Text="Bonus: VOL+10"
+                                                        FontSize="9" Foreground="#FFAA00"
+                                                        Margin="0,4,0,0" Visibility="Collapsed"/>
+                                            </StackPanel>
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>
@@ -1247,8 +1403,78 @@
                                             <ProgressBar x:Name="GBPUSD_TR_Bar_SA" Height="4" Minimum="0" Maximum="135" Value="0"
                                                         Foreground="#4EC9B0" Background="#1A1A1A" BorderThickness="0" Margin="0,4,0,6"/>
 
-                                            <!-- Score Breakdown -->
-                                            <TextBlock x:Name="GBPUSD_TR_Analysis_SA" Text="—" FontSize="10" Foreground="#9CDCFE" Opacity="0.7"/>
+                                            <!-- Component Breakdown -->
+                                            <StackPanel Margin="0,4,0,0">
+                                                <!-- EMA Alignment -->
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="EMA" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="GBPUSD_TR_EMA_Bar"
+                                                                Height="12" Minimum="0" Maximum="30" Value="0"
+                                                                Foreground="#4EC9B0" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="GBPUSD_TR_EMA_Text"
+                                                            Text="0/30" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- ADX Strength -->
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="ADX" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="GBPUSD_TR_ADX_Bar"
+                                                                Height="12" Minimum="0" Maximum="25" Value="0"
+                                                                Foreground="#4EC9B0" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="GBPUSD_TR_ADX_Text"
+                                                            Text="0/25" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- RSI Position -->
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="RSI" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="GBPUSD_TR_RSI_Bar"
+                                                                Height="12" Minimum="0" Maximum="20" Value="0"
+                                                                Foreground="#4EC9B0" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="GBPUSD_TR_RSI_Text"
+                                                            Text="0/20" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- CSM Support -->
+                                                <Grid Margin="0,0,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="CSM" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="GBPUSD_TR_CSM_Bar"
+                                                                Height="12" Minimum="0" Maximum="25" Value="0"
+                                                                Foreground="#4EC9B0" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="GBPUSD_TR_CSM_Text"
+                                                            Text="0/25" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- Bonus Scores (if non-zero) -->
+                                                <TextBlock x:Name="GBPUSD_TR_Bonus_Text"
+                                                        Text="Bonus: PA+15 VOL+10 MTF+10"
+                                                        FontSize="9" Foreground="#FFAA00"
+                                                        Margin="0,4,0,0" Visibility="Collapsed"/>
+                                            </StackPanel>
                                         </StackPanel>
                                     </Border>
 
@@ -1267,8 +1493,94 @@
                                             <ProgressBar x:Name="GBPUSD_RR_Bar_SA" Height="4" Minimum="0" Maximum="100" Value="0"
                                                         Foreground="#CE9178" Background="#1A1A1A" BorderThickness="0" Margin="0,4,0,6"/>
 
-                                            <!-- Score Breakdown -->
-                                            <TextBlock x:Name="GBPUSD_RR_Analysis_SA" Text="—" FontSize="10" Foreground="#9CDCFE" Opacity="0.7"/>
+                                            <!-- Component Breakdown -->
+                                            <StackPanel Margin="0,4,0,0">
+                                                <!-- Proximity -->
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Proximity" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="GBPUSD_RR_Prox_Bar"
+                                                                Height="12" Minimum="0" Maximum="15" Value="0"
+                                                                Foreground="#CE9178" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="GBPUSD_RR_Prox_Text"
+                                                            Text="0/15" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- Rejection -->
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Rejection" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="GBPUSD_RR_Rej_Bar"
+                                                                Height="12" Minimum="0" Maximum="15" Value="0"
+                                                                Foreground="#CE9178" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="GBPUSD_RR_Rej_Text"
+                                                            Text="0/15" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- RSI -->
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="RSI" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="GBPUSD_RR_RSI_Bar"
+                                                                Height="12" Minimum="0" Maximum="20" Value="0"
+                                                                Foreground="#CE9178" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="GBPUSD_RR_RSI_Text"
+                                                            Text="0/20" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- Stochastic -->
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Stochastic" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="GBPUSD_RR_Stoch_Bar"
+                                                                Height="12" Minimum="0" Maximum="15" Value="0"
+                                                                Foreground="#CE9178" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="GBPUSD_RR_Stoch_Text"
+                                                            Text="0/15" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- CSM -->
+                                                <Grid Margin="0,0,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="CSM" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="GBPUSD_RR_CSM_Bar"
+                                                                Height="12" Minimum="0" Maximum="25" Value="0"
+                                                                Foreground="#CE9178" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="GBPUSD_RR_CSM_Text"
+                                                            Text="0/25" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- Bonus Scores (if non-zero) -->
+                                                <TextBlock x:Name="GBPUSD_RR_Bonus_Text"
+                                                        Text="Bonus: VOL+10"
+                                                        FontSize="9" Foreground="#FFAA00"
+                                                        Margin="0,4,0,0" Visibility="Collapsed"/>
+                                            </StackPanel>
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>
@@ -1310,8 +1622,78 @@
                                             <ProgressBar x:Name="AUDJPY_TR_Bar_SA" Height="4" Minimum="0" Maximum="135" Value="0"
                                                         Foreground="#4EC9B0" Background="#1A1A1A" BorderThickness="0" Margin="0,4,0,6"/>
 
-                                            <!-- Score Breakdown -->
-                                            <TextBlock x:Name="AUDJPY_TR_Analysis_SA" Text="—" FontSize="10" Foreground="#9CDCFE" Opacity="0.7"/>
+                                            <!-- Component Breakdown -->
+                                            <StackPanel Margin="0,4,0,0">
+                                                <!-- EMA Alignment -->
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="EMA" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="AUDJPY_TR_EMA_Bar"
+                                                                Height="12" Minimum="0" Maximum="30" Value="0"
+                                                                Foreground="#4EC9B0" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="AUDJPY_TR_EMA_Text"
+                                                            Text="0/30" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- ADX Strength -->
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="ADX" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="AUDJPY_TR_ADX_Bar"
+                                                                Height="12" Minimum="0" Maximum="25" Value="0"
+                                                                Foreground="#4EC9B0" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="AUDJPY_TR_ADX_Text"
+                                                            Text="0/25" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- RSI Position -->
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="RSI" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="AUDJPY_TR_RSI_Bar"
+                                                                Height="12" Minimum="0" Maximum="20" Value="0"
+                                                                Foreground="#4EC9B0" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="AUDJPY_TR_RSI_Text"
+                                                            Text="0/20" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- CSM Support -->
+                                                <Grid Margin="0,0,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="CSM" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="AUDJPY_TR_CSM_Bar"
+                                                                Height="12" Minimum="0" Maximum="25" Value="0"
+                                                                Foreground="#4EC9B0" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="AUDJPY_TR_CSM_Text"
+                                                            Text="0/25" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- Bonus Scores (if non-zero) -->
+                                                <TextBlock x:Name="AUDJPY_TR_Bonus_Text"
+                                                        Text="Bonus: PA+15 VOL+10 MTF+10"
+                                                        FontSize="9" Foreground="#FFAA00"
+                                                        Margin="0,4,0,0" Visibility="Collapsed"/>
+                                            </StackPanel>
                                         </StackPanel>
                                     </Border>
 
@@ -1330,8 +1712,94 @@
                                             <ProgressBar x:Name="AUDJPY_RR_Bar_SA" Height="4" Minimum="0" Maximum="100" Value="0"
                                                         Foreground="#CE9178" Background="#1A1A1A" BorderThickness="0" Margin="0,4,0,6"/>
 
-                                            <!-- Score Breakdown -->
-                                            <TextBlock x:Name="AUDJPY_RR_Analysis_SA" Text="—" FontSize="10" Foreground="#9CDCFE" Opacity="0.7"/>
+                                            <!-- Component Breakdown -->
+                                            <StackPanel Margin="0,4,0,0">
+                                                <!-- Proximity -->
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Proximity" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="AUDJPY_RR_Prox_Bar"
+                                                                Height="12" Minimum="0" Maximum="15" Value="0"
+                                                                Foreground="#CE9178" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="AUDJPY_RR_Prox_Text"
+                                                            Text="0/15" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- Rejection -->
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Rejection" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="AUDJPY_RR_Rej_Bar"
+                                                                Height="12" Minimum="0" Maximum="15" Value="0"
+                                                                Foreground="#CE9178" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="AUDJPY_RR_Rej_Text"
+                                                            Text="0/15" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- RSI -->
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="RSI" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="AUDJPY_RR_RSI_Bar"
+                                                                Height="12" Minimum="0" Maximum="20" Value="0"
+                                                                Foreground="#CE9178" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="AUDJPY_RR_RSI_Text"
+                                                            Text="0/20" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- Stochastic -->
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Stochastic" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="AUDJPY_RR_Stoch_Bar"
+                                                                Height="12" Minimum="0" Maximum="15" Value="0"
+                                                                Foreground="#CE9178" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="AUDJPY_RR_Stoch_Text"
+                                                            Text="0/15" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- CSM -->
+                                                <Grid Margin="0,0,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="CSM" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="AUDJPY_RR_CSM_Bar"
+                                                                Height="12" Minimum="0" Maximum="25" Value="0"
+                                                                Foreground="#CE9178" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="AUDJPY_RR_CSM_Text"
+                                                            Text="0/25" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- Bonus Scores (if non-zero) -->
+                                                <TextBlock x:Name="AUDJPY_RR_Bonus_Text"
+                                                        Text="Bonus: VOL+10"
+                                                        FontSize="9" Foreground="#FFAA00"
+                                                        Margin="0,4,0,0" Visibility="Collapsed"/>
+                                            </StackPanel>
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>
@@ -1376,11 +1844,81 @@
                                             <ProgressBar x:Name="XAUUSD_TR_Bar_SA" Height="4" Minimum="0" Maximum="135" Value="0"
                                                         Foreground="#FFD700" Background="#1A1A1A" BorderThickness="0" Margin="0,4,0,6"/>
 
-                                            <!-- Score Breakdown -->
-                                            <TextBlock x:Name="XAUUSD_TR_Analysis_SA" Text="—" FontSize="10" Foreground="#9CDCFE" Opacity="0.7"/>
+                                            <!-- Component Breakdown -->
+                                            <StackPanel Margin="0,4,0,0">
+                                                <!-- EMA Alignment -->
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="EMA" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="XAUUSD_TR_EMA_Bar"
+                                                                Height="12" Minimum="0" Maximum="30" Value="0"
+                                                                Foreground="#FFD700" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="XAUUSD_TR_EMA_Text"
+                                                            Text="0/30" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
 
-                                            <!-- Note about Gold -->
-                                            <TextBlock Text="Gold trends only - no range trading" FontSize="10" Foreground="#AAAAAA" FontStyle="Italic" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                                                <!-- ADX Strength -->
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="ADX" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="XAUUSD_TR_ADX_Bar"
+                                                                Height="12" Minimum="0" Maximum="25" Value="0"
+                                                                Foreground="#FFD700" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="XAUUSD_TR_ADX_Text"
+                                                            Text="0/25" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- RSI Position -->
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="RSI" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="XAUUSD_TR_RSI_Bar"
+                                                                Height="12" Minimum="0" Maximum="20" Value="0"
+                                                                Foreground="#FFD700" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="XAUUSD_TR_RSI_Text"
+                                                            Text="0/20" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- CSM Support -->
+                                                <Grid Margin="0,0,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="CSM" FontSize="9" Foreground="#E0E0E0" VerticalAlignment="Center"/>
+                                                    <ProgressBar Grid.Column="1" x:Name="XAUUSD_TR_CSM_Bar"
+                                                                Height="12" Minimum="0" Maximum="25" Value="0"
+                                                                Foreground="#FFD700" Background="#1A1A1A" BorderThickness="0"/>
+                                                    <TextBlock Grid.Column="2" x:Name="XAUUSD_TR_CSM_Text"
+                                                            Text="0/25" FontSize="9" Foreground="#FFFFFF"
+                                                            FontFamily="Consolas" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+
+                                                <!-- Bonus Scores (if non-zero) -->
+                                                <TextBlock x:Name="XAUUSD_TR_Bonus_Text"
+                                                        Text="Bonus: PA+15 VOL+10 MTF+10"
+                                                        FontSize="9" Foreground="#FFAA00"
+                                                        Margin="0,4,0,0" Visibility="Collapsed"/>
+
+                                                <!-- Note about Gold -->
+                                                <TextBlock Text="Gold trends only - no range trading" FontSize="9" Foreground="#AAAAAA" FontStyle="Italic" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                                            </StackPanel>
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>
