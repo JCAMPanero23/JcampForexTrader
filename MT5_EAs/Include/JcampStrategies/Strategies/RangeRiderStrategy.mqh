@@ -88,12 +88,31 @@ public:
       if(verboseLogging)
          Print("\n====== RANGE RIDER ANALYSIS ======");
 
+      // Initialize result first (always)
+      result.signal = 0;
+      result.confidence = 0;
+      result.analysis = "";
+      result.strategyName = GetName();
+
+      // Initialize component scores (always, even if no range)
+      result.emaScore = 0;
+      result.adxScore = 0;
+      result.rsiScore = 0;
+      result.csmScore = 0;
+      result.priceActionScore = 0;
+      result.volumeScore = 0;
+      result.mtfScore = 0;
+      result.proximityScore = 0;
+      result.rejectionScore = 0;
+      result.stochasticScore = 0;
+
       // Step 1: Check if we have an active range
       if(!hasActiveRange)
       {
+         result.analysis = "No active range detected";
          if(verboseLogging)
             Print("  No active range for ", symbol);
-         return false;
+         return true;  // ✅ Return true with empty components (so dashboard can show 0/X)
       }
 
       // Step 2: Check price proximity to boundaries
@@ -105,28 +124,11 @@ public:
 
       if(distancePips < 0)
       {
+         result.analysis = "Price mid-range (not near boundaries)";
          if(verboseLogging)
             Print("  Price not near any boundary (mid-range)");
-         return false;
+         return true;  // ✅ Return true with empty components
       }
-
-      // Initialize result
-      result.signal = 0;
-      result.confidence = 0;
-      result.analysis = "";
-      result.strategyName = GetName();
-
-      // Initialize component scores
-      result.emaScore = 0;
-      result.adxScore = 0;
-      result.rsiScore = 0;
-      result.csmScore = 0;
-      result.priceActionScore = 0;
-      result.volumeScore = 0;
-      result.mtfScore = 0;
-      result.proximityScore = 0;
-      result.rejectionScore = 0;
-      result.stochasticScore = 0;
 
       // SCORE 1: Boundary Proximity (0-15 points)
       if(distancePips <= 3.0)
