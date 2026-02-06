@@ -75,6 +75,18 @@ public:
       result.analysis = "";
       result.strategyName = GetName();
 
+      // Initialize component scores
+      result.emaScore = 0;
+      result.adxScore = 0;
+      result.rsiScore = 0;
+      result.csmScore = 0;
+      result.priceActionScore = 0;
+      result.volumeScore = 0;
+      result.mtfScore = 0;
+      result.rangeWidthScore = 0;
+      result.srQualityScore = 0;
+      result.bounceScore = 0;
+
       // Check EMA alignment AND price position
       // BUY: EMAs bullish aligned AND price above EMA20
       // SELL: EMAs bearish aligned AND price below EMA20
@@ -84,92 +96,102 @@ public:
       if(bullishEMA)
       {
          result.signal = 1; // BUY
-         result.confidence += 30;
+
+         // EMA Score (30 points)
+         result.emaScore = 30;
+         result.confidence += result.emaScore;
          result.analysis += "EMA+30 ";
 
          // ADX Score (0-25)
-         int adxScore = ScoreADX(adx);
-         result.confidence += adxScore;
-         result.analysis += "ADX+" + IntegerToString(adxScore) + " ";
+         result.adxScore = ScoreADX(adx);
+         result.confidence += result.adxScore;
+         result.analysis += "ADX+" + IntegerToString(result.adxScore) + " ";
 
          // RSI Score (0-20)
-         int rsiScore = 0;
-         if(rsi > 50 && rsi < 70) rsiScore = 20;
-         else if(rsi > 40 && rsi < 80) rsiScore = 10;
-         else rsiScore = 5;
-         result.confidence += rsiScore;
-         result.analysis += "RSI+" + IntegerToString(rsiScore) + " ";
+         if(rsi > 50 && rsi < 70) result.rsiScore = 20;
+         else if(rsi > 40 && rsi < 80) result.rsiScore = 10;
+         else result.rsiScore = 5;
+         result.confidence += result.rsiScore;
+         result.analysis += "RSI+" + IntegerToString(result.rsiScore) + " ";
 
          // CSM Score (0-25)
-         int csmScore = ScoreCSM(csmDiff, true);
-         result.confidence += csmScore;
-         result.analysis += "CSM+" + IntegerToString(csmScore) + " ";
+         result.csmScore = ScoreCSM(csmDiff, true);
+         result.confidence += result.csmScore;
+         result.analysis += "CSM+" + IntegerToString(result.csmScore) + " ";
 
          // Price Action Pattern (bonus 15)
          int paScore = DetectPriceActionPattern(symbol, timeframe);
          if(paScore > 0)
          {
-            result.confidence += 15;
+            result.priceActionScore = 15;
+            result.confidence += result.priceActionScore;
             result.analysis += "PA+15 ";
          }
 
          // Volume Confirmation (bonus 10)
          if(CheckVolumeConfirmation(symbol, timeframe))
          {
-            result.confidence += 10;
+            result.volumeScore = 10;
+            result.confidence += result.volumeScore;
             result.analysis += "VOL+10 ";
          }
 
          // MTF Alignment (bonus 10)
          if(CheckMTFAlignment(symbol, result.signal))
          {
-            result.confidence += 10;
+            result.mtfScore = 10;
+            result.confidence += result.mtfScore;
             result.analysis += "MTF+10 ";
          }
       }
       else if(bearishEMA)
       {
          result.signal = -1; // SELL
-         result.confidence += 30;
+
+         // EMA Score (30 points)
+         result.emaScore = 30;
+         result.confidence += result.emaScore;
          result.analysis += "EMA+30 ";
 
          // ADX Score (0-25)
-         int adxScore = ScoreADX(adx);
-         result.confidence += adxScore;
-         result.analysis += "ADX+" + IntegerToString(adxScore) + " ";
+         result.adxScore = ScoreADX(adx);
+         result.confidence += result.adxScore;
+         result.analysis += "ADX+" + IntegerToString(result.adxScore) + " ";
 
          // RSI Score (0-20)
-         int rsiScore = 0;
-         if(rsi < 50 && rsi > 30) rsiScore = 20;
-         else if(rsi < 60 && rsi > 20) rsiScore = 10;
-         else rsiScore = 5;
-         result.confidence += rsiScore;
-         result.analysis += "RSI+" + IntegerToString(rsiScore) + " ";
+         if(rsi < 50 && rsi > 30) result.rsiScore = 20;
+         else if(rsi < 60 && rsi > 20) result.rsiScore = 10;
+         else result.rsiScore = 5;
+         result.confidence += result.rsiScore;
+         result.analysis += "RSI+" + IntegerToString(result.rsiScore) + " ";
 
          // CSM Score (0-25)
-         int csmScore = ScoreCSM(csmDiff, false);
-         result.confidence += csmScore;
-         result.analysis += "CSM+" + IntegerToString(csmScore) + " ";
+         result.csmScore = ScoreCSM(csmDiff, false);
+         result.confidence += result.csmScore;
+         result.analysis += "CSM+" + IntegerToString(result.csmScore) + " ";
 
          // Price Action Pattern (bonus 15)
          int paScore = DetectPriceActionPattern(symbol, timeframe);
          if(paScore < 0)
          {
-            result.confidence += 15;
+            result.priceActionScore = 15;
+            result.confidence += result.priceActionScore;
             result.analysis += "PA+15 ";
          }
 
          // Volume Confirmation (bonus 10)
          if(CheckVolumeConfirmation(symbol, timeframe))
          {
-            result.confidence += 10;
+            result.volumeScore = 10;
+            result.confidence += result.volumeScore;
             result.analysis += "VOL+10 ";
          }
 
          // MTF Alignment (bonus 10)
          if(CheckMTFAlignment(symbol, result.signal))
          {
-            result.confidence += 10;
+            result.mtfScore = 10;
+            result.confidence += result.mtfScore;
             result.analysis += "MTF+10 ";
          }
       }

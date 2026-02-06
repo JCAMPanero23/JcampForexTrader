@@ -54,12 +54,12 @@ public:
    //| Export Signal to JSON File                                       |
    //| Creates {SYMBOL}_signals.json (e.g., EURUSD_signals.json)       |
    //+------------------------------------------------------------------+
-   bool ExportSignal(const SignalExportData &data)
+   bool ExportSignal(const SignalExportData &data, const StrategySignal *signal = NULL)
    {
       string filename = exportFolder + "\\" + data.symbol + "_signals.json";
 
       // Build JSON content
-      string json = BuildJSON(data);
+      string json = BuildJSON(data, signal);
 
       // Write to file
       int handle = FileOpen(filename, FILE_WRITE|FILE_TXT|FILE_ANSI);
@@ -98,10 +98,10 @@ public:
       data.csmDiff = csmDiff;
       data.regime = regime;
       data.dynamicRegimeTriggered = dynamicRegimeTriggered;
-      data.stopLossDollars = 0;
-      data.takeProfitDollars = 0;
+      data.stopLossDollars = signal.stopLossDollars;
+      data.takeProfitDollars = signal.takeProfitDollars;
 
-      return ExportSignal(data);
+      return ExportSignal(data, &signal);
    }
 
    //+------------------------------------------------------------------+
@@ -144,9 +144,9 @@ private:
 
    //+------------------------------------------------------------------+
    //| Build JSON String                                                |
-   //| ✅ Updated to properly export NOT_TRADABLE signal type          |
+   //| ✅ Updated to export component scores for dashboard visualization |
    //+------------------------------------------------------------------+
-   string BuildJSON(const SignalExportData &data)
+   string BuildJSON(const SignalExportData &data, const StrategySignal *signal = NULL)
    {
       string json = "{\n";
       json += "  \"symbol\": \"" + data.symbol + "\",\n";
@@ -175,6 +175,24 @@ private:
 
       json += "  \"stop_loss_dollars\": " + DoubleToString(slDollars, 2) + ",\n";
       json += "  \"take_profit_dollars\": " + DoubleToString(tpDollars, 2) + ",\n";
+
+      // ✅ NEW: Export component scores if signal provided
+      if(signal != NULL)
+      {
+         json += "  \"components\": {\n";
+         json += "    \"ema_score\": " + IntegerToString(signal.emaScore) + ",\n";
+         json += "    \"adx_score\": " + IntegerToString(signal.adxScore) + ",\n";
+         json += "    \"rsi_score\": " + IntegerToString(signal.rsiScore) + ",\n";
+         json += "    \"csm_score\": " + IntegerToString(signal.csmScore) + ",\n";
+         json += "    \"price_action_score\": " + IntegerToString(signal.priceActionScore) + ",\n";
+         json += "    \"volume_score\": " + IntegerToString(signal.volumeScore) + ",\n";
+         json += "    \"mtf_score\": " + IntegerToString(signal.mtfScore) + ",\n";
+         json += "    \"proximity_score\": " + IntegerToString(signal.proximityScore) + ",\n";
+         json += "    \"rejection_score\": " + IntegerToString(signal.rejectionScore) + ",\n";
+         json += "    \"stochastic_score\": " + IntegerToString(signal.stochasticScore) + "\n";
+         json += "  },\n";
+      }
+
       json += "  \"exported_at\": \"" + TimeToString(TimeCurrent(), TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "\"\n";
       json += "}";
 

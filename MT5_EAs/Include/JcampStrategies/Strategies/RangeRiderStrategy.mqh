@@ -116,19 +116,30 @@ public:
       result.analysis = "";
       result.strategyName = GetName();
 
-      // SCORE 1: Boundary Proximity (0-15 points)
-      int proximityScore = 0;
-      if(distancePips <= 3.0)
-         proximityScore = 15;     // Very close (0-3 pips)
-      else if(distancePips <= 5.0)
-         proximityScore = 12;     // Close (3-5 pips)
-      else if(distancePips <= 8.0)
-         proximityScore = 10;     // Near (5-8 pips)
-      else
-         proximityScore = 7;      // Within zone (8-10 pips)
+      // Initialize component scores
+      result.emaScore = 0;
+      result.adxScore = 0;
+      result.rsiScore = 0;
+      result.csmScore = 0;
+      result.priceActionScore = 0;
+      result.volumeScore = 0;
+      result.mtfScore = 0;
+      result.proximityScore = 0;
+      result.rejectionScore = 0;
+      result.stochasticScore = 0;
 
-      result.confidence += proximityScore;
-      result.analysis += "PROX+" + IntegerToString(proximityScore) + " ";
+      // SCORE 1: Boundary Proximity (0-15 points)
+      if(distancePips <= 3.0)
+         result.proximityScore = 15;     // Very close (0-3 pips)
+      else if(distancePips <= 5.0)
+         result.proximityScore = 12;     // Close (3-5 pips)
+      else if(distancePips <= 8.0)
+         result.proximityScore = 10;     // Near (5-8 pips)
+      else
+         result.proximityScore = 7;      // Within zone (8-10 pips)
+
+      result.confidence += result.proximityScore;
+      result.analysis += "PROX+" + IntegerToString(result.proximityScore) + " ";
 
       // Determine direction based on boundary
       if(nearSupport)
@@ -144,122 +155,117 @@ public:
 
       // SCORE 2: Rejection Pattern (0-15 points)
       bool lookingForBullish = (result.signal == 1);
-      int rejectionScore = DetectRejectionPattern(symbol, timeframe, lookingForBullish);
-      result.confidence += rejectionScore;
-      if(rejectionScore > 0)
-         result.analysis += "REJ+" + IntegerToString(rejectionScore) + " ";
+      result.rejectionScore = DetectRejectionPattern(symbol, timeframe, lookingForBullish);
+      result.confidence += result.rejectionScore;
+      if(result.rejectionScore > 0)
+         result.analysis += "REJ+" + IntegerToString(result.rejectionScore) + " ";
 
       // SCORE 3: RSI Confirmation (0-20 points)
       double rsi = GetRSI(symbol, timeframe, 14);
-      int rsiScore = 0;
 
       if(result.signal == 1)     // BUY at support
       {
          if(rsi < 30)
-            rsiScore = 20;     // Oversold (perfect)
+            result.rsiScore = 20;     // Oversold (perfect)
          else if(rsi < 40)
-            rsiScore = 17;     // Below neutral (great)
+            result.rsiScore = 17;     // Below neutral (great)
          else if(rsi < 50)
-            rsiScore = 14;     // Weakly bullish (good)
+            result.rsiScore = 14;     // Weakly bullish (good)
          else if(rsi < 60)
-            rsiScore = 10;     // Neutral zone (acceptable)
+            result.rsiScore = 10;     // Neutral zone (acceptable)
          else
-            rsiScore = 7;      // Above neutral (less ideal)
+            result.rsiScore = 7;      // Above neutral (less ideal)
       }
       else if(result.signal == -1)     // SELL at resistance
       {
          if(rsi > 70)
-            rsiScore = 20;     // Overbought (perfect)
+            result.rsiScore = 20;     // Overbought (perfect)
          else if(rsi > 60)
-            rsiScore = 17;     // Above neutral (great)
+            result.rsiScore = 17;     // Above neutral (great)
          else if(rsi > 50)
-            rsiScore = 14;     // Weakly bearish (good)
+            result.rsiScore = 14;     // Weakly bearish (good)
          else if(rsi > 40)
-            rsiScore = 10;     // Neutral zone (acceptable)
+            result.rsiScore = 10;     // Neutral zone (acceptable)
          else
-            rsiScore = 7;      // Below neutral (less ideal)
+            result.rsiScore = 7;      // Below neutral (less ideal)
       }
 
-      result.confidence += rsiScore;
-      result.analysis += "RSI+" + IntegerToString(rsiScore) + " ";
+      result.confidence += result.rsiScore;
+      result.analysis += "RSI+" + IntegerToString(result.rsiScore) + " ";
 
       // SCORE 4: Stochastic Confirmation (0-15 points)
       double stochMain = 0, stochSignal = 0;
-      int stochScore = 0;
 
       if(GetStochastic(symbol, timeframe, stochMain, stochSignal))
       {
          if(result.signal == 1)     // BUY at support
          {
             if(stochMain < 20 && stochMain > stochSignal)
-               stochScore = 15;     // Oversold + crossing up
+               result.stochasticScore = 15;     // Oversold + crossing up
             else if(stochMain < 30)
-               stochScore = 12;     // Oversold
+               result.stochasticScore = 12;     // Oversold
             else if(stochMain < 50 && stochMain > stochSignal)
-               stochScore = 10;     // Below neutral + crossing up
+               result.stochasticScore = 10;     // Below neutral + crossing up
             else if(stochMain < 50)
-               stochScore = 7;      // Below neutral
+               result.stochasticScore = 7;      // Below neutral
          }
          else if(result.signal == -1)     // SELL at resistance
          {
             if(stochMain > 80 && stochMain < stochSignal)
-               stochScore = 15;     // Overbought + crossing down
+               result.stochasticScore = 15;     // Overbought + crossing down
             else if(stochMain > 70)
-               stochScore = 12;     // Overbought
+               result.stochasticScore = 12;     // Overbought
             else if(stochMain > 50 && stochMain < stochSignal)
-               stochScore = 10;     // Above neutral + crossing down
+               result.stochasticScore = 10;     // Above neutral + crossing down
             else if(stochMain > 50)
-               stochScore = 7;      // Above neutral
+               result.stochasticScore = 7;      // Above neutral
          }
 
-         result.confidence += stochScore;
-         if(stochScore > 0)
-            result.analysis += "STOCH+" + IntegerToString(stochScore) + " ";
+         result.confidence += result.stochasticScore;
+         if(result.stochasticScore > 0)
+            result.analysis += "STOCH+" + IntegerToString(result.stochasticScore) + " ";
       }
 
       // SCORE 5: CSM Confirmation (0-25 points)
-      int csmScore = 0;
-
       // At support (BUY), we want base currency weak (negative CSM diff)
       // At resistance (SELL), we want base currency strong (positive CSM diff)
       if(result.signal == 1)     // BUY at support
       {
          // Want negative CSM diff (base oversold)
          if(csmDiff < -20)
-            csmScore = 25;
+            result.csmScore = 25;
          else if(csmDiff < -15)
-            csmScore = 20;
+            result.csmScore = 20;
          else if(csmDiff < -10)
-            csmScore = 15;
+            result.csmScore = 15;
          else if(csmDiff < -5)
-            csmScore = 10;
+            result.csmScore = 10;
          else if(csmDiff < 0)
-            csmScore = 5;
+            result.csmScore = 5;
       }
       else if(result.signal == -1)     // SELL at resistance
       {
          // Want positive CSM diff (base overbought)
          if(csmDiff > 20)
-            csmScore = 25;
+            result.csmScore = 25;
          else if(csmDiff > 15)
-            csmScore = 20;
+            result.csmScore = 20;
          else if(csmDiff > 10)
-            csmScore = 15;
+            result.csmScore = 15;
          else if(csmDiff > 5)
-            csmScore = 10;
+            result.csmScore = 10;
          else if(csmDiff > 0)
-            csmScore = 5;
+            result.csmScore = 5;
       }
 
-      result.confidence += csmScore;
-      result.analysis += "CSM+" + IntegerToString(csmScore);
+      result.confidence += result.csmScore;
+      result.analysis += "CSM+" + IntegerToString(result.csmScore);
 
       // SCORE 6: Volume Confirmation (0-10 points) - BONUS
-      int volScore = 0;
       if(CheckVolumeConfirmation(symbol, timeframe))
       {
-         volScore = 10;
-         result.confidence += volScore;
+         result.volumeScore = 10;
+         result.confidence += result.volumeScore;
          result.analysis += " VOL+10";
       }
 

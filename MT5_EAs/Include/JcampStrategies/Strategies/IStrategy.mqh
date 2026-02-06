@@ -21,6 +21,22 @@ struct StrategySignal
    // Optional: ATR-based SL/TP (used by Gold strategy)
    double   stopLossDollars;    // Stop loss in dollars (0 = use default)
    double   takeProfitDollars;  // Take profit in dollars (0 = use default)
+
+   // Component scores for detailed dashboard visualization
+   // TrendRider components (0-135 total)
+   int      emaScore;           // EMA Alignment: 0-30 points
+   int      adxScore;           // ADX Strength: 0-25 points
+   int      rsiScore;           // RSI Position: 0-20 points (shared with RangeRider)
+   int      csmScore;           // CSM Support: 0-25 points (shared with RangeRider)
+   int      priceActionScore;   // Price Action: 0-15 points (bonus)
+   int      volumeScore;        // Volume: 0-10 points (bonus, shared with RangeRider)
+   int      mtfScore;           // Multi-Timeframe: 0-10 points (bonus)
+
+   // RangeRider components (0-100 total)
+   int      proximityScore;     // Boundary Proximity: 0-15 points
+   int      rejectionScore;     // Rejection Pattern: 0-15 points
+   int      stochasticScore;    // Stochastic: 0-15 points
+   // Note: rsiScore, csmScore, volumeScore are shared between strategies
 };
 
 //+------------------------------------------------------------------+
