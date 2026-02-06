@@ -94,6 +94,24 @@ public:
       result.analysis = "";
       result.strategyName = GetName();
 
+      // Initialize component scores (TrendRider specific)
+      result.emaScore = 0;
+      result.adxScore = 0;
+      result.rsiScore = 0;
+      result.csmScore = 0;
+      result.priceActionScore = 0;
+      result.volumeScore = 0;
+      result.mtfScore = 0;
+
+      // Initialize RangeRider scores to 0 (not used by Gold TrendRider)
+      result.proximityScore = 0;
+      result.rejectionScore = 0;
+      result.stochasticScore = 0;
+
+      // ✅ Calculate universal components first (for dashboard visibility even on HOLD)
+      result.adxScore = ScoreADX(adx);
+      result.csmScore = ScoreCSM(MathAbs(csmDiff), true); // Score by absolute strength
+
       // Check EMA alignment AND price position (same as TrendRider)
       bool bullishEMA = (ema20 > ema50 && ema50 > ema100 && currentPrice > ema20);
       bool bearishEMA = (ema20 < ema50 && ema50 < ema100 && currentPrice < ema20);
@@ -101,46 +119,51 @@ public:
       if(bullishEMA)
       {
          result.signal = 1; // BUY
-         result.confidence += 30;
+
+         // EMA Score (30 points)
+         result.emaScore = 30;
+         result.confidence += result.emaScore;
          result.analysis += "EMA+30 ";
 
          // ADX Score (0-25)
-         int adxScore = ScoreADX(adx);
-         result.confidence += adxScore;
-         result.analysis += "ADX+" + IntegerToString(adxScore) + " ";
+         result.adxScore = ScoreADX(adx);
+         result.confidence += result.adxScore;
+         result.analysis += "ADX+" + IntegerToString(result.adxScore) + " ";
 
          // RSI Score (0-20)
-         int rsiScore = 0;
-         if(rsi > 50 && rsi < 70) rsiScore = 20;
-         else if(rsi > 40 && rsi < 80) rsiScore = 10;
-         else rsiScore = 5;
-         result.confidence += rsiScore;
-         result.analysis += "RSI+" + IntegerToString(rsiScore) + " ";
+         if(rsi > 50 && rsi < 70) result.rsiScore = 20;
+         else if(rsi > 40 && rsi < 80) result.rsiScore = 10;
+         else result.rsiScore = 5;
+         result.confidence += result.rsiScore;
+         result.analysis += "RSI+" + IntegerToString(result.rsiScore) + " ";
 
          // CSM Score (0-25)
-         int csmScore = ScoreCSM(csmDiff, true);
-         result.confidence += csmScore;
-         result.analysis += "CSM+" + IntegerToString(csmScore) + " ";
+         result.csmScore = ScoreCSM(csmDiff, true);
+         result.confidence += result.csmScore;
+         result.analysis += "CSM+" + IntegerToString(result.csmScore) + " ";
 
          // Price Action Pattern (bonus 15)
          int paScore = DetectPriceActionPattern(symbol, timeframe);
          if(paScore > 0)
          {
-            result.confidence += 15;
+            result.priceActionScore = 15;
+            result.confidence += result.priceActionScore;
             result.analysis += "PA+15 ";
          }
 
          // Volume Confirmation (bonus 10)
          if(CheckVolumeConfirmation(symbol, timeframe))
          {
-            result.confidence += 10;
+            result.volumeScore = 10;
+            result.confidence += result.volumeScore;
             result.analysis += "VOL+10 ";
          }
 
          // MTF Alignment (bonus 10)
          if(CheckMTFAlignment(symbol, result.signal))
          {
-            result.confidence += 10;
+            result.mtfScore = 10;
+            result.confidence += result.mtfScore;
             result.analysis += "MTF+10 ";
          }
 
@@ -159,46 +182,51 @@ public:
       else if(bearishEMA)
       {
          result.signal = -1; // SELL
-         result.confidence += 30;
+
+         // EMA Score (30 points)
+         result.emaScore = 30;
+         result.confidence += result.emaScore;
          result.analysis += "EMA+30 ";
 
          // ADX Score (0-25)
-         int adxScore = ScoreADX(adx);
-         result.confidence += adxScore;
-         result.analysis += "ADX+" + IntegerToString(adxScore) + " ";
+         result.adxScore = ScoreADX(adx);
+         result.confidence += result.adxScore;
+         result.analysis += "ADX+" + IntegerToString(result.adxScore) + " ";
 
          // RSI Score (0-20)
-         int rsiScore = 0;
-         if(rsi < 50 && rsi > 30) rsiScore = 20;
-         else if(rsi < 60 && rsi > 20) rsiScore = 10;
-         else rsiScore = 5;
-         result.confidence += rsiScore;
-         result.analysis += "RSI+" + IntegerToString(rsiScore) + " ";
+         if(rsi < 50 && rsi > 30) result.rsiScore = 20;
+         else if(rsi < 60 && rsi > 20) result.rsiScore = 10;
+         else result.rsiScore = 5;
+         result.confidence += result.rsiScore;
+         result.analysis += "RSI+" + IntegerToString(result.rsiScore) + " ";
 
          // CSM Score (0-25)
-         int csmScore = ScoreCSM(csmDiff, false);
-         result.confidence += csmScore;
-         result.analysis += "CSM+" + IntegerToString(csmScore) + " ";
+         result.csmScore = ScoreCSM(csmDiff, false);
+         result.confidence += result.csmScore;
+         result.analysis += "CSM+" + IntegerToString(result.csmScore) + " ";
 
          // Price Action Pattern (bonus 15)
          int paScore = DetectPriceActionPattern(symbol, timeframe);
          if(paScore < 0)
          {
-            result.confidence += 15;
+            result.priceActionScore = 15;
+            result.confidence += result.priceActionScore;
             result.analysis += "PA+15 ";
          }
 
          // Volume Confirmation (bonus 10)
          if(CheckVolumeConfirmation(symbol, timeframe))
          {
-            result.confidence += 10;
+            result.volumeScore = 10;
+            result.confidence += result.volumeScore;
             result.analysis += "VOL+10 ";
          }
 
          // MTF Alignment (bonus 10)
          if(CheckMTFAlignment(symbol, result.signal))
          {
-            result.confidence += 10;
+            result.mtfScore = 10;
+            result.confidence += result.mtfScore;
             result.analysis += "MTF+10 ";
          }
 
@@ -216,18 +244,26 @@ public:
       }
       else
       {
-         return false; // No clear trend
+         // ✅ No clear EMA trend - but still return signal struct with component data
+         // This allows dashboard to show what's missing (EMA = 0/30)
+         result.signal = 0;
+         result.analysis += "No EMA alignment";
+
+         if(verboseLogging)
+            Print("No EMA alignment - returning with partial component data");
       }
 
       if(verboseLogging)
       {
-         Print("Signal: ", result.signal > 0 ? "BUY" : "SELL");
+         string signalText = result.signal > 0 ? "BUY" : (result.signal < 0 ? "SELL" : "NEUTRAL");
+         Print("Signal: ", signalText);
          Print("Confidence: ", result.confidence, "/135 (after spread penalty)");
          Print("ATR: $", DoubleToString(atr, 2), " | Spread: ", DoubleToString(spreadPips, 1), " pips");
          Print("Analysis: ", result.analysis);
       }
 
-      return IsValidSignal(result);
+      // ✅ Always return true now (with component data), let IsValidSignal() determine tradeability
+      return true;
    }
 
    //+------------------------------------------------------------------+
