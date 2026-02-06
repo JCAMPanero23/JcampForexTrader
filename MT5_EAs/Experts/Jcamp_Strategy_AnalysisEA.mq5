@@ -505,11 +505,23 @@ void OnTick()
     }
     else
     {
-        // No valid signal - export HOLD (strategy ran but conditions not met)
-        signalExporter.ClearSignal(_Symbol,
-                                    EnumToString(currentRegime),
-                                    csmDiff,
-                                    "No valid signal - waiting for better setup (HOLD)");
+        // No valid signal - export HOLD with component scores (so users can see what's missing)
+        // ✅ Export component scores even for HOLD signals for dashboard visibility
+        if(hasSignal)
+        {
+            // Strategy ran but didn't meet threshold - export with components
+            signalExporter.ExportSignalFromStrategy(_Symbol, signal, csmDiff,
+                                                     EnumToString(currentRegime),
+                                                     dynamicRegimeTriggeredThisCycle);
+        }
+        else
+        {
+            // Strategy didn't run at all (e.g., price not near boundaries for RangeRider)
+            signalExporter.ClearSignal(_Symbol,
+                                        EnumToString(currentRegime),
+                                        csmDiff,
+                                        "No valid signal - waiting for better setup (HOLD)");
+        }
 
         if(VerboseLogging)
             Print("✗ No valid signal - HOLD (strategy conditions not met)");
