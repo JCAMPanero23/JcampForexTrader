@@ -59,6 +59,21 @@ namespace JcampForexTrader
             public string Analysis { get; set; } = "";  // CSM Alpha analysis breakdown: "EMA+30 ADX+20 RSI+5 CSM+25"
             public string Regime { get; set; } = "UNKNOWN";  // TRENDING/RANGING/TRANSITIONAL
             public bool DynamicRegimeTriggered { get; set; } = false;  // True if dynamic detection changed regime
+
+            // Component scores (from "components" JSON object)
+            // TrendRider components
+            public int EmaScore { get; set; } = 0;
+            public int AdxScore { get; set; } = 0;
+            public int RsiScore { get; set; } = 0;
+            public int CsmScore { get; set; } = 0;
+            public int PriceActionScore { get; set; } = 0;
+            public int VolumeScore { get; set; } = 0;
+            public int MtfScore { get; set; } = 0;
+
+            // RangeRider components
+            public int ProximityScore { get; set; } = 0;
+            public int RejectionScore { get; set; } = 0;
+            public int StochasticScore { get; set; } = 0;
         }
 
         public class PositionDisplay
@@ -675,6 +690,28 @@ namespace JcampForexTrader
                 // CSM data
                 signalData.CsmDifferential = csmDiff;
                 signalData.CsmTrend = regime;
+
+                // Parse component scores (if present)
+                try
+                {
+                    if (signal.components != null)
+                    {
+                        signalData.EmaScore = (int)(signal.components.ema_score ?? 0);
+                        signalData.AdxScore = (int)(signal.components.adx_score ?? 0);
+                        signalData.RsiScore = (int)(signal.components.rsi_score ?? 0);
+                        signalData.CsmScore = (int)(signal.components.csm_score ?? 0);
+                        signalData.PriceActionScore = (int)(signal.components.price_action_score ?? 0);
+                        signalData.VolumeScore = (int)(signal.components.volume_score ?? 0);
+                        signalData.MtfScore = (int)(signal.components.mtf_score ?? 0);
+                        signalData.ProximityScore = (int)(signal.components.proximity_score ?? 0);
+                        signalData.RejectionScore = (int)(signal.components.rejection_score ?? 0);
+                        signalData.StochasticScore = (int)(signal.components.stochastic_score ?? 0);
+                    }
+                }
+                catch
+                {
+                    // Components not present or parse error - leave at defaults (0)
+                }
 
                 if (ENABLE_VERBOSE_DEBUG)
                     System.Diagnostics.Debug.WriteLine($"CSM Alpha signal loaded: {pair} | {signalText} @ {confidence} | {strategy}");
@@ -2033,7 +2070,6 @@ namespace JcampForexTrader
             var trSignal = FindName($"{pair}_TR_Signal_SA") as TextBlock;
             var trConf = FindName($"{pair}_TR_Conf_SA") as TextBlock;
             var trBar = FindName($"{pair}_TR_Bar_SA") as ProgressBar;
-            var trAnalysis = FindName($"{pair}_TR_Analysis_SA") as TextBlock;
 
             if (trSignal != null) trSignal.Text = signalData.BestSignal;
             if (trConf != null) trConf.Text = $"{signalData.TrendRiderConfidence}%";
@@ -2042,21 +2078,79 @@ namespace JcampForexTrader
                 trBar.Value = signalData.TrendRiderConfidence;
                 trBar.Foreground = GetSignalBrush(signalData.BestSignal);
             }
-            if (trAnalysis != null)
+
+            // Update TrendRider component progress bars
+            UpdateComponentBar($"{pair}_TR_EMA_Bar", $"{pair}_TR_EMA_Text", signalData.EmaScore, 30);
+            UpdateComponentBar($"{pair}_TR_ADX_Bar", $"{pair}_TR_ADX_Text", signalData.AdxScore, 25);
+            UpdateComponentBar($"{pair}_TR_RSI_Bar", $"{pair}_TR_RSI_Text", signalData.RsiScore, 20);
+            UpdateComponentBar($"{pair}_TR_CSM_Bar", $"{pair}_TR_CSM_Text", signalData.CsmScore, 25);
+
+            // Update TrendRider bonus scores (show if non-zero)
+            var trBonus = FindName($"{pair}_TR_Bonus_Text") as TextBlock;
+            if (trBonus != null)
             {
-                trAnalysis.Text = string.IsNullOrEmpty(signalData.Analysis) ? "—" : signalData.Analysis.Trim();
+                int bonusTotal = signalData.PriceActionScore + signalData.VolumeScore + signalData.MtfScore;
+                if (bonusTotal > 0)
+                {
+                    var bonusParts = new List<string>();
+                    if (signalData.PriceActionScore > 0) bonusParts.Add($"PA+{signalData.PriceActionScore}");
+                    if (signalData.VolumeScore > 0) bonusParts.Add($"VOL+{signalData.VolumeScore}");
+                    if (signalData.MtfScore > 0) bonusParts.Add($"MTF+{signalData.MtfScore}");
+                    trBonus.Text = "Bonus: " + string.Join(" ", bonusParts);
+                    trBonus.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    trBonus.Visibility = Visibility.Collapsed;
+                }
             }
 
-            // Update RangeRider section (currently shows 0% for CSM Alpha - only TrendRider used)
+            // Update RangeRider section
             var rrSignal = FindName($"{pair}_RR_Signal_SA") as TextBlock;
             var rrConf = FindName($"{pair}_RR_Conf_SA") as TextBlock;
             var rrBar = FindName($"{pair}_RR_Bar_SA") as ProgressBar;
-            var rrAnalysis = FindName($"{pair}_RR_Analysis_SA") as TextBlock;
 
             if (rrSignal != null) rrSignal.Text = "HOLD";
             if (rrConf != null) rrConf.Text = "0%";
             if (rrBar != null) rrBar.Value = 0;
-            if (rrAnalysis != null) rrAnalysis.Text = "—";
+
+            // Update RangeRider component progress bars
+            UpdateComponentBar($"{pair}_RR_Prox_Bar", $"{pair}_RR_Prox_Text", signalData.ProximityScore, 15);
+            UpdateComponentBar($"{pair}_RR_Rej_Bar", $"{pair}_RR_Rej_Text", signalData.RejectionScore, 15);
+            UpdateComponentBar($"{pair}_RR_RSI_Bar", $"{pair}_RR_RSI_Text", signalData.RsiScore, 20);
+            UpdateComponentBar($"{pair}_RR_Stoch_Bar", $"{pair}_RR_Stoch_Text", signalData.StochasticScore, 15);
+            UpdateComponentBar($"{pair}_RR_CSM_Bar", $"{pair}_RR_CSM_Text", signalData.CsmScore, 25);
+
+            // Update RangeRider bonus scores (show if non-zero)
+            var rrBonus = FindName($"{pair}_RR_Bonus_Text") as TextBlock;
+            if (rrBonus != null)
+            {
+                if (signalData.VolumeScore > 0)
+                {
+                    rrBonus.Text = $"Bonus: VOL+{signalData.VolumeScore}";
+                    rrBonus.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    rrBonus.Visibility = Visibility.Collapsed;
+                }
+            }
+        }
+
+        private void UpdateComponentBar(string barName, string textName, int value, int max)
+        {
+            var bar = FindName(barName) as ProgressBar;
+            var text = FindName(textName) as TextBlock;
+
+            if (bar != null)
+            {
+                bar.Value = value;
+            }
+
+            if (text != null)
+            {
+                text.Text = $"{value}/{max}";
+            }
         }
 
         private Dictionary<string, int> ParseAnalysisString(string analysis)
