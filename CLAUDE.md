@@ -2,7 +2,7 @@
 
 **Purpose:** Single authoritative reference for Claude Code
 **Project:** CSM Alpha - 4-Asset Trading System with Gold
-**Last Updated:** February 6, 2026 (Session 11 Complete - CSM Gatekeeper Refactoring)
+**Last Updated:** February 7, 2026 (Session 13 Complete - Enhanced Signal Dashboard)
 
 ---
 
@@ -512,80 +512,46 @@ Flow: Test strategies in CSM → Refine in backtesting → Deploy live
 
 ## 🎯 CURRENT SESSION STATUS
 
-**Session:** 13 (Enhanced Signal Analysis Dashboard)
-**Date:** TBD
+**Session:** 14 (Enhanced Dashboard Live Validation)
+**Date:** TBD (Market Open Required)
 **Duration:** Not Started
 **Status:** 🎯 Planned
 
-**Session 13 Objective:**
-Enhance CSMMonitor **SIGNAL ANALYSIS** tab to show detailed strategy breakdown (like old system).
+**Session 14 Objective:**
+Validate Session 13's Enhanced Signal Analysis Dashboard with live market data. Confirm all 3 strategies (TrendRider, RangeRider, GoldTrendRider) export component scores correctly when markets open.
 
-**Reference:** `Debug/Previous Strategy analysis Sample.png`
+**See:** `Documentation/SESSION_14_VALIDATION_PLAN.md` for complete testing checklist
 
-**Features to Implement:**
-1. 📊 **Detailed Signal Breakdown View**
-   - Per-pair strategy analysis card (EURUSD, GBPUSD, AUDJPY, XAUUSD)
-   - Show current signal status: BUY/SELL/HOLD/NOT_TRADABLE
-   - Display confidence % with visual progress bar
-   - Show CSM differential with threshold comparison
+**Prerequisites:**
+- ✅ Session 13 complete (all code changes committed)
+- ✅ Strategy_AnalysisEA compiled with latest changes
+- ⏳ Market open (Sunday 22:00 UTC - Friday 22:00 UTC)
 
-2. 🔍 **Component-Level Analysis**
-   - **TrendRider Breakdown:**
-     - EMA Alignment (0-30 points)
-     - ADX Strength (0-25 points)
-     - RSI Position (0-20 points)
-     - CSM Support (0-25 points)
-   - **RangeRider Breakdown:** (if applicable)
-     - Range Width
-     - S/R Quality
-     - Bounce Position
-   - Show what's contributing vs what's missing
+**Validation Tasks:**
+1. ⏳ Deploy Strategy_AnalysisEA on all 4 charts (EURUSD, GBPUSD, AUDJPY, XAUUSD)
+2. ⏳ Verify signal JSON files contain "components" object
+3. ⏳ Test all signal types: BUY/SELL, HOLD, NOT_TRADABLE
+4. ⏳ Validate dashboard displays component data correctly
+5. ⏳ Test strategy-specific components (TrendRider vs RangeRider)
+6. ⏳ Capture screenshots and document results
 
-3. ⚠️ **Visual Status Indicators**
-   - Orange warning box: "BLOCKING: CSM differential too low (primary)"
-   - Red "NEEDS" box: Show exact requirements not met
-   - Green checkmarks: Show conditions that ARE met
-   - Clear reasoning text at bottom
+**Expected Results:**
+- ✅ All 4 signal files contain valid "components" objects
+- ✅ Dashboard displays component progress bars for all pairs
+- ✅ HOLD signals show partial components (transparency achieved)
+- ✅ NOT_TRADABLE signals show orange with no components
+- ✅ Bonus scores show/hide dynamically
 
-4. 📈 **Real-Time Updates**
-   - Read signal JSON files every 5 seconds (existing refresh)
-   - Parse strategy breakdown data from signals
-   - Update UI with latest component scores
-
-**Implementation Approach:**
-1. **Design new XAML layout** for Signal Analysis tab
-   - 4 strategy cards (one per pair)
-   - Expandable sections for TrendRider/RangeRider details
-   - Visual progress bars and status icons
-
-2. **Update signal JSON export** (if needed)
-   - Ensure Strategy_AnalysisEA exports component scores
-   - Add strategy breakdown to signal files
-   - Include regime reasoning and blocking reasons
-
-3. **C# Parser Updates**
-   - Parse new signal structure
-   - Extract component scores (EMA, ADX, RSI, CSM)
-   - Calculate what's missing for valid signal
-
-4. **UI Data Binding**
-   - Bind component scores to progress bars
-   - Show/hide TrendRider vs RangeRider sections
-   - Update status colors and warning boxes
-
-**Expected Outcome:**
-- Users can see EXACTLY why a pair is on HOLD
-- Understand which strategy components are preventing signal
-- Know what needs to change for a BUY/SELL signal
-- Better transparency into CSM Alpha decision-making
-
-**Session 12 Recap (Completed):**
-- ✅ Session 11 documentation added to CLAUDE.md
-- ✅ Performance analysis report created
-- ✅ Session 11 CSM Gatekeeper validated (100% success)
-- ✅ AUDJPY correctly blocked (CSM diff 14.41 < 15.0)
-- ⚠️ Insufficient trade data for confidence threshold tuning
-- 📊 Account: $500.71 balance, 1 trade (+$0.74), 100% win rate
+**Session 13 Recap (Completed):**
+- ✅ Enhanced Signal Analysis Dashboard implemented
+- ✅ Added 10 component score fields to StrategySignal struct
+- ✅ Updated all 3 strategies to always return component data
+- ✅ Modified SignalExporter with two-method pattern
+- ✅ Enhanced XAML with 24 component progress bars
+- ✅ Updated C# parser to read component JSON
+- ✅ Created test signal generator (generate_test_signals.bat)
+- ✅ Offline testing confirmed dashboard works correctly
+- ⏳ **Market validation pending (Session 14)**
 
 
 ## 📜 SESSION HISTORY
@@ -1092,6 +1058,74 @@ Enhance CSMMonitor **SIGNAL ANALYSIS** tab to show detailed strategy breakdown (
 - Enhance CSMMonitor Signal Analysis tab with detailed strategy breakdown
 - Show WHY signals are on HOLD (component-by-component analysis)
 - Match old system's detailed view (see Debug/Previous Strategy analysis Sample.png)
+
+### Session 13: Enhanced Signal Analysis Dashboard (February 7, 2026)
+**Duration:** ~4 hours | **Status:** ✅ Complete (Awaiting Market Validation)
+
+**Accomplished:**
+- ✅ **MQL5 Strategy Updates** (7 files modified)
+  - Added 10 component score fields to `StrategySignal` struct (IStrategy.mqh)
+  - Modified TrendRiderStrategy to store individual component scores
+  - Modified RangeRiderStrategy to store component scores
+  - Modified GoldTrendRiderStrategy to store component scores
+  - Fixed all strategies to always return component data (even on HOLD)
+  - Split SignalExporter into two methods (with/without components)
+  - Updated Strategy_AnalysisEA to export components for HOLD signals
+
+- ✅ **XAML UI Updates** (MainWindow.xaml)
+  - Added 24 component progress bars (4 pairs × 2 strategies × 3+ components)
+  - Added X/Y labels for each component (e.g., "30/30", "20/25")
+  - Added collapsible bonus score sections (PA, VOL, MTF)
+  - Color-coded progress bars by component type
+
+- ✅ **C# Parser Updates** (MainWindow.xaml.cs)
+  - Extended SignalData class with 10 component properties
+  - Updated LoadCSMAlphaSignal() to parse "components" JSON object
+  - Enhanced UpdateSignalAnalysisTab() with component UI binding
+  - Created UpdateComponentBar() helper method
+
+- ✅ **Test Signal Generator** (generate_test_signals.bat)
+  - Created batch file for offline dashboard testing
+  - Generates 4 test scenarios (BUY, SELL, HOLD, NOT_TRADABLE)
+  - Allows UI validation without waiting for market open
+
+**Issues Encountered & Fixes:**
+1. **MQL5 Pointer Syntax Error** → Split methods to avoid pointer parameters
+2. **No Component Data in JSON** → Strategies returned false before calculating scores
+3. **Early Returns in Strategies** → Moved component calculation before condition checks
+4. **All 3 Strategies Fixed** → Always return true with component data (even signal=0)
+
+**Key Achievement:**
+✅ **Transparency:** Users can now see EXACTLY why signals are on HOLD by viewing individual component scores with visual progress bars
+
+**Files Modified:**
+- `IStrategy.mqh` - Added component fields
+- `TrendRiderStrategy.mqh` - Always returns components
+- `RangeRiderStrategy.mqh` - Always returns components
+- `GoldTrendRiderStrategy.mqh` - Always returns components
+- `SignalExporter.mqh` - Two-method export pattern
+- `Jcamp_Strategy_AnalysisEA.mq5` - Export components for HOLD
+- `MainWindow.xaml` - 24 progress bars + bonus sections
+- `MainWindow.xaml.cs` - Parse components, update UI
+- `generate_test_signals.bat` - Test data generator
+
+**Commits:** `e8189eb`, `b053ef8`, `e54fce9`, `febcc23`, `10be6e7`, `7f9cd07`, `3f638ae`
+
+**Testing:**
+- ✅ Offline testing complete (using test signal generator)
+- ✅ Dashboard displays all components correctly
+- ✅ Progress bars, X/Y labels, and bonus scores working
+- ⏳ **Market validation pending (Session 14)**
+
+**Documentation Created:**
+- `SESSION_13_ENHANCED_SIGNAL_DASHBOARD.md` - Complete implementation details
+- `SESSION_14_VALIDATION_PLAN.md` - Market testing checklist
+
+**Next Session (14) Objective:**
+- Deploy on live MT5 when markets open
+- Verify signal JSON files contain "components" object
+- Validate dashboard with real market data
+- Capture screenshots and document results
 
 ---
 
