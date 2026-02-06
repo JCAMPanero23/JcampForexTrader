@@ -75,7 +75,7 @@ public:
       result.analysis = "";
       result.strategyName = GetName();
 
-      // Initialize component scores
+      // Initialize component scores (TrendRider specific)
       result.emaScore = 0;
       result.adxScore = 0;
       result.rsiScore = 0;
@@ -83,9 +83,11 @@ public:
       result.priceActionScore = 0;
       result.volumeScore = 0;
       result.mtfScore = 0;
-      result.rangeWidthScore = 0;
-      result.srQualityScore = 0;
-      result.bounceScore = 0;
+
+      // Initialize RangeRider scores to 0 (not used by TrendRider)
+      result.proximityScore = 0;
+      result.rejectionScore = 0;
+      result.stochasticScore = 0;
 
       // Check EMA alignment AND price position
       // BUY: EMAs bullish aligned AND price above EMA20
