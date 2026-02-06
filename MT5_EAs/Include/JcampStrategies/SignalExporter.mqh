@@ -106,8 +106,12 @@ public:
 
    //+------------------------------------------------------------------+
    //| Clear Signal File (no valid signal)                              |
+   //| ✅ Updated to support NOT_TRADABLE vs HOLD distinction          |
    //+------------------------------------------------------------------+
-   bool ClearSignal(string symbol)
+   bool ClearSignal(string symbol,
+                     string regime = "UNKNOWN",
+                     double csmDiff = 0.0,
+                     string reason = "No valid signal")
    {
       SignalExportData data;
       data.symbol = symbol;
@@ -115,10 +119,12 @@ public:
       data.strategyName = "NONE";
       data.signal = 0;
       data.confidence = 0;
-      data.analysis = "No valid signal";
-      data.csmDiff = 0;
-      data.regime = "UNKNOWN";
+      data.analysis = reason;  // "NOT_TRADABLE" or "No valid signal" (HOLD)
+      data.csmDiff = csmDiff;
+      data.regime = regime;
       data.dynamicRegimeTriggered = false;
+      data.stopLossDollars = 0;
+      data.takeProfitDollars = 0;
 
       return ExportSignal(data);
    }
@@ -138,6 +144,7 @@ private:
 
    //+------------------------------------------------------------------+
    //| Build JSON String                                                |
+   //| ✅ Updated to properly export NOT_TRADABLE signal type          |
    //+------------------------------------------------------------------+
    string BuildJSON(const SignalExportData &data)
    {
@@ -147,7 +154,15 @@ private:
       json += "  \"unix_time\": " + IntegerToString((long)data.timestamp) + ",\n";
       json += "  \"strategy\": \"" + data.strategyName + "\",\n";
       json += "  \"signal\": " + IntegerToString(data.signal) + ",\n";
-      json += "  \"signal_text\": \"" + SignalToText(data.signal) + "\",\n";
+
+      // ✅ Check for NOT_TRADABLE in analysis field first
+      string signalText;
+      if(StringFind(data.analysis, "NOT_TRADABLE") >= 0)
+         signalText = "NOT_TRADABLE";
+      else
+         signalText = SignalToText(data.signal);
+
+      json += "  \"signal_text\": \"" + signalText + "\",\n";
       json += "  \"confidence\": " + IntegerToString(data.confidence) + ",\n";
       json += "  \"analysis\": \"" + data.analysis + "\",\n";
       json += "  \"csm_diff\": " + DoubleToString(data.csmDiff, 2) + ",\n";

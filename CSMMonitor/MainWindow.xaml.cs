@@ -667,8 +667,8 @@ namespace JcampForexTrader
                 }
                 else
                 {
-                    // NONE or NEUTRAL
-                    signalData.BestSignal = "HOLD";
+                    // NONE or NEUTRAL - preserve NOT_TRADABLE if that's what's in signal_text
+                    signalData.BestSignal = (signalText == "NOT_TRADABLE") ? "NOT_TRADABLE" : "HOLD";
                     signalData.BestConfidence = 0;
                 }
 
@@ -1253,15 +1253,17 @@ namespace JcampForexTrader
 
         private SolidColorBrush GetSignalColor(string signal)
         {
-            switch (signal?.ToUpper())
+            switch (signal?.ToUpper().Replace(" ", "_"))
             {
                 case "BUY":
-                    return GetMutedBrush("Green");  // Was: LightGreen
+                    return GetMutedBrush("Green");    // Valid trading signal (CSM passed, strategy confirmed)
                 case "SELL":
-                    return GetMutedBrush("Red");    // Was: LightCoral
+                    return GetMutedBrush("Red");      // Valid trading signal (CSM passed, strategy confirmed)
+                case "NOT_TRADABLE":
+                    return GetMutedBrush("Orange");   // System blocking: CSM failed OR wrong regime
                 case "HOLD":
                 default:
-                    return GetMutedBrush("Gray");   // Was: LightGray
+                    return GetMutedBrush("Gray");     // Strategy waiting for better setup
             }
         }
 

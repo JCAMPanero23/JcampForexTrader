@@ -36,9 +36,10 @@ input int AnalysisIntervalMinutes = 15;                   // Signal export inter
 input int RegimeCheckHours = 4;                           // Regime detection check interval (hours)
 
 //═══════════════════════════════════════════════════════════════════
-//  CURRENCY STRENGTH METER (CSM)
+//  CSM GATEKEEPER (Primary Trading Filter)
 //═══════════════════════════════════════════════════════════════════
-input group "═══ CURRENCY STRENGTH METER ═══"
+input group "═══ CSM GATEKEEPER (PRIMARY FILTER) ═══"
+input double MinCSMDifferential = 15.0;                   // Min CSM diff (blocks all trading if < threshold)
 input string CSM_Folder = "CSM_Data";                     // CSM file folder (from CSM_AnalysisEA)
 input int CSM_MaxAgeMinutes = 120;                        // Max CSM file age (minutes)
 
@@ -65,7 +66,6 @@ input double DynamicRegimeADXThreshold = 35.0;            // ADX threshold for d
 input group "═══ TREND RIDER STRATEGY ═══"
 input bool EnableTrendRider = true;                       // Enable Trend Rider
 input double MinConfidenceScore = 65.0;                   // Min confidence (%)
-input double MinCSMDifferential = 15.0;                   // Min CSM differential
 
 //═══════════════════════════════════════════════════════════════════
 //  RANGE RIDER STRATEGY
@@ -399,14 +399,37 @@ void OnTick()
     lastAnalysisTime = currentTime;
 
     //═══════════════════════════════════════════════════════════════
-    // Get CSM differential
+    // STEP 1: CSM GATEKEEPER CHECK (PRIMARY FILTER)
+    // This is the PRIMARY gate - if CSM fails, pair is NOT_TRADABLE
     //═══════════════════════════════════════════════════════════════
     double csmDiff = GetCSMDifferential(_Symbol);
 
     if(VerboseLogging)
         Print("CSM Differential for ", _Symbol, ": ", DoubleToString(csmDiff, 2));
 
+    // ✅ CSM GATE: Block trading if CSM differential too weak
+    if(csmDiff < MinCSMDifferential)
+    {
+        // CSM Gate Failed - Export NOT_TRADABLE
+        signalExporter.ClearSignal(_Symbol,
+                                    EnumToString(currentRegime),
+                                    csmDiff,
+                                    "NOT_TRADABLE - CSM diff too low");
+
+        if(VerboseLogging)
+            Print("✗ NOT TRADABLE - CSM Diff: ", DoubleToString(csmDiff, 2),
+                  " < ", MinCSMDifferential, " (CSM gate failed)");
+
+        return; // STOP - Do not proceed to regime/strategy evaluation
+    }
+
+    // CSM Gate Passed - Continue to regime detection
+    if(VerboseLogging)
+        Print("✓ CSM GATE PASSED - Diff: ", DoubleToString(csmDiff, 2),
+              " >= ", MinCSMDifferential);
+
     //═══════════════════════════════════════════════════════════════
+    // STEP 2: REGIME DETECTION (STRATEGY SELECTOR)
     // Select strategy based on regime
     // ✅ CSM Alpha: Gold (XAUUSD) uses TrendRider only
     //═══════════════════════════════════════════════════════════════
@@ -424,33 +447,44 @@ void OnTick()
     }
     else
     {
-        activeStrategy = NULL;  // TRANSITIONAL or Gold in ranging market
+        // TRANSITIONAL regime OR Gold in RANGING market
+        activeStrategy = NULL;
 
-        if(isGold && currentRegime == REGIME_RANGING && VerboseLogging)
-            Print("⚠ Gold in RANGING market - no signal (TrendRider only for Gold)");
+        // Determine reason for NOT_TRADABLE
+        string reason;
+        if(currentRegime == REGIME_TRANSITIONAL)
+            reason = "NOT_TRADABLE - TRANSITIONAL regime (unclear market structure)";
+        else if(isGold && currentRegime == REGIME_RANGING)
+            reason = "NOT_TRADABLE - Gold in RANGING market (TrendRider only)";
+        else
+            reason = "NOT_TRADABLE - No applicable strategy";
+
+        // Export NOT_TRADABLE
+        signalExporter.ClearSignal(_Symbol,
+                                    EnumToString(currentRegime),
+                                    csmDiff,
+                                    reason);
+
+        if(VerboseLogging)
+            Print("✗ NOT TRADABLE - ", reason);
+
+        return; // STOP - No strategy to run
     }
 
     //═══════════════════════════════════════════════════════════════
-    // Generate signal
+    // STEP 3: STRATEGY EXECUTION (SIGNAL GENERATION)
+    // Strategy will run and return BUY/SELL if conditions met
     //═══════════════════════════════════════════════════════════════
     StrategySignal signal;
     bool hasSignal = false;
 
-    if(activeStrategy != NULL)
-    {
-        hasSignal = activeStrategy.Analyze(_Symbol, AnalysisTimeframe, csmDiff, signal);
+    hasSignal = activeStrategy.Analyze(_Symbol, AnalysisTimeframe, csmDiff, signal);
 
-        if(VerboseLogging)
-        {
-            Print("Strategy: ", signal.strategyName);
-            Print("Signal: ", signal.signal == 1 ? "BUY" : (signal.signal == -1 ? "SELL" : "NEUTRAL"));
-            Print("Confidence: ", signal.confidence);
-        }
-    }
-    else
+    if(VerboseLogging)
     {
-        if(VerboseLogging)
-            Print("No active strategy (Regime: ", EnumToString(currentRegime), ")");
+        Print("Strategy: ", signal.strategyName);
+        Print("Signal: ", signal.signal == 1 ? "BUY" : (signal.signal == -1 ? "SELL" : "NEUTRAL"));
+        Print("Confidence: ", signal.confidence);
     }
 
     //═══════════════════════════════════════════════════════════════
@@ -458,23 +492,27 @@ void OnTick()
     //═══════════════════════════════════════════════════════════════
     if(hasSignal && activeStrategy.IsValidSignal(signal))
     {
+        // Valid BUY/SELL signal - export it
         signalExporter.ExportSignalFromStrategy(_Symbol, signal, csmDiff,
                                                  EnumToString(currentRegime),
                                                  dynamicRegimeTriggeredThisCycle);
 
         if(VerboseLogging)
-            Print("✓ Valid signal exported");
+            Print("✓ Valid signal exported: ", signal.signal == 1 ? "BUY" : "SELL");
 
         // Reset dynamic regime flag after export
         dynamicRegimeTriggeredThisCycle = false;
     }
     else
     {
-        // No valid signal - clear signal file
-        signalExporter.ClearSignal(_Symbol);
+        // No valid signal - export HOLD (strategy ran but conditions not met)
+        signalExporter.ClearSignal(_Symbol,
+                                    EnumToString(currentRegime),
+                                    csmDiff,
+                                    "No valid signal - waiting for better setup (HOLD)");
 
         if(VerboseLogging)
-            Print("✗ No valid signal - signal file cleared");
+            Print("✗ No valid signal - HOLD (strategy conditions not met)");
 
         // Reset dynamic regime flag
         dynamicRegimeTriggeredThisCycle = false;
