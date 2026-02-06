@@ -276,7 +276,8 @@ public:
          Print("Analysis: ", result.analysis);
       }
 
-      return IsValidSignal(result);
+      // ✅ Always return true now (with component data), let IsValidSignal() determine tradeability
+      return true;
    }
 
 private:
