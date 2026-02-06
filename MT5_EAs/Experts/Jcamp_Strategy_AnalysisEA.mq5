@@ -83,10 +83,10 @@ input int RangeRiderMinConfidence = 65;                   // Min confidence for 
 //═══════════════════════════════════════════════════════════════════
 input group "═══ LOGGING & DIAGNOSTICS ═══"
 input bool VerboseLogging = true;                         // Enable detailed logging
-input bool EnableCSMDiagnostics = false;                  // Enable CSM diagnostic reports
+input bool EnableCSMDiagnostics = true;                  // Enable CSM diagnostic reports
 
 // Broker suffix for symbol names
-input string BrokerSuffix = ".sml";                           // Broker symbol suffix (e.g., ".sml")
+input string BrokerSuffix = ".r";                           // Broker symbol suffix (e.g., ".r")
 
 //+------------------------------------------------------------------+
 //| CSM DATA STRUCTURES (from BacktestEA)                            |

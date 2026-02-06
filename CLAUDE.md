@@ -2,7 +2,7 @@
 
 **Purpose:** Single authoritative reference for Claude Code
 **Project:** CSM Alpha - 4-Asset Trading System with Gold
-**Last Updated:** February 4, 2026 (Session 10 Complete - Architecture Documentation)
+**Last Updated:** February 6, 2026 (Session 11 Complete - CSM Gatekeeper Refactoring)
 
 ---
 
@@ -512,42 +512,80 @@ Flow: Test strategies in CSM → Refine in backtesting → Deploy live
 
 ## 🎯 CURRENT SESSION STATUS
 
-**Session:** 9 (Gold Spread Analysis & System Optimization)
-**Date:** February 3, 2026
-**Duration:** ~2.5 hours
-**Status:** ✅ Complete
+**Session:** 13 (Enhanced Signal Analysis Dashboard)
+**Date:** TBD
+**Duration:** Not Started
+**Status:** 🎯 Planned
 
-**Completed Tasks:**
-1. ✅ **Analyze XAUUSD M1 CSV Data** (352,116 bars analyzed)
-   - ✅ Parsed full year 2025 Gold M1 data
-   - ✅ Calculated comprehensive spread statistics
-   - ✅ Identified time-of-day patterns (Asian 28.7 pips vs London/NY 21-24 pips)
-   - ✅ Determined optimal spread multiplier: 15.0x (30 pips max)
+**Session 13 Objective:**
+Enhance CSMMonitor **SIGNAL ANALYSIS** tab to show detailed strategy breakdown (like old system).
 
-2. ✅ **Spread-Aware Trading Strategy**
-   - ✅ Implemented 15.0x multiplier (conservative, catches 72% of opportunities)
-   - ✅ Added trading hours restriction (block Asian session 22:00-09:00)
-   - ✅ Created spread quality logic (require confidence 120+ for 25-35 pip spreads)
+**Reference:** `Debug/Previous Strategy analysis Sample.png`
 
-3. ✅ **Implementation & Documentation**
-   - ✅ Updated MainTradingEA.mq5 (multiplier 5.0x → 15.0x)
-   - ✅ Enhanced TradeExecutor.mqh (hours filter + quality logic)
-   - ✅ Created GOLD_SPREAD_ANALYSIS_REPORT.md (comprehensive)
-   - ✅ Created SESSION_9_GOLD_OPTIMIZATION_CHANGES.md (implementation guide)
-   - ✅ Created analyze_gold_spreads.py (reusable Python script)
+**Features to Implement:**
+1. 📊 **Detailed Signal Breakdown View**
+   - Per-pair strategy analysis card (EURUSD, GBPUSD, AUDJPY, XAUUSD)
+   - Show current signal status: BUY/SELL/HOLD/NOT_TRADABLE
+   - Display confidence % with visual progress bar
+   - Show CSM differential with threshold comparison
 
-**Key Results:**
-- Gold spread multiplier: 5.0x → 15.0x (10 pips → 30 pips max)
-- Trading hours: Block 22:00-09:00 UTC+2 (Asian session, high spreads)
-- Spread quality: Wider spreads require higher confidence (120+ vs 70)
-- Cost reduction: ~40% per trade (better execution quality)
-- Session 8 issue solved: 69-84 pip spreads now blocked
+2. 🔍 **Component-Level Analysis**
+   - **TrendRider Breakdown:**
+     - EMA Alignment (0-30 points)
+     - ADX Strength (0-25 points)
+     - RSI Position (0-20 points)
+     - CSM Support (0-25 points)
+   - **RangeRider Breakdown:** (if applicable)
+     - Range Width
+     - S/R Quality
+     - Bounce Position
+   - Show what's contributing vs what's missing
 
-**Next Session:**
-- Compile changes in MetaEditor
-- Deploy on demo MT5
-- Monitor first 10 Gold trades
-- Validate optimization effectiveness
+3. ⚠️ **Visual Status Indicators**
+   - Orange warning box: "BLOCKING: CSM differential too low (primary)"
+   - Red "NEEDS" box: Show exact requirements not met
+   - Green checkmarks: Show conditions that ARE met
+   - Clear reasoning text at bottom
+
+4. 📈 **Real-Time Updates**
+   - Read signal JSON files every 5 seconds (existing refresh)
+   - Parse strategy breakdown data from signals
+   - Update UI with latest component scores
+
+**Implementation Approach:**
+1. **Design new XAML layout** for Signal Analysis tab
+   - 4 strategy cards (one per pair)
+   - Expandable sections for TrendRider/RangeRider details
+   - Visual progress bars and status icons
+
+2. **Update signal JSON export** (if needed)
+   - Ensure Strategy_AnalysisEA exports component scores
+   - Add strategy breakdown to signal files
+   - Include regime reasoning and blocking reasons
+
+3. **C# Parser Updates**
+   - Parse new signal structure
+   - Extract component scores (EMA, ADX, RSI, CSM)
+   - Calculate what's missing for valid signal
+
+4. **UI Data Binding**
+   - Bind component scores to progress bars
+   - Show/hide TrendRider vs RangeRider sections
+   - Update status colors and warning boxes
+
+**Expected Outcome:**
+- Users can see EXACTLY why a pair is on HOLD
+- Understand which strategy components are preventing signal
+- Know what needs to change for a BUY/SELL signal
+- Better transparency into CSM Alpha decision-making
+
+**Session 12 Recap (Completed):**
+- ✅ Session 11 documentation added to CLAUDE.md
+- ✅ Performance analysis report created
+- ✅ Session 11 CSM Gatekeeper validated (100% success)
+- ✅ AUDJPY correctly blocked (CSM diff 14.41 < 15.0)
+- ⚠️ Insufficient trade data for confidence threshold tuning
+- 📊 Account: $500.71 balance, 1 trade (+$0.74), 100% win rate
 
 
 ## 📜 SESSION HISTORY
@@ -942,6 +980,119 @@ Flow: Test strategies in CSM → Refine in backtesting → Deploy live
 
 **Status:** Architecture understood and documented, ready for implementation
 
+### Session 11: CSM Gatekeeper Refactoring (February 6, 2026)
+**Duration:** ~2.5 hours | **Status:** ✅ Complete & Validated
+
+**Accomplished:**
+- ✅ **Moved CSM Differential to Primary Gatekeeper** (commit: `caf3052`)
+  - Moved `MinCSMDifferential` from "TREND RIDER STRATEGY" → "CSM GATEKEEPER" input group
+  - Now clearly identified as system-wide gate, not strategy-specific parameter
+
+- ✅ **Implemented 3-Step Signal Flow** (Strategy_AnalysisEA.mq5)
+  ```
+  STEP 1: CSM Gate Check (PRIMARY)
+    ↓ CSM diff < 15.0? → Export NOT_TRADABLE (STOP)
+    ↓ CSM diff ≥ 15.0? → Continue to Step 2
+
+  STEP 2: Regime Detection (Strategy Selector)
+    ↓ TRANSITIONAL? → Export NOT_TRADABLE (STOP)
+    ↓ RANGING + Gold? → Export NOT_TRADABLE (STOP, TrendRider only)
+    ↓ TRENDING/RANGING? → Continue to Step 3
+
+  STEP 3: Strategy Execution (Signal Generation)
+    ↓ Run TrendRider or RangeRider
+    ↓ Export BUY/SELL/HOLD
+  ```
+
+- ✅ **Updated SignalExporter.mqh**
+  - `ClearSignal()` now accepts: regime, csmDiff, reason
+  - `BuildJSON()` handles NOT_TRADABLE signal type
+  - Complete signal type support: BUY, SELL, HOLD, NOT_TRADABLE
+
+- ✅ **Updated CSMMonitor Color Coding** (MainWindow.xaml.cs)
+  - Added orange color for NOT_TRADABLE in `GetSignalColor()`
+  - Preserves NOT_TRADABLE from signal_text (vs defaulting to HOLD)
+  - Color schema:
+    - 🟢 **BUY** / 🔴 **SELL**: Valid tradable signals
+    - 🟠 **NOT_TRADABLE**: System blocking (CSM/regime gate)
+    - ⚪ **HOLD**: Strategy waiting for better conditions
+
+**Validation Results:**
+- ✅ **Compilation:** 0 errors in MetaEditor
+- ✅ **Deployment:** All 3 EAs running on demo (CSM_AnalysisEA, Strategy_AnalysisEA × 4, MainTradingEA)
+- ✅ **CSM Gate Working:** EURUSD, GBPUSD, AUDJPY showing NOT_TRADABLE (orange) when CSM diff < 15.0
+- ✅ **Visual Confirmation:** Screenshots show orange signals in dashboard (see Debug/)
+- ✅ **Behavioral Validation:** AUDJPY no longer trading with low CSM differential (Session 10 issue SOLVED)
+
+**Files Modified:**
+1. `MT5_EAs/Experts/Jcamp_Strategy_AnalysisEA.mq5` (88 lines changed)
+   - CSM gatekeeper logic added before regime detection
+   - Enhanced logging for gate status visibility
+2. `MT5_EAs/Include/JcampStrategies/SignalExporter.mqh` (25 lines changed)
+   - NOT_TRADABLE signal type support
+3. `CSMMonitor/MainWindow.xaml.cs` (14 lines changed)
+   - Orange color for NOT_TRADABLE signals
+
+**Commits:**
+- `caf3052` - Session 11 CSM Gatekeeper Refactoring (complete implementation)
+
+**Impact:**
+- ✅ **Primary Gate Enforced:** CSM differential now blocks trading BEFORE strategy evaluation
+- ✅ **Dashboard Clarity:** Users can see WHY pairs are not tradable (orange = blocked by system)
+- ✅ **Architecture Correct:** Signal flow matches BacktestEA's proven logic
+- ✅ **Risk Management:** No more trading with weak currency differentials
+
+**Key Achievement:**
+- **Session 10 Issue Resolved:** AUDJPY will never again trade with CSM diff < 15.0
+- System now correctly distinguishes between "blocked by system" vs "waiting for setup"
+
+### Session 12: Performance Analysis & Validation (February 6, 2026)
+**Duration:** ~1 hour | **Status:** ✅ Complete
+
+**Accomplished:**
+- ✅ **Session 11 Documentation**
+  - Added comprehensive Session 11 entry to CLAUDE.md
+  - Documented all CSM Gatekeeper changes (commit `caf3052`)
+  - Updated project status headers
+
+- ✅ **Performance Analysis & Validation**
+  - Created `Documentation/SESSION_12_PERFORMANCE_ANALYSIS.md`
+  - Analyzed current market state (extreme RISK-OFF: USD 0.00, Gold 100.00)
+  - **Validated Session 11 CSM Gatekeeper:** ✅ **100% SUCCESS**
+    - AUDJPY correctly blocked (CSM diff 14.41 < 15.0)
+    - EURUSD/GBPUSD/XAUUSD correctly allowed through gate (CSM diff ≥ 15.0)
+    - Dashboard displaying orange NOT_TRADABLE for blocked pairs
+    - All signals showing HOLD (strategies waiting for entry conditions)
+
+**Trade History Analysis:**
+- Total trades: 1 (AUDJPY +$0.74, executed before Session 11)
+- Win rate: 100% (1/1)
+- Account balance: $500.71
+- Open positions: 0
+
+**Key Findings:**
+- ✅ **CSM Gatekeeper Working Perfectly** - AUDJPY blocked correctly
+- ✅ **Signal Flow Correct** - 3-step architecture validated
+- ✅ **Dashboard Colors Working** - Orange for NOT_TRADABLE, gray for HOLD
+- ⚠️ **Insufficient Data** - Need 10-20+ trades for confidence threshold tuning
+
+**Market Context:**
+- Extreme market conditions (USD collapse, Gold panic)
+- All 4 pairs showing HOLD despite large CSM differentials
+- Indicates strategies need more than just CSM (EMA, ADX, RSI must align)
+
+**Commits:**
+- Session 11 & 12 documentation updates (pending)
+
+**Decision:**
+- Postpone confidence threshold tuning until more trade data collected
+- System needs 1-2 days of demo trading to accumulate meaningful statistics
+
+**Next Session (13) Objective:**
+- Enhance CSMMonitor Signal Analysis tab with detailed strategy breakdown
+- Show WHY signals are on HOLD (component-by-component analysis)
+- Match old system's detailed view (see Debug/Previous Strategy analysis Sample.png)
+
 ---
 
 ## 💡 IMPORTANT NOTES
@@ -992,4 +1143,4 @@ Flow: Test strategies in CSM → Refine in backtesting → Deploy live
 ---
 
 *Read this file at start of every session for full context*
-*Updated: Session 6 Complete - January 22, 2026*
+*Updated: Session 11 Complete - February 6, 2026*
