@@ -550,8 +550,41 @@ void OnTick()
             // Convert back to price distance
             double slDistance = isGold ? slPips : (slPips * pipSize);
 
-            // Calculate TP distance (based on R:R ratio)
-            double tpDistance = slDistance * RiskRewardRatio;
+            //═══════════════════════════════════════════════════════════════
+            // SESSION 17: CONFIDENCE-BASED R:R SCALING
+            //═══════════════════════════════════════════════════════════════
+            double rrRatio;
+
+            // Scale R:R based on signal confidence
+            if(signal.confidence >= 90)
+            {
+                rrRatio = 3.0;  // High confidence → 1:3 R:R
+                if(VerboseLogging)
+                    Print("🔥 High conf (", signal.confidence, ") → 1:3 R:R");
+            }
+            else if(signal.confidence >= 80)
+            {
+                rrRatio = 2.5;  // Good confidence → 1:2.5 R:R
+                if(VerboseLogging)
+                    Print("⚡ Good conf (", signal.confidence, ") → 1:2.5 R:R");
+            }
+            else
+            {
+                rrRatio = 2.0;  // Standard → 1:2 R:R
+                if(VerboseLogging)
+                    Print("✓ Standard conf (", signal.confidence, ") → 1:2 R:R");
+            }
+
+            // Apply Gold R:R cap (too unpredictable for 1:3)
+            if(isGold && rrRatio > 2.5)
+            {
+                rrRatio = 2.5;
+                if(VerboseLogging)
+                    Print("⚠️ Gold R:R capped at 1:2.5 (volatility limit)");
+            }
+
+            // Calculate TP distance (based on dynamic R:R ratio)
+            double tpDistance = slDistance * rrRatio;
 
             // Store in signal struct
             signal.stopLossDollars = slDistance;
@@ -566,7 +599,7 @@ void OnTick()
                 Print("SL Distance: ", DoubleToString(slPips, 1), (isGold ? " $" : " pips"),
                       " (Min: ", minSL, ", Max: ", maxSL, ")");
                 Print("TP Distance: ", DoubleToString(tpDistance / (isGold ? 1.0 : pipSize), 1),
-                      (isGold ? " $" : " pips"), " (R:R ", RiskRewardRatio, ":1)");
+                      (isGold ? " $" : " pips"), " (R:R ", rrRatio, ":1)");
             }
         }
         else
