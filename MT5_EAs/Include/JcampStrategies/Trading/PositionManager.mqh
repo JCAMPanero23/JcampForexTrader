@@ -1,58 +1,78 @@
 //+------------------------------------------------------------------+
 //|                                           PositionManager.mqh     |
 //|                                            JcampForexTrader       |
-//|                                                                   |
+//|                         Session 16 - 3-Phase Trailing System     |
 //+------------------------------------------------------------------+
 #property copyright "JcampForexTrader"
 #property link      ""
-#property version   "1.00"
+#property version   "2.00"
 #property strict
 
 #include <Trade\Trade.mqh>
+#include "PositionTracker.mqh"
 
 //+------------------------------------------------------------------+
-//| Position Manager Class                                            |
-//| Manages open positions: trailing stops, partial closes, monitoring|
+//| Position Manager Class (Enhanced with 3-Phase Trailing)          |
+//| Manages open positions with asymmetric trailing stop system      |
 //+------------------------------------------------------------------+
 class PositionManager
 {
 private:
    CTrade   trade;
+   CPositionTracker tracker;
    int      magic;
-   bool     enableTrailingStop;
-   int      trailingStopPips;
-   int      trailingStartPips;     // Start trailing after X pips profit
+   bool     useAdvancedTrailing;
+   double   trailingActivationR;
+   double   phase1EndR;
+   double   phase1TrailDistance;
+   double   phase2EndR;
+   double   phase2TrailDistance;
+   double   phase3TrailDistance;
    bool     verboseLogging;
-
-   // Track position high water marks for trailing stops
-   struct PositionTracker {
-      ulong    ticket;
-      double   highWaterMark;      // Highest price for BUY, lowest for SELL
-   };
-   PositionTracker trackers[];
 
 public:
    PositionManager(int magicNum = 100001,
-                   bool enableTrailing = true,
-                   int trailingPips = 20,
-                   int trailingStart = 30,
+                   bool useAdvanced = true,
+                   double activationR = 0.5,
+                   double p1End = 1.0,
+                   double p1Trail = 0.3,
+                   double p2End = 2.0,
+                   double p2Trail = 0.5,
+                   double p3Trail = 0.8,
                    bool verbose = false)
    {
       magic = magicNum;
-      enableTrailingStop = enableTrailing;
-      trailingStopPips = trailingPips;
-      trailingStartPips = trailingStart;
+      useAdvancedTrailing = useAdvanced;
+      trailingActivationR = activationR;
+      phase1EndR = p1End;
+      phase1TrailDistance = p1Trail;
+      phase2EndR = p2End;
+      phase2TrailDistance = p2Trail;
+      phase3TrailDistance = p3Trail;
       verboseLogging = verbose;
 
       trade.SetExpertMagicNumber(magic);
-      ArrayResize(trackers, 0);
    }
 
    ~PositionManager() {}
 
    //+------------------------------------------------------------------+
-   //| Update All Positions                                             |
-   //| Call this on every OnTick or periodically                        |
+   //| Register New Position for Tracking                               |
+   //| Call this immediately after trade execution                       |
+   //+------------------------------------------------------------------+
+   bool RegisterPosition(ulong ticket,
+                          string symbol,
+                          string strategy,
+                          int signal,
+                          double entryPrice,
+                          double slDistance)
+   {
+      return tracker.AddPosition(ticket, symbol, strategy, signal, entryPrice, slDistance);
+   }
+
+   //+------------------------------------------------------------------+
+   //| Update All Positions (3-Phase Trailing System)                   |
+   //| Call this on every OnTick                                         |
    //+------------------------------------------------------------------+
    void UpdatePositions()
    {
@@ -67,25 +87,121 @@ public:
          if(PositionGetInteger(POSITION_MAGIC) != magic)
             continue;
 
-         // Get position info
+         // Check if position still exists
+         if(!PositionSelectByTicket(ticket))
+         {
+            // Position closed, remove from tracker
+            tracker.RemovePosition(ticket);
+            continue;
+         }
+
+         // Get position data from tracker
+         PositionData* pos = tracker.GetPosition(ticket);
+         if(pos == NULL)
+         {
+            // Position not tracked (opened externally or before EA start)
+            continue;
+        }
+
+         // Get current position info
          string symbol = PositionGetString(POSITION_SYMBOL);
          ENUM_POSITION_TYPE posType = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
-         double openPrice = PositionGetDouble(POSITION_PRICE_OPEN);
          double currentPrice = (posType == POSITION_TYPE_BUY) ?
                                SymbolInfoDouble(symbol, SYMBOL_BID) :
                                SymbolInfoDouble(symbol, SYMBOL_ASK);
-         double sl = PositionGetDouble(POSITION_SL);
-         double tp = PositionGetDouble(POSITION_TP);
-         double profit = PositionGetDouble(POSITION_PROFIT);
+         double currentSL = PositionGetDouble(POSITION_SL);
+         double currentTP = PositionGetDouble(POSITION_TP);
 
-         // Apply trailing stop if enabled
-         if(enableTrailingStop)
+         // Calculate current R-multiple
+         double currentR = tracker.CalculateCurrentR(ticket, currentPrice);
+
+         // Update high water mark
+         tracker.UpdateHighWaterMark(ticket, currentPrice);
+
+         // ✅ RANGE RIDER EARLY BREAKEVEN (at +0.5R)
+         if(!pos.breakevenSet && StringFind(pos.strategy, "RANGE") >= 0 && currentR >= 0.5)
          {
-            CheckAndApplyTrailingStop(ticket, symbol, posType, openPrice, currentPrice, sl);
+            ApplyBreakeven(ticket, symbol, posType, pos.entryPrice, currentSL, currentTP);
+            tracker.SetBreakevenSet(ticket, true);
+            continue; // Skip trailing this tick (breakeven just set)
          }
 
-         // Note: Removed verbose position logging here to prevent log spam
-         // Position status is exported to files every 5 minutes instead
+         // Check if advanced trailing should activate
+         if(!useAdvancedTrailing || currentR < trailingActivationR)
+            continue; // Not profitable enough yet
+
+         // Activate trailing if not already
+         if(!pos.trailingActivated)
+         {
+            tracker.SetTrailingActivated(ticket, true);
+            if(verboseLogging)
+            {
+               Print("⚡ Trailing Activated: #", ticket, " | ",
+                     symbol, " | R=+", DoubleToString(currentR, 2));
+            }
+         }
+
+         // Determine current phase
+         int phase = tracker.GetCurrentPhase(currentR, phase1EndR, phase2EndR);
+
+         // Get trail distance for current phase
+         double trailDistance = 0;
+         if(phase == 1)
+            trailDistance = phase1TrailDistance;
+         else if(phase == 2)
+            trailDistance = phase2TrailDistance;
+         else
+            trailDistance = phase3TrailDistance;
+
+         // Calculate new SL in R-multiples
+         double newSL_R = currentR - trailDistance;
+
+         // Prevent negative R (don't move SL below entry)
+         if(newSL_R < 0)
+            newSL_R = 0;
+
+         // Convert R to price
+         double newSL_Price;
+         if(posType == POSITION_TYPE_BUY)
+            newSL_Price = pos.entryPrice + (newSL_R * pos.originalSLDistance);
+         else
+            newSL_Price = pos.entryPrice - (newSL_R * pos.originalSLDistance);
+
+         // Only move SL if better than current
+         bool shouldUpdate = false;
+         if(posType == POSITION_TYPE_BUY && newSL_Price > currentSL)
+            shouldUpdate = true;
+         else if(posType == POSITION_TYPE_SELL && newSL_Price < currentSL)
+            shouldUpdate = true;
+
+         if(shouldUpdate)
+         {
+            // Normalize price
+            int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
+            newSL_Price = NormalizeDouble(newSL_Price, digits);
+
+            if(trade.PositionModify(ticket, newSL_Price, currentTP))
+            {
+               // Update phase if changed
+               if(phase != pos.currentPhase)
+               {
+                  tracker.SetPhase(ticket, phase);
+                  if(verboseLogging)
+                  {
+                     Print("🎯 Phase Transition: #", ticket, " | ",
+                           symbol, " | Phase ", pos.currentPhase, " → ", phase,
+                           " | R=+", DoubleToString(currentR, 2));
+                  }
+               }
+
+               if(verboseLogging)
+               {
+                  Print("✓ Trailing Phase ", phase, " | #", ticket, " | ",
+                        symbol, " | R=+", DoubleToString(currentR, 2),
+                        " | SL→+", DoubleToString(newSL_R, 2), "R");
+               }
+            }
+         }
       }
    }
 
@@ -147,7 +263,7 @@ public:
       {
          Print("✅ Position Closed: #", ticket, " | ", symbol,
                " | Reason: ", reason);
-         RemoveTracker(ticket);
+         tracker.RemovePosition(ticket);
          return true;
       }
       else
@@ -186,139 +302,40 @@ public:
 
 private:
    //+------------------------------------------------------------------+
-   //| Check and Apply Trailing Stop                                    |
+   //| Apply Breakeven Stop Loss (RangeRider at +0.5R)                  |
    //+------------------------------------------------------------------+
-   void CheckAndApplyTrailingStop(ulong ticket,
-                                   string symbol,
-                                   ENUM_POSITION_TYPE posType,
-                                   double openPrice,
-                                   double currentPrice,
-                                   double currentSL)
+   void ApplyBreakeven(ulong ticket,
+                       string symbol,
+                       ENUM_POSITION_TYPE posType,
+                       double entryPrice,
+                       double currentSL,
+                       double currentTP)
    {
       double point = SymbolInfoDouble(symbol, SYMBOL_POINT);
-      double pipValue = 10 * point; // 1 pip = 10 points
+      int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
 
-      // Calculate current profit in pips
-      double profitPips = CalculatePips(symbol, openPrice, currentPrice, posType);
-
-      // Only start trailing after position is in profit by trailingStartPips
-      if(profitPips < trailingStartPips)
-         return;
-
-      // Get or create tracker for this position (returns index)
-      int trackerIdx = GetOrCreateTracker(ticket);
-      if(trackerIdx < 0)
-         return;
-
-      // Update high water mark
+      // Move to breakeven + 2 pips
+      double bePrice;
       if(posType == POSITION_TYPE_BUY)
-      {
-         if(trackers[trackerIdx].highWaterMark == 0 || currentPrice > trackers[trackerIdx].highWaterMark)
-            trackers[trackerIdx].highWaterMark = currentPrice;
-      }
-      else // SELL
-      {
-         if(trackers[trackerIdx].highWaterMark == 0 || currentPrice < trackers[trackerIdx].highWaterMark)
-            trackers[trackerIdx].highWaterMark = currentPrice;
-      }
-
-      // Calculate new trailing stop
-      double newSL = 0;
-      if(posType == POSITION_TYPE_BUY)
-      {
-         newSL = trackers[trackerIdx].highWaterMark - (trailingStopPips * pipValue);
-
-         // Only update if new SL is better (higher) than current SL
-         if(newSL > currentSL || currentSL == 0)
-         {
-            newSL = NormalizeDouble(newSL, (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS));
-
-            if(trade.PositionModify(ticket, newSL, PositionGetDouble(POSITION_TP)))
-            {
-               if(verboseLogging)
-               {
-                  Print("📈 Trailing Stop Updated: #", ticket, " | ",
-                        symbol, " BUY | New SL: ", newSL,
-                        " | High: ", trackers[trackerIdx].highWaterMark);
-               }
-            }
-         }
-      }
-      else // SELL
-      {
-         newSL = trackers[trackerIdx].highWaterMark + (trailingStopPips * pipValue);
-
-         // Only update if new SL is better (lower) than current SL
-         if(newSL < currentSL || currentSL == 0)
-         {
-            newSL = NormalizeDouble(newSL, (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS));
-
-            if(trade.PositionModify(ticket, newSL, PositionGetDouble(POSITION_TP)))
-            {
-               if(verboseLogging)
-               {
-                  Print("📉 Trailing Stop Updated: #", ticket, " | ",
-                        symbol, " SELL | New SL: ", newSL,
-                        " | Low: ", trackers[trackerIdx].highWaterMark);
-               }
-            }
-         }
-      }
-   }
-
-   //+------------------------------------------------------------------+
-   //| Calculate Pips Profit/Loss                                       |
-   //+------------------------------------------------------------------+
-   double CalculatePips(string symbol, double openPrice, double currentPrice, ENUM_POSITION_TYPE posType)
-   {
-      double point = SymbolInfoDouble(symbol, SYMBOL_POINT);
-      double priceDiff = 0;
-
-      if(posType == POSITION_TYPE_BUY)
-         priceDiff = currentPrice - openPrice;
+         bePrice = entryPrice + (2.0 * 10 * point); // +2 pips
       else
-         priceDiff = openPrice - currentPrice;
+         bePrice = entryPrice - (2.0 * 10 * point); // -2 pips
 
-      return priceDiff / (point * 10.0); // Convert to pips
-   }
+      bePrice = NormalizeDouble(bePrice, digits);
 
-   //+------------------------------------------------------------------+
-   //| Get or Create Position Tracker (returns array index)             |
-   //+------------------------------------------------------------------+
-   int GetOrCreateTracker(ulong ticket)
-   {
-      // Find existing tracker
-      for(int i = 0; i < ArraySize(trackers); i++)
+      // Only update if better than current SL
+      bool shouldUpdate = false;
+      if(posType == POSITION_TYPE_BUY && bePrice > currentSL)
+         shouldUpdate = true;
+      else if(posType == POSITION_TYPE_SELL && bePrice < currentSL)
+         shouldUpdate = true;
+
+      if(shouldUpdate)
       {
-         if(trackers[i].ticket == ticket)
-            return i;  // Return index
-      }
-
-      // Create new tracker
-      int size = ArraySize(trackers);
-      ArrayResize(trackers, size + 1);
-      trackers[size].ticket = ticket;
-      trackers[size].highWaterMark = 0;
-
-      return size;  // Return index of new tracker
-   }
-
-   //+------------------------------------------------------------------+
-   //| Remove Tracker (when position closes)                            |
-   //+------------------------------------------------------------------+
-   void RemoveTracker(ulong ticket)
-   {
-      for(int i = 0; i < ArraySize(trackers); i++)
-      {
-         if(trackers[i].ticket == ticket)
+         if(trade.PositionModify(ticket, bePrice, currentTP))
          {
-            // Shift array
-            for(int j = i; j < ArraySize(trackers) - 1; j++)
-            {
-               trackers[j] = trackers[j + 1];
-            }
-            ArrayResize(trackers, ArraySize(trackers) - 1);
-            break;
+            Print("🛡️ RangeRider Breakeven | #", ticket, " | ",
+                  symbol, " | SL→Entry+2 pips (worst case: -0.08R)");
          }
       }
    }

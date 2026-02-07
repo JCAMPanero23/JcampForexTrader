@@ -39,10 +39,21 @@ input double SpreadMultiplierXAUUSD = 15.0;            // XAUUSD (Gold) spread m
 input int MaxPositionsPerSymbol = 1;                   // Max simultaneous positions per symbol
 input int MaxTotalPositions = 3;                       // Max total open positions
 
-// --- Position Management ---
-input bool EnableTrailingStop = true;                  // Enable trailing stop
-input int TrailingStopPips = 20;                       // Trailing stop distance (pips)
-input int TrailingStartPips = 30;                      // Start trailing after X pips profit
+// --- Position Management (Session 16: 3-Phase Trailing) ---
+input group "═══ 3-PHASE TRAILING SYSTEM ═══"
+input bool UseAdvancedTrailing = true;                 // Enable 3-phase trailing system
+input double TrailingActivationR = 0.5;                // Start trailing at +0.5R
+
+input group "═══ PHASE 1: Early Protection (0.5R - 1.0R) ═══"
+input double Phase1EndR = 1.0;                         // Phase 1 ends at this R
+input double Phase1TrailDistance = 0.3;                // Trail 0.3R behind (tight lock)
+
+input group "═══ PHASE 2: Profit Building (1.0R - 2.0R) ═══"
+input double Phase2EndR = 2.0;                         // Phase 2 ends at this R
+input double Phase2TrailDistance = 0.5;                // Trail 0.5R behind (balanced)
+
+input group "═══ PHASE 3: Let Winners Run (2.0R+) ═══"
+input double Phase3TrailDistance = 0.8;                // Trail 0.8R behind (loose)
 
 // --- Performance Export ---
 input string ExportFolder = "CSM_Data";                // Folder for performance data export
@@ -90,7 +101,13 @@ int OnInit()
    tradeExecutor = new TradeExecutor(RiskPercent, MinConfidence, MaxSpreadPips, MagicNumber, VerboseLogging,
                                      SpreadMultiplierEURUSD, SpreadMultiplierGBPUSD,
                                      SpreadMultiplierAUDJPY, SpreadMultiplierXAUUSD);
-   positionManager = new PositionManager(MagicNumber, EnableTrailingStop, TrailingStopPips, TrailingStartPips, VerboseLogging);
+   positionManager = new PositionManager(MagicNumber,
+                                         UseAdvancedTrailing,
+                                         TrailingActivationR,
+                                         Phase1EndR, Phase1TrailDistance,
+                                         Phase2EndR, Phase2TrailDistance,
+                                         Phase3TrailDistance,
+                                         VerboseLogging);
    performanceTracker = new PerformanceTracker(ExportFolder, MagicNumber, VerboseLogging);
 
    // Verify modules initialized
@@ -252,6 +269,34 @@ void CheckAndExecuteSignals()
       {
          totalPositions++;
          Print("✅ Trade opened successfully: Ticket #", ticket);
+
+         // ✅ SESSION 16: Register position for 3-phase trailing
+         if(PositionSelectByTicket(ticket))
+         {
+            double entryPrice = PositionGetDouble(POSITION_PRICE_OPEN);
+            double sl = PositionGetDouble(POSITION_SL);
+
+            // Calculate SL distance in price units
+            double slDistance = MathAbs(entryPrice - sl);
+
+            // Register with position manager
+            bool registered = positionManager.RegisterPosition(
+               ticket,
+               signal.symbol,
+               signal.strategy,
+               signal.signal,
+               entryPrice,
+               slDistance
+            );
+
+            if(registered && VerboseLogging)
+            {
+               Print("📊 Position Registered for 3-Phase Trailing: #", ticket,
+                     " | Strategy: ", signal.strategy,
+                     " | Entry: ", entryPrice,
+                     " | SL Distance: ", slDistance);
+            }
+         }
       }
       else
       {
