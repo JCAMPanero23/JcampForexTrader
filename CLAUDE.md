@@ -555,6 +555,16 @@ Flow: Demo → Collect data → Backtest → Validate → VPS → Live
 - **OPTION_B_FINDINGS.md** - MainTradingEA investigation
 - **MAINTRADING_EA_ARCHITECTURE_ANALYSIS.md** - Session 6 modular MainTradingEA analysis (Score: 8.2/10)
 
+### Session Planning
+- **SESSION_14_VALIDATION_PLAN.md** - Dashboard validation checklist (pending market open)
+- **SL_TP_MULTI_LAYER_PROTECTION_PLAN.md** - 🚀 **Sessions 15-17 Implementation Plan** (1,477 lines)
+  - Session 15: ATR-Based Dynamic SL/TP (~3 hours) ← NEXT SESSION
+  - Session 16: 3-Phase Asymmetric Trailing (~3 hours)
+  - Session 17: Confidence Scaling + Symbol Calibration (~2 hours)
+  - Complete analysis of BacktestEA's 5-layer protection system
+  - Code examples, testing checklists, performance projections
+  - **Created:** Feb 7, 2026 at 4:25 AM
+
 ### Reference
 - **Reference/Jcamp_BacktestEA.mq5** - Strategy source (9,063 lines)
 
@@ -562,35 +572,67 @@ Flow: Demo → Collect data → Backtest → Validate → VPS → Live
 
 ## 🎯 CURRENT SESSION STATUS
 
-**Session:** 14 (Enhanced Dashboard Live Validation)
-**Date:** TBD (Market Open Required)
-**Duration:** Not Started
-**Status:** 🎯 Planned
+**Current Session:** 14.5 (Architecture Decision - Complete)
+**Next Session:** 15 (ATR-Based Dynamic SL/TP) 🎯
 
-**Session 14 Objective:**
+---
+
+### Session 14: Enhanced Dashboard Live Validation
+**Date:** TBD (Market Open Required)
+**Status:** ⏳ Pending Market Open
+
+**Objective:**
 Validate Session 13's Enhanced Signal Analysis Dashboard with live market data. Confirm all 3 strategies (TrendRider, RangeRider, GoldTrendRider) export component scores correctly when markets open.
 
 **See:** `Documentation/SESSION_14_VALIDATION_PLAN.md` for complete testing checklist
 
-**Prerequisites:**
-- ✅ Session 13 complete (all code changes committed)
-- ✅ Strategy_AnalysisEA compiled with latest changes
-- ⏳ Market open (Sunday 22:00 UTC - Friday 22:00 UTC)
+---
 
-**Validation Tasks:**
-1. ⏳ Deploy Strategy_AnalysisEA on all 4 charts (EURUSD, GBPUSD, AUDJPY, XAUUSD)
-2. ⏳ Verify signal JSON files contain "components" object
-3. ⏳ Test all signal types: BUY/SELL, HOLD, NOT_TRADABLE
-4. ⏳ Validate dashboard displays component data correctly
-5. ⏳ Test strategy-specific components (TrendRider vs RangeRider)
-6. ⏳ Capture screenshots and document results
+### 🚀 Session 15: ATR-Based Dynamic SL/TP (NEXT SESSION)
+**Date:** TBD
+**Duration:** ~3 hours
+**Status:** 📋 Ready to Implement
+
+**⚠️ IMPORTANT: This is NOT about data collection!**
+
+**Objective:**
+Fix "trades stopped out too early" issue by implementing market-adaptive SL/TP that responds to volatility automatically.
+
+**Problem Being Solved:**
+- ❌ Current: Fixed 50/100 pip SL/TP regardless of market volatility
+- ❌ No ATR adaptation (same stops in quiet/volatile markets)
+- ❌ Trades stopped by normal market noise
+- ❌ Missing big winning trades (can't ride trends)
+
+**Solution:**
+- ✅ ATR-based dynamic SL/TP: `SL = ATR × 0.5` (with min/max bounds)
+- ✅ Volatility adaptation: Wider stops in volatile markets, tighter in quiet
+- ✅ Symbol-specific bounds (EURUSD 20-60, GBPUSD 25-80, AUDJPY 25-70, XAUUSD 30-150)
+- ✅ Risk:Reward maintained at 2.0 (TP = SL × 2)
+
+**Files to Modify:**
+1. `Strategy_AnalysisEA.mq5` - Add ATR-based SL/TP calculation
+2. `SignalExporter.mqh` - Export stop_loss_dollars/take_profit_dollars (already has fields!)
+3. `TradeExecutor.mqh` - Activate existing ATR code path (Lines 128-153)
 
 **Expected Results:**
-- ✅ All 4 signal files contain valid "components" objects
-- ✅ Dashboard displays component progress bars for all pairs
-- ✅ HOLD signals show partial components (transparency achieved)
-- ✅ NOT_TRADABLE signals show orange with no components
-- ✅ Bonus scores show/hide dynamically
+- Premature stop-outs: 40% → 25% (-15% improvement)
+- Better win rate in volatile markets
+- Stops adapt automatically to market conditions
+
+**Complete Implementation Plan:**
+**See:** `Documentation/SL_TP_MULTI_LAYER_PROTECTION_PLAN.md` (1,477 lines, created Feb 7, 2026 at 4:25 AM)
+
+**Roadmap:**
+```
+Session 15: ATR-Based SL/TP (~3 hours)         ← NEXT
+Session 16: 3-Phase Trailing (~3 hours)        ← Future
+Session 17: Confidence Scaling (~2 hours)      ← Future
+```
+
+**Total Expected Improvement:** +167% net R over 100 trades (15R → 40R)
+
+---
 
 **Session 13 Recap (Completed):**
 - ✅ Enhanced Signal Analysis Dashboard implemented
