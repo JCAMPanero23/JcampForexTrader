@@ -80,15 +80,16 @@ public:
     }
 
     //+------------------------------------------------------------------+
-    //| Get Position Data by Ticket                                      |
+    //| Get Position Data by Ticket (returns copy)                       |
     //+------------------------------------------------------------------+
-    PositionData* GetPosition(ulong ticket)
+    bool GetPosition(ulong ticket, PositionData &outPos)
     {
         int idx = GetPositionIndex(ticket);
         if(idx < 0)
-            return NULL;
+            return false;
 
-        return GetPointer(m_positions[idx]);
+        outPos = m_positions[idx];
+        return true;
     }
 
     //+------------------------------------------------------------------+
@@ -115,24 +116,24 @@ public:
     //+------------------------------------------------------------------+
     double CalculateCurrentR(ulong ticket, double currentPrice)
     {
-        PositionData* pos = GetPosition(ticket);
-        if(pos == NULL)
+        int idx = GetPositionIndex(ticket);
+        if(idx < 0)
             return 0.0;
 
-        if(pos.originalSLDistance == 0)
+        if(m_positions[idx].originalSLDistance == 0)
             return 0.0;
 
         double priceDiff = 0.0;
-        if(pos.signal > 0) // BUY
-            priceDiff = currentPrice - pos.entryPrice;
+        if(m_positions[idx].signal > 0) // BUY
+            priceDiff = currentPrice - m_positions[idx].entryPrice;
         else // SELL
-            priceDiff = pos.entryPrice - currentPrice;
+            priceDiff = m_positions[idx].entryPrice - currentPrice;
 
-        double currentR = priceDiff / pos.originalSLDistance;
+        double currentR = priceDiff / m_positions[idx].originalSLDistance;
 
         // Update max R if higher
-        if(currentR > pos.maxR)
-            pos.maxR = currentR;
+        if(currentR > m_positions[idx].maxR)
+            m_positions[idx].maxR = currentR;
 
         return currentR;
     }
@@ -155,25 +156,25 @@ public:
     //+------------------------------------------------------------------+
     bool UpdateHighWaterMark(ulong ticket, double currentPrice)
     {
-        PositionData* pos = GetPosition(ticket);
-        if(pos == NULL)
+        int idx = GetPositionIndex(ticket);
+        if(idx < 0)
             return false;
 
         bool updated = false;
 
-        if(pos.signal > 0) // BUY
+        if(m_positions[idx].signal > 0) // BUY
         {
-            if(currentPrice > pos.highWaterMark)
+            if(currentPrice > m_positions[idx].highWaterMark)
             {
-                pos.highWaterMark = currentPrice;
+                m_positions[idx].highWaterMark = currentPrice;
                 updated = true;
             }
         }
         else // SELL
         {
-            if(currentPrice < pos.highWaterMark)
+            if(currentPrice < m_positions[idx].highWaterMark)
             {
-                pos.highWaterMark = currentPrice;
+                m_positions[idx].highWaterMark = currentPrice;
                 updated = true;
             }
         }
@@ -186,9 +187,9 @@ public:
     //+------------------------------------------------------------------+
     void SetTrailingActivated(ulong ticket, bool activated)
     {
-        PositionData* pos = GetPosition(ticket);
-        if(pos != NULL)
-            pos.trailingActivated = activated;
+        int idx = GetPositionIndex(ticket);
+        if(idx >= 0)
+            m_positions[idx].trailingActivated = activated;
     }
 
     //+------------------------------------------------------------------+
@@ -196,9 +197,9 @@ public:
     //+------------------------------------------------------------------+
     void SetPhase(ulong ticket, int phase)
     {
-        PositionData* pos = GetPosition(ticket);
-        if(pos != NULL)
-            pos.currentPhase = phase;
+        int idx = GetPositionIndex(ticket);
+        if(idx >= 0)
+            m_positions[idx].currentPhase = phase;
     }
 
     //+------------------------------------------------------------------+
@@ -206,9 +207,9 @@ public:
     //+------------------------------------------------------------------+
     void SetBreakevenSet(ulong ticket, bool set)
     {
-        PositionData* pos = GetPosition(ticket);
-        if(pos != NULL)
-            pos.breakevenSet = set;
+        int idx = GetPositionIndex(ticket);
+        if(idx >= 0)
+            m_positions[idx].breakevenSet = set;
     }
 
     //+------------------------------------------------------------------+
@@ -220,14 +221,15 @@ public:
     }
 
     //+------------------------------------------------------------------+
-    //| Get Position by Index (for iteration)                            |
+    //| Get Position by Index (for iteration, returns copy)              |
     //+------------------------------------------------------------------+
-    PositionData* GetPositionByIndex(int index)
+    bool GetPositionByIndex(int index, PositionData &outPos)
     {
         if(index < 0 || index >= ArraySize(m_positions))
-            return NULL;
+            return false;
 
-        return GetPointer(m_positions[index]);
+        outPos = m_positions[index];
+        return true;
     }
 
 private:

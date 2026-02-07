@@ -96,8 +96,8 @@ public:
          }
 
          // Get position data from tracker
-         PositionData* pos = tracker.GetPosition(ticket);
-         if(pos == NULL)
+         PositionData pos;
+         if(!tracker.GetPosition(ticket, pos))
          {
             // Position not tracked (opened externally or before EA start)
             continue;
