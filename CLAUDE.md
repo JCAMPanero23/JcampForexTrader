@@ -2,7 +2,7 @@
 
 **Purpose:** Single authoritative reference for Claude Code
 **Project:** CSM Alpha - 4-Asset Trading System with Gold
-**Last Updated:** February 7, 2026 (Session 14.5 - Architecture Decision Complete)
+**Last Updated:** February 7, 2026 (Session 15 - ATR-Based Dynamic SL/TP Complete)
 
 ---
 
@@ -572,8 +572,8 @@ Flow: Demo → Collect data → Backtest → Validate → VPS → Live
 
 ## 🎯 CURRENT SESSION STATUS
 
-**Current Session:** 14.5 (Architecture Decision - Complete)
-**Next Session:** 15 (ATR-Based Dynamic SL/TP) 🎯
+**Current Session:** 15 (ATR-Based Dynamic SL/TP - Complete ✅)
+**Next Session:** 16 (3-Phase Asymmetric Trailing) 🎯
 
 ---
 
@@ -588,37 +588,39 @@ Validate Session 13's Enhanced Signal Analysis Dashboard with live market data. 
 
 ---
 
-### 🚀 Session 15: ATR-Based Dynamic SL/TP (NEXT SESSION)
-**Date:** TBD
+### ✅ Session 15: ATR-Based Dynamic SL/TP (COMPLETE)
+**Date:** February 7, 2026
 **Duration:** ~3 hours
-**Status:** 📋 Ready to Implement
-
-**⚠️ IMPORTANT: This is NOT about data collection!**
+**Status:** ✅ Complete - Ready for Testing
 
 **Objective:**
 Fix "trades stopped out too early" issue by implementing market-adaptive SL/TP that responds to volatility automatically.
 
-**Problem Being Solved:**
-- ❌ Current: Fixed 50/100 pip SL/TP regardless of market volatility
-- ❌ No ATR adaptation (same stops in quiet/volatile markets)
-- ❌ Trades stopped by normal market noise
-- ❌ Missing big winning trades (can't ride trends)
-
-**Solution:**
-- ✅ ATR-based dynamic SL/TP: `SL = ATR × 0.5` (with min/max bounds)
-- ✅ Volatility adaptation: Wider stops in volatile markets, tighter in quiet
+**Problem Solved:**
+- ✅ Implemented ATR-based dynamic SL/TP (was: Fixed 50/100 pip SL/TP)
+- ✅ Volatility adaptation: Wider stops in volatile, tighter in quiet
 - ✅ Symbol-specific bounds (EURUSD 20-60, GBPUSD 25-80, AUDJPY 25-70, XAUUSD 30-150)
+- ✅ Symbol-specific ATR multipliers (GBPUSD 0.6 for spikes, Gold 0.4 for huge ATR)
 - ✅ Risk:Reward maintained at 2.0 (TP = SL × 2)
 
-**Files to Modify:**
-1. `Strategy_AnalysisEA.mq5` - Add ATR-based SL/TP calculation
-2. `SignalExporter.mqh` - Export stop_loss_dollars/take_profit_dollars (already has fields!)
-3. `TradeExecutor.mqh` - Activate existing ATR code path (Lines 128-153)
+**Files Modified:**
+- ✅ `Strategy_AnalysisEA.mq5` - Added ATR-based SL/TP calculation (98 lines)
+- ✅ `SignalExporter.mqh` - Already exports stop_loss_dollars/take_profit_dollars
+- ✅ `TradeExecutor.mqh` - Already has ATR code path (will auto-activate)
+
+**Testing Required:**
+- [ ] Compile Strategy_AnalysisEA in MetaEditor (F7)
+- [ ] Deploy on demo MT5
+- [ ] Verify signal JSON contains stop_loss_dollars/take_profit_dollars
+- [ ] Monitor first 5 trades for ATR adaptation
+- [ ] Validate stops adapt to market volatility
 
 **Expected Results:**
 - Premature stop-outs: 40% → 25% (-15% improvement)
 - Better win rate in volatile markets
 - Stops adapt automatically to market conditions
+
+**See:** Session History below for complete implementation details
 
 **Complete Implementation Plan:**
 **See:** `Documentation/SL_TP_MULTI_LAYER_PROTECTION_PLAN.md` (1,477 lines, created Feb 7, 2026 at 4:25 AM)
@@ -1288,6 +1290,81 @@ Multi-pair backtesting requires proper portfolio simulation. Python backtester s
 - Prepare for Session 14 (market validation when markets open)
 - Collect data for Python backtesting
 
+### Session 15: ATR-Based Dynamic SL/TP Implementation (February 7, 2026)
+**Duration:** ~3 hours | **Status:** ✅ Complete (Ready for Testing)
+
+**Objective:**
+Implement market-adaptive stop loss and take profit system that responds to volatility automatically. Fix "trades stopped out too early" issue by making stops adapt to market conditions.
+
+**Accomplished:**
+- ✅ **Added ATR-based SL/TP System to Strategy_AnalysisEA.mq5**
+  - 14 new input parameters (ATR multipliers, min/max bounds per symbol)
+  - Symbol-specific bounds:
+    - EURUSD: 20-60 pips, multiplier 0.5
+    - GBPUSD: 25-80 pips, multiplier 0.6 (wider for London spikes)
+    - AUDJPY: 25-70 pips, multiplier 0.5
+    - XAUUSD: 30-150 pips, multiplier 0.4 (lower for huge ATR)
+  - ATR calculation logic after strategy evaluation
+  - Sets signal.stopLossDollars and signal.takeProfitDollars
+  - Handles Gold vs Forex correctly (dollars vs pips)
+
+- ✅ **Added 3 Helper Functions**
+  - GetSymbolATRMultiplier() - Returns symbol-specific ATR multiplier
+  - GetSymbolMinSL() - Returns minimum SL bound
+  - GetSymbolMaxSL() - Returns maximum SL bound
+  - All handle broker suffixes (.sml, .r, .ecn, .raw)
+
+- ✅ **SignalExporter.mqh** - Already exports stop_loss_dollars/take_profit_dollars (no changes needed)
+- ✅ **TradeExecutor.mqh** - Already has ATR code path (lines 128-153, no changes needed)
+
+**How It Works:**
+```
+1. Strategy evaluates → generates signal (BUY/SELL/HOLD)
+2. ATR system calculates dynamic SL/TP:
+   - Get ATR (14 period, H1 timeframe)
+   - Apply symbol multiplier (GBPUSD 0.6, others 0.5, Gold 0.4)
+   - Enforce min/max bounds per symbol
+   - Calculate TP (SL × 2.0 R:R ratio)
+3. Signal exported with ATR-based stops
+4. TradeExecutor automatically uses ATR stops (existing code path activates)
+```
+
+**Files Modified:**
+- `Jcamp_Strategy_AnalysisEA.mq5` (98 lines added)
+  - Input parameters section (lines 82-110)
+  - ATR calculation logic (lines 491-548)
+  - Helper functions (lines 690-754)
+
+**Commit:** `9f1ba83` - feat: Session 15 - ATR-Based Dynamic SL/TP Implementation
+
+**Expected Results:**
+- **Premature stop-outs:** 40% → 25% (-15% improvement)
+- **Volatility adaptation:** Wider stops in volatile markets, tighter in quiet
+- **Symbol-aware:** Each pair uses appropriate stop distances
+- **Better win rate:** Trades survive normal market noise
+
+**Testing Checklist (Next Steps):**
+- [ ] Compile Strategy_AnalysisEA in MetaEditor (F7)
+- [ ] Deploy on demo MT5
+- [ ] Check signal JSON files contain:
+  - [ ] `"stop_loss_dollars": 25.5` (or similar)
+  - [ ] `"take_profit_dollars": 51.0` (or similar)
+- [ ] Verify trades execute with ATR-based SL/TP (check Expert tab logs)
+- [ ] Test in different volatility conditions:
+  - [ ] Quiet day (ATR 20-30) → Tighter stops
+  - [ ] Volatile day (ATR 60-80) → Wider stops
+- [ ] Confirm bounds working:
+  - [ ] Very low ATR → Min SL applied
+  - [ ] Very high ATR → Max SL applied
+- [ ] Monitor first 5 trades, compare to fixed system
+
+**Next Session (16) Preview:**
+3-Phase Asymmetric Trailing System
+- Phase 1 (0.5-1.0R): Tight trail (protect quick wins)
+- Phase 2 (1.0-2.0R): Balanced trail (let it breathe)
+- Phase 3 (2.0R+): Loose trail (ride the trend)
+- Expected: +0.4R per winner improvement
+
 ---
 
 ## 💡 IMPORTANT NOTES
@@ -1338,4 +1415,4 @@ Multi-pair backtesting requires proper portfolio simulation. Python backtester s
 ---
 
 *Read this file at start of every session for full context*
-*Updated: Session 11 Complete - February 6, 2026*
+*Updated: Session 15 Complete - February 7, 2026*
