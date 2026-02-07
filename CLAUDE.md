@@ -2,7 +2,7 @@
 
 **Purpose:** Single authoritative reference for Claude Code
 **Project:** CSM Alpha - 4-Asset Trading System with Gold
-**Last Updated:** February 7, 2026 (Session 13 Complete - Enhanced Signal Dashboard)
+**Last Updated:** February 7, 2026 (Session 14.5 - Architecture Decision Complete)
 
 ---
 
@@ -395,7 +395,7 @@ git commit -m "Updated strategy logic"
 
 **Total Time:** ~20.5 hours | **Status:** ✅ Complete!
 
-### Phase 2: CSM Alpha Testing & Integration (✅ COMPLETE - Session 8)
+### Phase 2: CSM Alpha Testing & Integration (🔄 IN PROGRESS - Sessions 8-13)
 - [x] Test CSM Alpha EAs compilation in MetaEditor (~30 min)
   - [x] CSM_AnalysisEA.mq5 ✅
   - [x] Strategy_AnalysisEA.mq5 (updated) ✅
@@ -418,14 +418,50 @@ git commit -m "Updated strategy logic"
   - [x] Gold TrendRider-only behavior verified ✅
   - [x] **First live trades executed!** (EURUSD +$6.08, GBPUSD +$3.42) 🎉
 - [x] **Bonus Achievements:**
-  - [x] Spread multiplier system (5x for Gold)
+  - [x] Spread multiplier system (15x for Gold - Session 9)
   - [x] Symbol-aware SL/TP (Gold: $50/$100, Forex: 50/100 pips)
   - [x] Position log spam fix
   - [x] Broker suffix handling
-- [ ] Manual trading based on signals (NEXT - ongoing)
-- [ ] Fine-tune confidence thresholds (NEXT)
+  - [x] CSM Gatekeeper refactoring (Session 11)
+  - [x] Enhanced Signal Dashboard with component scores (Session 13)
+- [x] Session 14: Market validation (NEXT - pending market open)
+- [ ] Sessions 15-17: Collect 50+ demo trades (~2 weeks)
+- [ ] Fine-tune confidence thresholds based on data
 
-### Phase 3: VPS Deployment (Week 5)
+### Phase 3: Python Multi-Pair Backtesting (Week 3-4)
+**Decision (Session 14.5):** MT5 multi-pair backtester scrapped - resume Phase 8 Python backtester instead
+
+- [ ] Resume Phase 8 Python backtester (D:\Jcamp_TradingApp)
+- [ ] Port CSM Alpha logic to Python
+  - [ ] 9-currency competitive scoring
+  - [ ] Synthetic Gold pair calculation
+  - [ ] TrendRider/RangeRider/GoldTrendRider strategies
+  - [ ] CSM gatekeeper logic
+- [ ] Run 1-year multi-pair backtest (2024-2025)
+  - [ ] All 4 pairs: EURUSD, GBPUSD, AUDJPY, XAUUSD
+  - [ ] Portfolio-level simulation (1% risk per trade)
+  - [ ] Combined equity curve
+- [ ] Compare architectures
+  - [ ] CSM Gate ON vs OFF (answer Session 14.5 question)
+  - [ ] Confidence thresholds (70 vs 80 vs 90)
+  - [ ] Spread multipliers optimization
+- [ ] Generate comprehensive reports
+  - [ ] Per-pair performance
+  - [ ] Correlation analysis
+  - [ ] Drawdown scenarios
+  - [ ] Win rate, R-multiples, Sharpe ratio
+
+**Prerequisites:**
+- ✅ 50+ closed demo trades collected
+- ✅ CSM Alpha system stable (no critical bugs)
+- ✅ Need to validate historical performance
+
+### Phase 4: VPS Deployment (Week 5)
+**Only proceed if:**
+- ✅ Demo trading: Win rate > 50%, positive R-multiple
+- ✅ Python backtest: Profitable over 1 year, max DD < 20%
+
+**Tasks:**
 - [ ] Setup Forex VPS (Vultr recommended, $12/month)
 - [ ] Install Windows Server 2022
 - [ ] Install MT5 on VPS
@@ -433,7 +469,7 @@ git commit -m "Updated strategy logic"
 - [ ] Setup file sync for C# Monitor
 - [ ] Verify 24/7 operation
 
-### Phase 4: Live Trading (Weeks 6+)
+### Phase 5: Live Trading (Week 6+)
 - [ ] Start with micro lots (0.01)
 - [ ] Monitor daily performance
 - [ ] Track win rate, R-multiples, drawdown
@@ -466,11 +502,11 @@ git commit -m "Updated strategy logic"
 
 ## 🔗 RELATED PROJECTS
 
-### D:\Jcamp_TradingApp (Phase 8 - Paused)
-- **Status:** Complete, on hold for CSM focus
+### D:\Jcamp_TradingApp (Phase 8 - Resuming Soon)
+- **Status:** Complete, ready to resume
 - **Content:** Phase 8 multi-pair backtesting (Python + C#)
-- **Purpose:** Advanced backtesting & visualization
-- **When to Resume:** After CSM live trading validated (2-4 months)
+- **Purpose:** Validate CSM Alpha on historical data before VPS live trading
+- **When to Resume:** 3-4 weeks (after collecting 50+ demo trades)
 
 **Phase 8 Work Preserved:**
 - Python backtesting engine (30/31 tests passing)
@@ -478,15 +514,29 @@ git commit -m "Updated strategy logic"
 - Multi-pair support (EURUSD, GBPUSD, GBPNZD)
 - All bugs documented for future fixes
 
+**Resumption Plan:**
+- Port CSM Alpha logic to Python (9-currency system, Gold integration)
+- Run 1-year backtest on all 4 pairs (EURUSD, GBPUSD, AUDJPY, XAUUSD)
+- Compare CSM Gate ON vs OFF architectures
+- Validate confidence thresholds and spread multipliers
+- Generate performance reports before VPS deployment
+
+**Decision (Session 14.5):**
+- ❌ **MT5 Multi-Pair Backtester:** Scrapped (Strategy Tester limitations)
+- ✅ **Python Backtester:** Superior for portfolio simulation, correlation analysis
+
 ### Relationship Between Projects
 ```
-JcampForexTrader (Current)          Jcamp_TradingApp (Future)
-├── CSM live trading                ├── Multi-pair backtesting
-├── VPS deployment                  ├── Python strategy brain
-├── Real-time signals               ├── Advanced visualization
-└── 24/7 operation                  └── Strategy optimization
+JcampForexTrader (Current)          Jcamp_TradingApp (Phase 3)
+├── CSM live demo trading           ├── Multi-pair backtesting
+├── Signal dashboard                ├── Historical validation
+├── Data collection (50+ trades)    ├── Architecture comparison
+└── Real-time monitoring            └── Performance optimization
+                                         ↓
+                                    VPS Live Trading (Phase 4)
+                                    └── Deploy validated system
 
-Flow: Test strategies in CSM → Refine in backtesting → Deploy live
+Flow: Demo → Collect data → Backtest → Validate → VPS → Live
 ```
 
 ---
@@ -1126,6 +1176,75 @@ Validate Session 13's Enhanced Signal Analysis Dashboard with live market data. 
 - Verify signal JSON files contain "components" object
 - Validate dashboard with real market data
 - Capture screenshots and document results
+
+### Session 14.5: Architecture Decision - Multi-Pair Backtesting (February 7, 2026)
+**Duration:** ~30 minutes | **Status:** ✅ Complete (Planning Session)
+
+**Discussion Topic:**
+- User explored removing CSM gatekeeper (making it scoring-only instead of hard block)
+- Motivation: Want to validate multi-pair system performance
+- Original BacktestEA only tested single-pair
+
+**Options Evaluated:**
+
+**Option A: MT5 Multi-Pair Backtester with Global Variables**
+```
+CSM_Backtester.mq5 → GV → 4x SymbolBacktester.mq5
+```
+- ❌ MT5 Strategy Tester runs ONE EA at a time (can't test portfolio)
+- ❌ Multi-symbol data access slow and buggy
+- ❌ No combined equity curve visualization
+- ❌ Complex to debug, limited value
+
+**Option B: All-in-One Multi-Pair EA**
+```
+MultiPair_Backtester.mq5 (trades all 4 symbols internally)
+```
+- ❌ Strategy Tester only loads chart symbol data
+- ❌ Manual data loading required for other symbols
+- ❌ Slow backtests, potential data gaps
+- ❌ Can't simulate true portfolio dynamics
+
+**Option C: Python Multi-Pair Backtester (Phase 8)** ✅ **SELECTED**
+```
+Resume D:\Jcamp_TradingApp Python backtester
+```
+- ✅ Native multi-pair support (vectorized pandas)
+- ✅ Portfolio-level simulation (margin, correlation)
+- ✅ Combined equity curve + advanced visualization
+- ✅ Fast execution (30/31 tests already passing)
+- ✅ Can compare CSM Gate ON vs OFF architectures
+
+**Decision Made:**
+- ❌ **Scrap MT5 multi-pair backtester** (not worth technical limitations)
+- ✅ **Resume Python backtester** after collecting 50+ demo trades (3-4 weeks)
+- ✅ **Keep CSM gatekeeper architecture** (validated in Session 11-12)
+- ✅ **Test CSM Gate ON vs OFF in Python** (answer performance question properly)
+
+**Updated Roadmap:**
+```
+Phase 2: Demo Trading (NOW - Week 2)
+  ↓ Collect 50+ trades, validate stability
+Phase 3: Python Backtest (Week 3-4)
+  ↓ Port CSM Alpha, run 1-year multi-pair backtest
+  ↓ Compare architectures, optimize thresholds
+Phase 4: VPS Deployment (Week 5)
+  ↓ Deploy validated system
+Phase 5: Live Trading (Week 6+)
+```
+
+**Files Updated:**
+- `CLAUDE.md` - Updated deployment roadmap (Phases 2-5)
+- `CLAUDE.md` - Updated "RELATED PROJECTS" section (resume timeline 3-4 weeks)
+- `CLAUDE.md` - Added Session 14.5 documentation
+
+**Key Insight:**
+Multi-pair backtesting requires proper portfolio simulation. Python backtester superior to MT5 Strategy Tester for this purpose. Worth waiting 3-4 weeks to do it right.
+
+**Next Steps:**
+- Continue Phase 2 (demo trading validation)
+- Prepare for Session 14 (market validation when markets open)
+- Collect data for Python backtesting
 
 ---
 
