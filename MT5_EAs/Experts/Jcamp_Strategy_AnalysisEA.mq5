@@ -79,6 +79,34 @@ input double MaxRangeWidthPips = 100.0;                   // Max range width (pi
 input int RangeRiderMinConfidence = 65;                   // Min confidence for entry (%)
 
 //═══════════════════════════════════════════════════════════════════
+//  ATR-BASED DYNAMIC SL/TP (Session 15)
+//═══════════════════════════════════════════════════════════════════
+input group "═══ ATR-BASED SL/TP SETTINGS ═══"
+input double   StopLossATRMultiplier = 0.5;               // ATR multiplier for SL
+input int      ATRPeriod = 14;                            // ATR period
+input double   RiskRewardRatio = 2.0;                     // R:R ratio (TP = SL × ratio)
+
+input group "═══ EURUSD BOUNDS ═══"
+input double   EURUSD_MinSL = 20.0;                       // Min SL (pips)
+input double   EURUSD_MaxSL = 60.0;                       // Max SL (pips)
+input double   EURUSD_ATRMultiplier = 0.5;                // ATR multiplier
+
+input group "═══ GBPUSD BOUNDS ═══"
+input double   GBPUSD_MinSL = 25.0;                       // Min SL (pips)
+input double   GBPUSD_MaxSL = 80.0;                       // Max SL (pips)
+input double   GBPUSD_ATRMultiplier = 0.6;                // ATR multiplier (wider for spikes)
+
+input group "═══ AUDJPY BOUNDS ═══"
+input double   AUDJPY_MinSL = 25.0;                       // Min SL (pips)
+input double   AUDJPY_MaxSL = 70.0;                       // Max SL (pips)
+input double   AUDJPY_ATRMultiplier = 0.5;                // ATR multiplier
+
+input group "═══ XAUUSD (GOLD) BOUNDS ═══"
+input double   XAUUSD_MinSL = 30.0;                       // Min SL (pips/$)
+input double   XAUUSD_MaxSL = 150.0;                      // Max SL (pips/$)
+input double   XAUUSD_ATRMultiplier = 0.4;                // ATR multiplier (lower for Gold)
+
+//═══════════════════════════════════════════════════════════════════
 //  LOGGING & DIAGNOSTICS
 //═══════════════════════════════════════════════════════════════════
 input group "═══ LOGGING & DIAGNOSTICS ═══"
@@ -488,6 +516,71 @@ void OnTick()
     }
 
     //═══════════════════════════════════════════════════════════════
+    // SESSION 15: ATR-BASED DYNAMIC SL/TP CALCULATION
+    // Calculate market-adaptive stops for all signals (BUY/SELL/HOLD)
+    //═══════════════════════════════════════════════════════════════
+    if(hasSignal)
+    {
+        // Get current ATR value
+        double atr = GetATR(_Symbol, AnalysisTimeframe, ATRPeriod);
+
+        if(atr > 0)  // Valid ATR data
+        {
+            // Get symbol-specific parameters
+            double atrMultiplier = GetSymbolATRMultiplier(_Symbol);
+            double minSL = GetSymbolMinSL(_Symbol);
+            double maxSL = GetSymbolMaxSL(_Symbol);
+
+            // Calculate base SL distance (in price units)
+            double point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+            int digits = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
+            double pipSize = (digits == 3 || digits == 5) ? point * 10.0 : point;
+
+            // For Gold: ATR is in dollars, for forex: ATR is in price (convert to pips)
+            bool isGold = (StringFind(_Symbol, "XAU") >= 0);
+            double atrPips = isGold ? atr : (atr / pipSize);
+
+            // Calculate SL distance
+            double slPips = atrPips * atrMultiplier;
+
+            // Apply bounds
+            if(slPips < minSL) slPips = minSL;
+            if(slPips > maxSL) slPips = maxSL;
+
+            // Convert back to price distance
+            double slDistance = isGold ? slPips : (slPips * pipSize);
+
+            // Calculate TP distance (based on R:R ratio)
+            double tpDistance = slDistance * RiskRewardRatio;
+
+            // Store in signal struct
+            signal.stopLossDollars = slDistance;
+            signal.takeProfitDollars = tpDistance;
+
+            if(VerboseLogging)
+            {
+                Print("═══ ATR-Based SL/TP (Session 15) ═══");
+                Print("Symbol: ", _Symbol);
+                Print("ATR: ", DoubleToString(atrPips, 1), (isGold ? " $" : " pips"));
+                Print("ATR Multiplier: ", atrMultiplier);
+                Print("SL Distance: ", DoubleToString(slPips, 1), (isGold ? " $" : " pips"),
+                      " (Min: ", minSL, ", Max: ", maxSL, ")");
+                Print("TP Distance: ", DoubleToString(tpDistance / (isGold ? 1.0 : pipSize), 1),
+                      (isGold ? " $" : " pips"), " (R:R ", RiskRewardRatio, ":1)");
+            }
+        }
+        else
+        {
+            // Fallback to zero (TradeExecutor will use default fixed SL/TP)
+            signal.stopLossDollars = 0.0;
+            signal.takeProfitDollars = 0.0;
+
+            if(VerboseLogging)
+                Print("⚠ ATR data invalid, using default SL/TP");
+        }
+    }
+
+    //═══════════════════════════════════════════════════════════════
     // Export signal to JSON file
     //═══════════════════════════════════════════════════════════════
     if(hasSignal && activeStrategy.IsValidSignal(signal))
@@ -653,6 +746,66 @@ double GetCSMDifferential(string symbol)
     double diff = csm_data[base_idx].current_strength - csm_data[quote_idx].current_strength;
 
     return diff;
+}
+
+//+------------------------------------------------------------------+
+//| Get Symbol-Specific ATR Multiplier (Session 15)                 |
+//+------------------------------------------------------------------+
+double GetSymbolATRMultiplier(string symbol)
+{
+    string clean = symbol;
+    StringReplace(clean, ".sml", "");
+    StringReplace(clean, ".r", "");
+    StringReplace(clean, ".ecn", "");
+    StringReplace(clean, ".raw", "");
+
+    if(StringFind(clean, "EURUSD") >= 0) return EURUSD_ATRMultiplier;
+    if(StringFind(clean, "GBPUSD") >= 0) return GBPUSD_ATRMultiplier;
+    if(StringFind(clean, "AUDJPY") >= 0) return AUDJPY_ATRMultiplier;
+    if(StringFind(clean, "XAUUSD") >= 0 || StringFind(clean, "GOLD") >= 0)
+        return XAUUSD_ATRMultiplier;
+
+    return StopLossATRMultiplier; // Default
+}
+
+//+------------------------------------------------------------------+
+//| Get Symbol-Specific Minimum SL (Session 15)                     |
+//+------------------------------------------------------------------+
+double GetSymbolMinSL(string symbol)
+{
+    string clean = symbol;
+    StringReplace(clean, ".sml", "");
+    StringReplace(clean, ".r", "");
+    StringReplace(clean, ".ecn", "");
+    StringReplace(clean, ".raw", "");
+
+    if(StringFind(clean, "EURUSD") >= 0) return EURUSD_MinSL;
+    if(StringFind(clean, "GBPUSD") >= 0) return GBPUSD_MinSL;
+    if(StringFind(clean, "AUDJPY") >= 0) return AUDJPY_MinSL;
+    if(StringFind(clean, "XAUUSD") >= 0 || StringFind(clean, "GOLD") >= 0)
+        return XAUUSD_MinSL;
+
+    return 20.0; // Default
+}
+
+//+------------------------------------------------------------------+
+//| Get Symbol-Specific Maximum SL (Session 15)                     |
+//+------------------------------------------------------------------+
+double GetSymbolMaxSL(string symbol)
+{
+    string clean = symbol;
+    StringReplace(clean, ".sml", "");
+    StringReplace(clean, ".r", "");
+    StringReplace(clean, ".ecn", "");
+    StringReplace(clean, ".raw", "");
+
+    if(StringFind(clean, "EURUSD") >= 0) return EURUSD_MaxSL;
+    if(StringFind(clean, "GBPUSD") >= 0) return GBPUSD_MaxSL;
+    if(StringFind(clean, "AUDJPY") >= 0) return AUDJPY_MaxSL;
+    if(StringFind(clean, "XAUUSD") >= 0 || StringFind(clean, "GOLD") >= 0)
+        return XAUUSD_MaxSL;
+
+    return 100.0; // Default
 }
 
 //+------------------------------------------------------------------+
