@@ -102,9 +102,10 @@ input double   AUDJPY_MaxSL = 70.0;                       // Max SL (pips)
 input double   AUDJPY_ATRMultiplier = 0.5;                // ATR multiplier
 
 input group "═══ XAUUSD (GOLD) BOUNDS ═══"
-input double   XAUUSD_MinSL = 30.0;                       // Min SL (pips/$)
-input double   XAUUSD_MaxSL = 150.0;                      // Max SL (pips/$)
-input double   XAUUSD_ATRMultiplier = 0.4;                // ATR multiplier (lower for Gold)
+input double   XAUUSD_MinSL = 50.0;                       // Min SL (pips/$) - raised from 30
+input double   XAUUSD_MaxSL = 200.0;                      // Max SL (pips/$) - raised from 150
+input double   XAUUSD_ATRMultiplier = 0.6;                // ATR multiplier - raised from 0.4
+input ENUM_TIMEFRAMES XAUUSD_ATRTimeframe = PERIOD_H4;    // ATR timeframe for Gold (H4 more stable)
 
 //═══════════════════════════════════════════════════════════════════
 //  LOGGING & DIAGNOSTICS
@@ -521,8 +522,14 @@ void OnTick()
     //═══════════════════════════════════════════════════════════════
     if(hasSignal)
     {
+        // Determine if this is Gold
+        bool isGold = (StringFind(_Symbol, "XAU") >= 0);
+
+        // SESSION 18: Use H4 ATR for Gold, H1 for forex (more stable Gold volatility measurement)
+        ENUM_TIMEFRAMES atrTimeframe = isGold ? XAUUSD_ATRTimeframe : AnalysisTimeframe;
+
         // Get current ATR value
-        double atr = GetATR(_Symbol, AnalysisTimeframe, ATRPeriod);
+        double atr = GetATR(_Symbol, atrTimeframe, ATRPeriod);
 
         if(atr > 0)  // Valid ATR data
         {
@@ -537,7 +544,6 @@ void OnTick()
             double pipSize = (digits == 3 || digits == 5) ? point * 10.0 : point;
 
             // For Gold: ATR is in dollars, for forex: ATR is in price (convert to pips)
-            bool isGold = (StringFind(_Symbol, "XAU") >= 0);
             double atrPips = isGold ? atr : (atr / pipSize);
 
             // Calculate SL distance
@@ -592,8 +598,10 @@ void OnTick()
 
             if(VerboseLogging)
             {
-                Print("═══ ATR-Based SL/TP (Session 15) ═══");
+                Print("═══ ATR-Based SL/TP (Sessions 15-18) ═══");
                 Print("Symbol: ", _Symbol);
+                Print("ATR Timeframe: ", EnumToString(atrTimeframe),
+                      (isGold ? " (H4 for Gold stability)" : " (H1 for forex)"));
                 Print("ATR: ", DoubleToString(atrPips, 1), (isGold ? " $" : " pips"));
                 Print("ATR Multiplier: ", atrMultiplier);
                 Print("SL Distance: ", DoubleToString(slPips, 1), (isGold ? " $" : " pips"),

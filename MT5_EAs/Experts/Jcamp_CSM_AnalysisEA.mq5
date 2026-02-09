@@ -20,7 +20,7 @@ input int    UpdateIntervalMinutes = 60;              // CSM Update Interval (mi
 
 input group "═══ Export Settings ═══"
 input string ExportFolder = "CSM_Data";               // Export folder name
-input bool   VerboseLogging = false;                  // Verbose logging
+input bool   VerboseLogging = true;                  // Verbose logging
 
 input group "═══ Broker Settings ═══"
 input string BrokerSuffix = ".r";                       // Broker symbol suffix (e.g., ".r")
