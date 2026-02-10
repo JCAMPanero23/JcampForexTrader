@@ -496,6 +496,7 @@
                             <!-- Currency Strength Horizontal Grid -->
                             <UniformGrid Grid.Row="1" x:Name="CurrencyStrengthGrid" Columns="9" Rows="1">
                                 <!-- 9 currencies: USD, EUR, GBP, JPY, CHF, AUD, CAD, NZD, XAU (Gold) -->
+                                <!-- Session 19: Gold (XAU) tracked in CSM but not traded (replaced with USDJPY + USDCHF) -->
                                 <!-- Dynamically populated via C# code -->
                             </UniformGrid>
                         </Grid>
@@ -607,10 +608,10 @@
                                     </Grid>
                                 </Border>
 
-                                <!-- XAUUSD (Gold) Card -->
+                                <!-- USDJPY Card (Session 19: Replaced Gold) -->
                                 <Border Grid.Row="4" x:Name="XAUUSDBorder" Background="#2D2D30" BorderBrush="#3E3E42"
                                        BorderThickness="1" CornerRadius="3" Margin="0,0,0,0" Padding="10,8" Cursor="Hand"
-                                       MouseLeftButtonDown="AssetCard_Click" Tag="XAUUSD">
+                                       MouseLeftButtonDown="AssetCard_Click" Tag="USDJPY">
                                     <Grid>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto"/>
@@ -618,9 +619,9 @@
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
                                         <StackPanel Grid.Row="0" Orientation="Horizontal">
-                                            <TextBlock Text="XAUUSD" FontSize="18" FontWeight="Bold"
+                                            <TextBlock Text="USDJPY" FontSize="18" FontWeight="Bold"
                                                       Foreground="White" FontFamily="Segoe UI Semibold"/>
-                                            <TextBlock Text="⚡" FontSize="13" Foreground="#FFD700" Margin="4,0,0,0"/>
+                                            <TextBlock Text="🏯" FontSize="13" Foreground="#FFD700" Margin="4,0,0,0"/>
                                         </StackPanel>
                                         <Grid Grid.Row="1" Margin="0,4,0,0">
                                             <TextBlock x:Name="XAUUSD_Best_Signal" Text="HOLD" FontSize="18"
@@ -903,7 +904,7 @@
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
 
-                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="EUR·GBP·AUD·XAU" FontSize="13"
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="EUR·GBP·AUD·JPY·CHF" FontSize="13"
                                                   Foreground="#D0D0D0" FontFamily="Consolas"/>
                                         <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Margin="0,2,0,0">
                                             <TextBlock x:Name="EURUSDCount" Text="1" FontSize="13" FontWeight="Bold" Foreground="#4EC9B0" FontFamily="Consolas"/>

@@ -111,12 +111,13 @@ input double   USDCHF_MinSL = 20.0;                       // Min SL (pips)
 input double   USDCHF_MaxSL = 60.0;                       // Max SL (pips)
 input double   USDCHF_ATRMultiplier = 0.5;                // ATR multiplier
 
-// ⚠️ SESSION 19: XAUUSD (Gold) parameters disabled (resume when account > $1000)
-// input group "═══ XAUUSD (GOLD) BOUNDS ═══"
-// input double   XAUUSD_MinSL = 50.0;                       // Min SL (pips/$) - raised from 30
-// input double   XAUUSD_MaxSL = 200.0;                      // Max SL (pips/$) - raised from 150
-// input double   XAUUSD_ATRMultiplier = 0.6;                // ATR multiplier - raised from 0.4
-// input ENUM_TIMEFRAMES XAUUSD_ATRTimeframe = PERIOD_H4;    // ATR timeframe for Gold (H4 more stable)
+// ⚠️ SESSION 19: XAUUSD (Gold) parameters kept for code compatibility (not trading Gold)
+// To resume Gold: Remove charts from MT5, parameters stay active
+input group "═══ XAUUSD (GOLD) BOUNDS - NOT TRADING ═══"
+input double   XAUUSD_MinSL = 50.0;                       // Min SL (pips/$) - raised from 30
+input double   XAUUSD_MaxSL = 200.0;                      // Max SL (pips/$) - raised from 150
+input double   XAUUSD_ATRMultiplier = 0.6;                // ATR multiplier - raised from 0.4
+input ENUM_TIMEFRAMES XAUUSD_ATRTimeframe = PERIOD_H4;    // ATR timeframe for Gold (H4 more stable)
 
 //═══════════════════════════════════════════════════════════════════
 //  LOGGING & DIAGNOSTICS
@@ -816,8 +817,8 @@ double GetSymbolATRMultiplier(string symbol)
     if(StringFind(clean, "AUDJPY") >= 0) return AUDJPY_ATRMultiplier;
     if(StringFind(clean, "USDJPY") >= 0) return USDJPY_ATRMultiplier;  // Session 19
     if(StringFind(clean, "USDCHF") >= 0) return USDCHF_ATRMultiplier;  // Session 19
-    // if(StringFind(clean, "XAUUSD") >= 0 || StringFind(clean, "GOLD") >= 0)
-    //     return XAUUSD_ATRMultiplier;  // Disabled Session 19 (resume at $1000+ account)
+    if(StringFind(clean, "XAUUSD") >= 0 || StringFind(clean, "GOLD") >= 0)
+        return XAUUSD_ATRMultiplier;  // Session 19: Not trading but kept for code compatibility
 
     return StopLossATRMultiplier; // Default
 }
@@ -838,8 +839,8 @@ double GetSymbolMinSL(string symbol)
     if(StringFind(clean, "AUDJPY") >= 0) return AUDJPY_MinSL;
     if(StringFind(clean, "USDJPY") >= 0) return USDJPY_MinSL;  // Session 19
     if(StringFind(clean, "USDCHF") >= 0) return USDCHF_MinSL;  // Session 19
-    // if(StringFind(clean, "XAUUSD") >= 0 || StringFind(clean, "GOLD") >= 0)
-    //     return XAUUSD_MinSL;  // Disabled Session 19 (resume at $1000+ account)
+    if(StringFind(clean, "XAUUSD") >= 0 || StringFind(clean, "GOLD") >= 0)
+        return XAUUSD_MinSL;  // Session 19: Not trading but kept for code compatibility
 
     return 20.0; // Default
 }
@@ -860,8 +861,8 @@ double GetSymbolMaxSL(string symbol)
     if(StringFind(clean, "AUDJPY") >= 0) return AUDJPY_MaxSL;
     if(StringFind(clean, "USDJPY") >= 0) return USDJPY_MaxSL;  // Session 19
     if(StringFind(clean, "USDCHF") >= 0) return USDCHF_MaxSL;  // Session 19
-    // if(StringFind(clean, "XAUUSD") >= 0 || StringFind(clean, "GOLD") >= 0)
-    //     return XAUUSD_MaxSL;  // Disabled Session 19 (resume at $1000+ account)
+    if(StringFind(clean, "XAUUSD") >= 0 || StringFind(clean, "GOLD") >= 0)
+        return XAUUSD_MaxSL;  // Session 19: Not trading but kept for code compatibility
 
     return 100.0; // Default
 }

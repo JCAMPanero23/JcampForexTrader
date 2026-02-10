@@ -165,7 +165,8 @@ namespace JcampForexTrader
                 ["EURUSD"] = new SignalData(),
                 ["GBPUSD"] = new SignalData(),
                 ["AUDJPY"] = new SignalData(),
-                ["XAUUSD"] = new SignalData()
+                ["USDJPY"] = new SignalData(),  // Session 19
+                ["USDCHF"] = new SignalData()   // Session 19
             };
             // Initialize trade history manager
             if (pathFound && Directory.Exists(csmDataPath))
@@ -486,13 +487,14 @@ namespace JcampForexTrader
             // Signal files are in CSM_Signals folder (sibling to CSM_Data)
             string signalPath = csmDataPath.Replace("CSM_Data", "CSM_Signals");
 
-            // CSM Alpha: Handle broker suffix (.r for FP Markets Raw account)
+            // CSM Alpha Session 19: 5 assets with broker suffix (.r for FP Markets Raw account)
             var pairMappings = new Dictionary<string, string>
             {
                 ["EURUSD"] = "EURUSD.r",
                 ["GBPUSD"] = "GBPUSD.r",
                 ["AUDJPY"] = "AUDJPY.r",
-                ["XAUUSD"] = "XAUUSD.r"
+                ["USDJPY"] = "USDJPY.r",  // Session 19
+                ["USDCHF"] = "USDCHF.r"   // Session 19
             };
 
             foreach (var kvp in pairMappings)
@@ -824,16 +826,18 @@ namespace JcampForexTrader
             // Update Currency Strength Display with inline values
             UpdateCurrencyStrengthDisplay();
 
-            // Update Signal Displays
+            // Update Signal Displays (Session 19: 5 assets)
             UpdateSignalDisplay("EURUSD");
             UpdateSignalDisplay("GBPUSD");
             UpdateSignalDisplay("AUDJPY");
-            UpdateSignalDisplay("XAUUSD");
+            UpdateSignalDisplay("USDJPY");
+            UpdateSignalDisplay("USDCHF");
 
             UpdateStrategyDetails("EURUSD");
             UpdateStrategyDetails("GBPUSD");
             UpdateStrategyDetails("AUDJPY");
-            UpdateStrategyDetails("XAUUSD");
+            UpdateStrategyDetails("USDJPY");
+            UpdateStrategyDetails("USDCHF");
 
             UpdateStatusPanels();
 
@@ -1527,8 +1531,8 @@ namespace JcampForexTrader
 
         private void SelectAssetCard(string asset)
         {
-            // Reset all asset card borders to default
-            var assets = new[] { "EURUSD", "GBPUSD", "AUDJPY", "XAUUSD" };
+            // Reset all asset card borders to default (Session 19: 5 assets)
+            var assets = new[] { "EURUSD", "GBPUSD", "AUDJPY", "USDJPY", "USDCHF" };
             foreach (var a in assets)
             {
                 var borderName = $"{a}Border";
@@ -1819,13 +1823,14 @@ namespace JcampForexTrader
                 // CSM Alpha: Signal files are in CSM_Signals folder (sibling to CSM_Data)
                 string signalPath = pathToValidate.Replace("CSM_Data", "CSM_Signals");
 
-                // CSM Alpha: 4 assets with broker suffix mapping (.r for FP Markets Raw)
+                // CSM Alpha Session 19: 5 assets with broker suffix mapping (.r for FP Markets Raw)
                 var pairMappings = new Dictionary<string, string>
                 {
                     ["EURUSD"] = "EURUSD.r",
                     ["GBPUSD"] = "GBPUSD.r",
                     ["AUDJPY"] = "AUDJPY.r",
-                    ["XAUUSD"] = "XAUUSD.r"
+                    ["USDJPY"] = "USDJPY.r",  // Session 19
+                    ["USDCHF"] = "USDCHF.r"   // Session 19
                 };
 
                 int jsonFilesFound = 0;
@@ -2357,17 +2362,19 @@ namespace JcampForexTrader
                     return;
                 }
 
-                // Refresh signal displays for all pairs
+                // Refresh signal displays for all pairs (Session 19: 5 assets)
                 UpdateSignalDisplay("EURUSD");
                 UpdateSignalDisplay("GBPUSD");
                 UpdateSignalDisplay("AUDJPY");
-                UpdateSignalDisplay("XAUUSD");
+                UpdateSignalDisplay("USDJPY");
+                UpdateSignalDisplay("USDCHF");
 
-                // Refresh strategy details for all pairs
+                // Refresh strategy details for all pairs (Session 19: 5 assets)
                 UpdateStrategyDetails("EURUSD");
                 UpdateStrategyDetails("GBPUSD");
                 UpdateStrategyDetails("AUDJPY");
-                UpdateStrategyDetails("XAUUSD");
+                UpdateStrategyDetails("USDJPY");
+                UpdateStrategyDetails("USDCHF");
 
                 // Refresh currency strength display
                 UpdateCurrencyStrengthDisplay();
@@ -2430,17 +2437,30 @@ namespace JcampForexTrader
                                          pairSignals["AUDJPY"].BreakoutRetestConfidence,
                                          pairSignals["AUDJPY"].CsmDifferential);
 
-                UpdateStrategyStatusPanel("XAUUSD", "TR", pairSignals["XAUUSD"].TrendRiderSignal,
-                                         pairSignals["XAUUSD"].TrendRiderConfidence,
-                                         pairSignals["XAUUSD"].CsmDifferential);
+                // Session 19: Added USDJPY and USDCHF
+                UpdateStrategyStatusPanel("USDJPY", "TR", pairSignals["USDJPY"].TrendRiderSignal,
+                                         pairSignals["USDJPY"].TrendRiderConfidence,
+                                         pairSignals["USDJPY"].CsmDifferential);
 
-                UpdateStrategyStatusPanel("XAUUSD", "IP", pairSignals["XAUUSD"].ImpulsePullbackSignal,
-                                         pairSignals["XAUUSD"].ImpulsePullbackConfidence,
-                                         pairSignals["XAUUSD"].CsmDifferential);
+                UpdateStrategyStatusPanel("USDJPY", "IP", pairSignals["USDJPY"].ImpulsePullbackSignal,
+                                         pairSignals["USDJPY"].ImpulsePullbackConfidence,
+                                         pairSignals["USDJPY"].CsmDifferential);
 
-                UpdateStrategyStatusPanel("XAUUSD", "BR", pairSignals["XAUUSD"].BreakoutRetestSignal,
-                                         pairSignals["XAUUSD"].BreakoutRetestConfidence,
-                                         pairSignals["XAUUSD"].CsmDifferential);
+                UpdateStrategyStatusPanel("USDJPY", "BR", pairSignals["USDJPY"].BreakoutRetestSignal,
+                                         pairSignals["USDJPY"].BreakoutRetestConfidence,
+                                         pairSignals["USDJPY"].CsmDifferential);
+
+                UpdateStrategyStatusPanel("USDCHF", "TR", pairSignals["USDCHF"].TrendRiderSignal,
+                                         pairSignals["USDCHF"].TrendRiderConfidence,
+                                         pairSignals["USDCHF"].CsmDifferential);
+
+                UpdateStrategyStatusPanel("USDCHF", "IP", pairSignals["USDCHF"].ImpulsePullbackSignal,
+                                         pairSignals["USDCHF"].ImpulsePullbackConfidence,
+                                         pairSignals["USDCHF"].CsmDifferential);
+
+                UpdateStrategyStatusPanel("USDCHF", "BR", pairSignals["USDCHF"].BreakoutRetestSignal,
+                                         pairSignals["USDCHF"].BreakoutRetestConfidence,
+                                         pairSignals["USDCHF"].CsmDifferential);
             }
             catch (Exception ex)
             {
