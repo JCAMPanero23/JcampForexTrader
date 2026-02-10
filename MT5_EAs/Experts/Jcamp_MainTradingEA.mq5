@@ -5,9 +5,9 @@
 //+------------------------------------------------------------------+
 #property copyright "JcampForexTrader"
 #property link      ""
-#property version   "2.00"
-#property description "CSM Alpha Main Trading EA - 4 Asset System"
-#property description "Trades: EURUSD.r, GBPUSD.r, AUDJPY.r, XAUUSD.r (with broker suffix)"
+#property version   "2.10"
+#property description "CSM Alpha Main Trading EA - 5 Asset System (Session 19)"
+#property description "Trades: EURUSD.r, GBPUSD.r, AUDJPY.r, USDJPY.r, USDCHF.r (with broker suffix)"
 #property strict
 
 // Include modular components
@@ -21,7 +21,7 @@
 //+------------------------------------------------------------------+
 
 // --- Symbol Configuration ---
-input string TradedSymbols = "EURUSD.r,GBPUSD.r,AUDJPY.r,XAUUSD.r";  // ✅ CSM Alpha: 4 assets (FP Markets Raw account suffix)
+input string TradedSymbols = "EURUSD.r,GBPUSD.r,AUDJPY.r,USDJPY.r,USDCHF.r";  // ✅ Session 19: 5 assets (Gold removed, replaced with USDJPY + USDCHF)
 
 // --- Signal Settings ---
 input string SignalFolder = "CSM_Signals";             // Folder containing signal files
@@ -35,7 +35,9 @@ input double MaxSpreadPips = 2.0;                      // Base spread limit (pip
 input double SpreadMultiplierEURUSD = 1.0;             // EURUSD spread multiplier (1x = 2.0 pips)
 input double SpreadMultiplierGBPUSD = 1.0;             // GBPUSD spread multiplier (1x = 2.0 pips)
 input double SpreadMultiplierAUDJPY = 1.0;             // AUDJPY spread multiplier (1x = 2.0 pips)
-input double SpreadMultiplierXAUUSD = 15.0;            // XAUUSD (Gold) spread multiplier (15x = 30.0 pips) ✅ Optimized
+input double SpreadMultiplierUSDJPY = 1.0;             // USDJPY spread multiplier (1x = 2.0 pips) - Session 19
+input double SpreadMultiplierUSDCHF = 1.0;             // USDCHF spread multiplier (1x = 2.0 pips) - Session 19
+// input double SpreadMultiplierXAUUSD = 15.0;         // XAUUSD (Gold) - Disabled Session 19 (resume at $1000+ account)
 input int MaxPositionsPerSymbol = 1;                   // Max simultaneous positions per symbol
 input int MaxTotalPositions = 3;                       // Max total open positions
 
@@ -100,7 +102,7 @@ int OnInit()
    signalReader = new SignalReader(SignalFolder, VerboseLogging);
    tradeExecutor = new TradeExecutor(RiskPercent, MinConfidence, MaxSpreadPips, MagicNumber, VerboseLogging,
                                      SpreadMultiplierEURUSD, SpreadMultiplierGBPUSD,
-                                     SpreadMultiplierAUDJPY, SpreadMultiplierXAUUSD);
+                                     SpreadMultiplierAUDJPY, SpreadMultiplierUSDJPY, SpreadMultiplierUSDCHF);
    positionManager = new PositionManager(MagicNumber,
                                          UseAdvancedTrailing,
                                          TrailingActivationR,

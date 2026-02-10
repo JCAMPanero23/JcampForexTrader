@@ -61,7 +61,8 @@ public:
                  double eurMultiplier = 1.0,
                  double gbpMultiplier = 1.0,
                  double audMultiplier = 1.0,
-                 double xauMultiplier = 5.0)
+                 double usdjpyMultiplier = 1.0,
+                 double usdchfMultiplier = 1.0)
    {
       riskPercent = riskPct;
       minConfidence = minConf;
@@ -70,12 +71,14 @@ public:
       tradeComment = "JcampCSM";
       verboseLogging = verbose;
 
-      // Initialize spread multipliers for CSM Alpha symbols
-      ArrayResize(spreadMultipliers, 4);
+      // Initialize spread multipliers for CSM Alpha symbols (Session 19: 5 pairs)
+      ArrayResize(spreadMultipliers, 5);
       spreadMultipliers[0].symbol = "EURUSD";  spreadMultipliers[0].multiplier = eurMultiplier;
       spreadMultipliers[1].symbol = "GBPUSD";  spreadMultipliers[1].multiplier = gbpMultiplier;
       spreadMultipliers[2].symbol = "AUDJPY";  spreadMultipliers[2].multiplier = audMultiplier;
-      spreadMultipliers[3].symbol = "XAUUSD";  spreadMultipliers[3].multiplier = xauMultiplier;
+      spreadMultipliers[3].symbol = "USDJPY";  spreadMultipliers[3].multiplier = usdjpyMultiplier;
+      spreadMultipliers[4].symbol = "USDCHF";  spreadMultipliers[4].multiplier = usdchfMultiplier;
+      // XAUUSD removed - Session 19 (resume at $1000+ account)
 
       trade.SetExpertMagicNumber(magic);
       trade.SetMarginMode();
