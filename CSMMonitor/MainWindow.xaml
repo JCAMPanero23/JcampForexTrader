@@ -513,11 +513,12 @@
                             <!-- Trade Details -->
                         </Grid.ColumnDefinitions>
 
-                        <!-- LEFT PANEL: Asset Selector (4 Cards) -->
+                        <!-- LEFT PANEL: Asset Selector (5 Cards - Session 19) -->
                         <Border Grid.Column="0" Background="#252526" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="4" Margin="0,0,6,0">
                             <Grid Margin="8">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
                                     <RowDefinition Height="*"/>
                                     <RowDefinition Height="*"/>
                                     <RowDefinition Height="*"/>
@@ -609,8 +610,8 @@
                                 </Border>
 
                                 <!-- USDJPY Card (Session 19: Replaced Gold) -->
-                                <Border Grid.Row="4" x:Name="XAUUSDBorder" Background="#2D2D30" BorderBrush="#3E3E42"
-                                       BorderThickness="1" CornerRadius="3" Margin="0,0,0,0" Padding="10,8" Cursor="Hand"
+                                <Border Grid.Row="4" x:Name="USDJPYBorder" Background="#2D2D30" BorderBrush="#3E3E42"
+                                       BorderThickness="1" CornerRadius="3" Margin="0,0,0,4" Padding="10,8" Cursor="Hand"
                                        MouseLeftButtonDown="AssetCard_Click" Tag="USDJPY">
                                     <Grid>
                                         <Grid.RowDefinitions>
@@ -624,15 +625,45 @@
                                             <TextBlock Text="🏯" FontSize="13" Foreground="#FFD700" Margin="4,0,0,0"/>
                                         </StackPanel>
                                         <Grid Grid.Row="1" Margin="0,4,0,0">
-                                            <TextBlock x:Name="XAUUSD_Best_Signal" Text="HOLD" FontSize="18"
+                                            <TextBlock x:Name="USDJPY_Best_Signal" Text="HOLD" FontSize="18"
                                                       Foreground="#FFFFFF" HorizontalAlignment="Left"/>
-                                            <TextBlock x:Name="XAUUSD_Best_Conf" Text="0%" FontSize="18" FontWeight="Bold"
+                                            <TextBlock x:Name="USDJPY_Best_Conf" Text="0%" FontSize="18" FontWeight="Bold"
                                                       Foreground="#FFFFFF" HorizontalAlignment="Right" FontFamily="Consolas"/>
                                         </Grid>
                                         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,4,0,0">
-                                            <TextBlock x:Name="XAUUSD_Regime" Text="UNKNOWN" FontSize="11" FontWeight="SemiBold"
+                                            <TextBlock x:Name="USDJPY_Regime" Text="UNKNOWN" FontSize="11" FontWeight="SemiBold"
                                                       Foreground="#888888" FontFamily="Consolas"/>
-                                            <TextBlock x:Name="XAUUSD_Dynamic" Text="" FontSize="11" FontWeight="Bold"
+                                            <TextBlock x:Name="USDJPY_Dynamic" Text="" FontSize="11" FontWeight="Bold"
+                                                      Foreground="#FFD700" Margin="6,0,0,0" FontFamily="Consolas"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+
+                                <!-- USDCHF Card (Session 19: NEW) -->
+                                <Border Grid.Row="5" x:Name="USDCHFBorder" Background="#2D2D30" BorderBrush="#3E3E42"
+                                       BorderThickness="1" CornerRadius="3" Margin="0,0,0,0" Padding="10,8" Cursor="Hand"
+                                       MouseLeftButtonDown="AssetCard_Click" Tag="USDCHF">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <StackPanel Grid.Row="0" Orientation="Horizontal">
+                                            <TextBlock Text="USDCHF" FontSize="18" FontWeight="Bold"
+                                                      Foreground="White" FontFamily="Segoe UI Semibold"/>
+                                            <TextBlock Text="🇨🇭" FontSize="13" Foreground="#FFD700" Margin="4,0,0,0"/>
+                                        </StackPanel>
+                                        <Grid Grid.Row="1" Margin="0,4,0,0">
+                                            <TextBlock x:Name="USDCHF_Best_Signal" Text="HOLD" FontSize="18"
+                                                      Foreground="#FFFFFF" HorizontalAlignment="Left"/>
+                                            <TextBlock x:Name="USDCHF_Best_Conf" Text="0%" FontSize="18" FontWeight="Bold"
+                                                      Foreground="#FFFFFF" HorizontalAlignment="Right" FontFamily="Consolas"/>
+                                        </Grid>
+                                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,4,0,0">
+                                            <TextBlock x:Name="USDCHF_Regime" Text="UNKNOWN" FontSize="11" FontWeight="SemiBold"
+                                                      Foreground="#888888" FontFamily="Consolas"/>
+                                            <TextBlock x:Name="USDCHF_Dynamic" Text="" FontSize="11" FontWeight="Bold"
                                                       Foreground="#FFD700" Margin="6,0,0,0" FontFamily="Consolas"/>
                                         </StackPanel>
                                     </Grid>
@@ -980,19 +1011,28 @@
                         <TextBlock x:Name="AUDJPY_BR_Signal" Text="HOLD"/>
                         <TextBlock x:Name="AUDJPY_BR_Conf" Text="0%"/>
 
-                        <!-- XAUUSD Signals (TR, IP, BR) -->
-                        <TextBlock x:Name="XAUUSD_TR_Signal" Text="HOLD"/>
-                        <TextBlock x:Name="XAUUSD_TR_Conf" Text="0%"/>
-                        <TextBlock x:Name="XAUUSD_IP_Signal" Text="HOLD"/>
-                        <TextBlock x:Name="XAUUSD_IP_Conf" Text="0%"/>
-                        <TextBlock x:Name="XAUUSD_BR_Signal" Text="HOLD"/>
-                        <TextBlock x:Name="XAUUSD_BR_Conf" Text="0%"/>
+                        <!-- USDJPY Signals (TR, IP, BR) - Session 19 -->
+                        <TextBlock x:Name="USDJPY_TR_Signal" Text="HOLD"/>
+                        <TextBlock x:Name="USDJPY_TR_Conf" Text="0%"/>
+                        <TextBlock x:Name="USDJPY_IP_Signal" Text="HOLD"/>
+                        <TextBlock x:Name="USDJPY_IP_Conf" Text="0%"/>
+                        <TextBlock x:Name="USDJPY_BR_Signal" Text="HOLD"/>
+                        <TextBlock x:Name="USDJPY_BR_Conf" Text="0%"/>
+
+                        <!-- USDCHF Signals (TR, IP, BR) - Session 19 -->
+                        <TextBlock x:Name="USDCHF_TR_Signal" Text="HOLD"/>
+                        <TextBlock x:Name="USDCHF_TR_Conf" Text="0%"/>
+                        <TextBlock x:Name="USDCHF_IP_Signal" Text="HOLD"/>
+                        <TextBlock x:Name="USDCHF_IP_Conf" Text="0%"/>
+                        <TextBlock x:Name="USDCHF_BR_Signal" Text="HOLD"/>
+                        <TextBlock x:Name="USDCHF_BR_Conf" Text="0%"/>
 
                         <!-- Panels (kept for compatibility) -->
                         <StackPanel x:Name="EURUSDSignalsPanel"/>
                         <StackPanel x:Name="GBPUSDSignalsPanel"/>
                         <StackPanel x:Name="AUDJPYSignalsPanel"/>
-                        <StackPanel x:Name="XAUUSDSignalsPanel"/>
+                        <StackPanel x:Name="USDJPYSignalsPanel"/>
+                        <StackPanel x:Name="USDCHFSignalsPanel"/>
                     </Grid>
                 </Grid>
             </TabItem>
