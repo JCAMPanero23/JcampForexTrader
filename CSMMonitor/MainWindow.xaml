@@ -514,7 +514,7 @@
                         </Grid.ColumnDefinitions>
 
                         <!-- LEFT PANEL: Asset Selector (5 Cards - Session 19) -->
-                        <Border Grid.Column="0" Background="#252526" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="4" Margin="0,0,6,0">
+                        <Border Grid.Column="0" Background="#252526" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="4" Margin="0,0,6,-136">
                             <Grid Margin="8">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
@@ -839,7 +839,7 @@
                     <!-- ═══════════════════════════════════════════════════════════════════════ -->
                     <!-- BOTTOM ROW: ACCOUNT SUMMARY (2 Rows, 7 Metric Cards) -->
                     <!-- ═══════════════════════════════════════════════════════════════════════ -->
-                    <Border Grid.Row="2" Background="#252526" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="4">
+                    <Border Grid.Row="2" Background="#252526" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="4" Margin="414,0,0,0">
                         <Grid Margin="12,10">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="*"/>
