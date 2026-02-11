@@ -4,22 +4,25 @@
 //|                                                                   |
 //| PURPOSE: CSM Alpha Strategy Validation via MT5 Strategy Tester   |
 //| - Single-symbol backtest (run separately for each asset)         |
-//| - Embedded CSM calculation (9 currencies including Gold)         |
+//| - Embedded CSM calculation (8 currencies - Gold removed)         |
 //| - Modular architecture using proven components                   |
+//| - JSON export for Python portfolio simulation                    |
 //| - Optimization ready (OnTester returns Profit Factor)            |
 //|                                                                   |
 //| USAGE:                                                            |
-//| 1. Attach to M15 chart: EURUSD, GBPUSD, AUDJPY, or XAUUSD           |
+//| 1. Attach to M15 chart: EURUSD, GBPUSD, AUDJPY, USDJPY, USDCHF  |
 //| 2. Run Strategy Tester (Ctrl+R)                                  |
 //| 3. Set date range (e.g., 1 year: 2024.01.01 - 2025.01.01)       |
 //| 4. Enable "Every tick" mode for accuracy                         |
 //| 5. Run backtest and analyze results                              |
+//| 6. Check JSON export in MQL5/Files/Backtest_Results/             |
 //+------------------------------------------------------------------+
 #property copyright "JcampForexTrader"
 #property link      ""
-#property version   "2.10"
-#property description "M15 Timeframe Optimized (H1 CSM + M15 Signals)"
-#property description "CSM Alpha Backtester - Modular Strategy Validation"
+#property version   "3.00"
+#property description "Session 19 Update: 8-Currency CSM (No Gold)"
+#property description "5-Asset System: EURUSD, GBPUSD, AUDJPY, USDJPY, USDCHF"
+#property description "Both Strategies Enabled: TrendRider + RangeRider"
 #property strict
 
 //+------------------------------------------------------------------+
@@ -39,9 +42,8 @@
 //+------------------------------------------------------------------+
 input group "=== Risk Management ==="
 input double   RiskPercent = 1.0;           // Risk per trade (% of balance)
-input int      MinConfidence = 70;          // Minimum confidence to trade
+input int      MinConfidence = 65;          // Minimum confidence to trade (Session 19)
 input double   MaxSpreadPips = 2.0;         // Max spread (pips)
-input double   GoldSpreadMultiplier = 5.0;  // Gold spread multiplier
 
 input group "=== Position Management ==="
 input bool     EnableTrailing = true;       // Enable trailing stop
@@ -50,7 +52,7 @@ input int      TrailingStartPips = 30;      // Start trailing after profit (pips
 
 input group "=== Strategy Settings ==="
 input int      RegimeCheckMinutes = 15;     // Regime check interval (minutes)
-input bool     UseRangeRider = false;       // Enable RangeRider (needs range detection)
+input bool     UseRangeRider = true;        // Enable RangeRider ✅ (Session 19)
 
 input group "=== Regime Detection Tuning ==="
 input double   TrendingThreshold = 55.0;    // Trending classification threshold (%)
@@ -69,7 +71,6 @@ input int      MagicNumber = 999999;        // Magic number for backtest
 //+------------------------------------------------------------------+
 CTrade trade;
 string currentSymbol;
-bool isGoldSymbol;
 
 // Strategy Modules (indicators and regime are functions, not classes)
 TrendRiderStrategy* trendRider;
@@ -78,13 +79,13 @@ RangeRiderStrategy* rangeRider;
 // Current regime (cached from DetectMarketRegime function)
 MARKET_REGIME currentRegime;
 
-// CSM Data (9 currencies)
-double csmStrengths[9];
-string csmNames[9] = {"USD", "EUR", "GBP", "JPY", "CHF", "AUD", "CAD", "NZD", "XAU"};
+// CSM Data (8 currencies - Gold removed, Session 19)
+double csmStrengths[8];
+string csmNames[8] = {"USD", "EUR", "GBP", "JPY", "CHF", "AUD", "CAD", "NZD"};
 
 // Currency pair indices for CSM lookup
 int usdIdx = 0, eurIdx = 1, gbpIdx = 2, jpyIdx = 3;
-int chfIdx = 4, audIdx = 5, cadIdx = 6, nzdIdx = 7, xauIdx = 8;
+int chfIdx = 4, audIdx = 5, cadIdx = 6, nzdIdx = 7;
 
 // Performance Tracking
 int totalTrades = 0;
@@ -127,14 +128,11 @@ int OnInit()
 
    currentSymbol = _Symbol;
 
-   // Check if this is a Gold symbol
-   isGoldSymbol = (StringFind(currentSymbol, "XAU") >= 0 || StringFind(currentSymbol, "GOLD") >= 0);
-
    Print("Symbol: ", currentSymbol);
-   Print("Is Gold: ", (isGoldSymbol ? "YES (TrendRider only)" : "NO (Both strategies)"));
+   Print("Strategy: TrendRider + RangeRider (Session 19)");
    Print("Risk: ", RiskPercent, "%");
    Print("Min Confidence: ", MinConfidence);
-   Print("Max Spread: ", MaxSpreadPips, " pips", (isGoldSymbol ? " (x" + DoubleToString(GoldSpreadMultiplier, 1) + " for Gold)" : ""));
+   Print("Max Spread: ", MaxSpreadPips, " pips");
    Print("Trailing Stop: ", (EnableTrailing ? "ENABLED" : "DISABLED"));
 
    // Initialize trade manager
@@ -146,10 +144,10 @@ int OnInit()
    // Initialize strategies (indicators and regime are functions, not classes)
    trendRider = new TrendRiderStrategy(MinConfidence, 15.0, VerboseLogging);
 
-   if(!isGoldSymbol && UseRangeRider)
+   if(UseRangeRider)
    {
       rangeRider = new RangeRiderStrategy(MinConfidence, VerboseLogging);
-      Print("RangeRider: ENABLED (requires range detection)");
+      Print("RangeRider: ENABLED ✅");
    }
    else
    {
@@ -192,7 +190,7 @@ void OnDeinit(const int reason)
 
    // Cleanup strategies only (indicators and regime are functions, not classes)
    if(trendRider != NULL) delete trendRider;
-   if(rangeRider != NULL && !isGoldSymbol) delete rangeRider;
+   if(rangeRider != NULL) delete rangeRider;
 }
 
 //+------------------------------------------------------------------+
@@ -248,7 +246,7 @@ void OnTick()
       //────────────────────────────────────────────────────────────
       if(isNewBar(PERIOD_H1))
       {
-         CalculateCSM();  // 9 currencies + synthetic Gold pairs
+         CalculateCSM();  // 8-currency CSM (Session 19)
 
          if(VerboseLogging)
             Print("📊 CSM Updated (H1 bar close)");
@@ -307,7 +305,7 @@ void OnTick()
 //+------------------------------------------------------------------+
 void CalculateCSM()
 {
-   // Define the 8 major pairs + 4 synthetic Gold pairs (13 total)
+   // Define the 8 major pairs (Session 19 - Gold removed)
    string pairs[] = {
       "EURUSD", "GBPUSD", "AUDUSD", "NZDUSD", "USDCAD", "USDCHF", "USDJPY",  // 7 USD pairs
       "EURGBP", "EURJPY", "GBPJPY", "AUDJPY", "CADJPY", "CHFJPY"            // 6 cross pairs
@@ -318,8 +316,8 @@ void CalculateCSM()
       csmStrengths[i] = 50.0;  // Start neutral
 
    // Score counters for competitive scoring
-   int scores[9];
-   int maxComparisons[9];
+   int scores[8];
+   int maxComparisons[8];
    for(int i = 0; i < 9; i++)
    {
       scores[i] = 0;
@@ -363,88 +361,8 @@ void CalculateCSM()
       maxComparisons[quoteIdx]++;
    }
 
-   // Calculate synthetic Gold pairs and add to scoring
-   // XAUUSD (if available on broker)
-   double xauusd = iClose("XAUUSD", PERIOD_H1, 0);
-   double xauusd_prev = iClose("XAUUSD", PERIOD_H1, 1);
-
-   if(xauusd > 0 && xauusd_prev > 0)
-   {
-      // XAUEUR = XAUUSD / EURUSD
-      double eurusd = iClose("EURUSD", PERIOD_H1, 0);
-      double eurusd_prev = iClose("EURUSD", PERIOD_H1, 1);
-
-      if(eurusd > 0 && eurusd_prev > 0)
-      {
-         double xaueur = xauusd / eurusd;
-         double xaueur_prev = xauusd_prev / eurusd_prev;
-
-         if(xaueur > xaueur_prev)
-            scores[xauIdx]++;  // Gold stronger than EUR
-         else
-            scores[eurIdx]++;
-
-         maxComparisons[xauIdx]++;
-         maxComparisons[eurIdx]++;
-      }
-
-      // XAUJPY = XAUUSD * USDJPY
-      double usdjpy = iClose("USDJPY", PERIOD_H1, 0);
-      double usdjpy_prev = iClose("USDJPY", PERIOD_H1, 1);
-
-      if(usdjpy > 0 && usdjpy_prev > 0)
-      {
-         double xaujpy = xauusd * usdjpy;
-         double xaujpy_prev = xauusd_prev * usdjpy_prev;
-
-         if(xaujpy > xaujpy_prev)
-            scores[xauIdx]++;  // Gold stronger than JPY
-         else
-            scores[jpyIdx]++;
-
-         maxComparisons[xauIdx]++;
-         maxComparisons[jpyIdx]++;
-      }
-
-      // XAUGBP = XAUUSD / GBPUSD
-      double gbpusd = iClose("GBPUSD", PERIOD_H1, 0);
-      double gbpusd_prev = iClose("GBPUSD", PERIOD_H1, 1);
-
-      if(gbpusd > 0 && gbpusd_prev > 0)
-      {
-         double xaugbp = xauusd / gbpusd;
-         double xaugbp_prev = xauusd_prev / gbpusd_prev;
-
-         if(xaugbp > xaugbp_prev)
-            scores[xauIdx]++;  // Gold stronger than GBP
-         else
-            scores[gbpIdx]++;
-
-         maxComparisons[xauIdx]++;
-         maxComparisons[gbpIdx]++;
-      }
-
-      // XAUAUD = XAUUSD / AUDUSD
-      double audusd = iClose("AUDUSD", PERIOD_H1, 0);
-      double audusd_prev = iClose("AUDUSD", PERIOD_H1, 1);
-
-      if(audusd > 0 && audusd_prev > 0)
-      {
-         double xauaud = xauusd / audusd;
-         double xauaud_prev = xauusd_prev / audusd_prev;
-
-         if(xauaud > xauaud_prev)
-            scores[xauIdx]++;  // Gold stronger than AUD
-         else
-            scores[audIdx]++;
-
-         maxComparisons[xauIdx]++;
-         maxComparisons[audIdx]++;
-      }
-   }
-
    // Convert scores to 0-100 scale (competitive percentile)
-   for(int i = 0; i < 9; i++)
+   for(int i = 0; i < 8; i++)
    {
       if(maxComparisons[i] > 0)
          csmStrengths[i] = (scores[i] * 100.0) / maxComparisons[i];
@@ -477,14 +395,8 @@ void GetCSMForPair(double &baseStrength, double &quoteStrength)
    string baseCcy = "";
    string quoteCcy = "";
 
-   // Parse current symbol
-   if(StringFind(currentSymbol, "XAU") >= 0)
-   {
-      // Gold pair (XAUUSD, XAUUSD.r, etc.)
-      baseCcy = "XAU";
-      quoteCcy = "USD";
-   }
-   else if(StringLen(currentSymbol) >= 6)
+   // Parse current symbol (forex pairs only - Session 19)
+   if(StringLen(currentSymbol) >= 6)
    {
       baseCcy = StringSubstr(currentSymbol, 0, 3);
       quoteCcy = StringSubstr(currentSymbol, 3, 3);
@@ -527,23 +439,7 @@ void EvaluateAndTrade()
    bool analyzed = false;
    string strategyUsed = "NONE";
 
-   if(isGoldSymbol)
-   {
-      // Gold: TrendRider only
-      if(currentRegime == REGIME_TRENDING)
-      {
-         strategyUsed = "TrendRider (Gold)";
-         analyzed = trendRider.Analyze(currentSymbol, PERIOD_H1, csmDiff, result);
-      }
-      else
-      {
-         if(VerboseLogging)
-            Print("⏭️  Gold skipped - Regime not TRENDING (", lastRegimeStr, ")");
-      }
-   }
-   else
-   {
-      // Other pairs: TrendRider or RangeRider based on regime
+   // All pairs: TrendRider or RangeRider based on regime (Session 19)
       if(UseRangeRider && currentRegime == REGIME_RANGING)
       {
          // RangeRider (requires range detection - currently disabled)
@@ -561,7 +457,6 @@ void EvaluateAndTrade()
          if(VerboseLogging)
             Print("⏭️  Skipped - Regime: ", lastRegimeStr, " (not suitable for trading)");
       }
-   }
 
    if(VerboseLogging && analyzed)
    {
@@ -683,17 +578,11 @@ double CalculatePositionSize()
    double balance = AccountInfoDouble(ACCOUNT_BALANCE);
    double riskAmount = balance * (RiskPercent / 100.0);
 
-   // Calculate SL distance
-   double slDistance = 0;
-   if(isGoldSymbol)
-      slDistance = 50.0;  // Gold: $50 SL
-   else
-   {
-      double point = SymbolInfoDouble(currentSymbol, SYMBOL_POINT);
-      int digits = (int)SymbolInfoInteger(currentSymbol, SYMBOL_DIGITS);
-      double pipSize = (digits == 3 || digits == 5) ? point * 10.0 : point;
-      slDistance = 50.0 * pipSize;  // Forex: 50 pips
-   }
+   // Calculate SL distance (forex symbols)
+   double point = SymbolInfoDouble(currentSymbol, SYMBOL_POINT);
+   int digits = (int)SymbolInfoInteger(currentSymbol, SYMBOL_DIGITS);
+   double pipSize = (digits == 3 || digits == 5) ? point * 10.0 : point;
+   double slDistance = 50.0 * pipSize;  // 50 pips for all symbols
 
    // Calculate lots
    double tickValue = SymbolInfoDouble(currentSymbol, SYMBOL_TRADE_TICK_VALUE);
@@ -719,17 +608,11 @@ double CalculatePositionSize()
 //+------------------------------------------------------------------+
 double CalculateStopLoss(ENUM_ORDER_TYPE orderType, double entryPrice)
 {
-   double slDistance = 0;
-
-   if(isGoldSymbol)
-      slDistance = 50.0;  // Gold: $50
-   else
-   {
-      double point = SymbolInfoDouble(currentSymbol, SYMBOL_POINT);
-      int digits = (int)SymbolInfoInteger(currentSymbol, SYMBOL_DIGITS);
-      double pipSize = (digits == 3 || digits == 5) ? point * 10.0 : point;
-      slDistance = 50.0 * pipSize;  // Forex: 50 pips
-   }
+   // Calculate SL distance (forex symbols)
+   double point = SymbolInfoDouble(currentSymbol, SYMBOL_POINT);
+   int digits = (int)SymbolInfoInteger(currentSymbol, SYMBOL_DIGITS);
+   double pipSize = (digits == 3 || digits == 5) ? point * 10.0 : point;
+   double slDistance = 50.0 * pipSize;  // 50 pips for all symbols
 
    if(orderType == ORDER_TYPE_BUY)
       return entryPrice - slDistance;
@@ -742,17 +625,11 @@ double CalculateStopLoss(ENUM_ORDER_TYPE orderType, double entryPrice)
 //+------------------------------------------------------------------+
 double CalculateTakeProfit(ENUM_ORDER_TYPE orderType, double entryPrice)
 {
-   double tpDistance = 0;
-
-   if(isGoldSymbol)
-      tpDistance = 100.0;  // Gold: $100 (2x SL)
-   else
-   {
-      double point = SymbolInfoDouble(currentSymbol, SYMBOL_POINT);
-      int digits = (int)SymbolInfoInteger(currentSymbol, SYMBOL_DIGITS);
-      double pipSize = (digits == 3 || digits == 5) ? point * 10.0 : point;
-      tpDistance = 100.0 * pipSize;  // Forex: 100 pips (2x SL)
-   }
+   // Calculate TP distance (forex symbols, 2x SL)
+   double point = SymbolInfoDouble(currentSymbol, SYMBOL_POINT);
+   int digits = (int)SymbolInfoInteger(currentSymbol, SYMBOL_DIGITS);
+   double pipSize = (digits == 3 || digits == 5) ? point * 10.0 : point;
+   double tpDistance = 100.0 * pipSize;  // 100 pips (2x SL) for all symbols
 
    if(orderType == ORDER_TYPE_BUY)
       return entryPrice + tpDistance;
@@ -768,11 +645,7 @@ bool CheckSpread()
    double spread = SymbolInfoInteger(currentSymbol, SYMBOL_SPREAD) * SymbolInfoDouble(currentSymbol, SYMBOL_POINT);
    double spreadPips = spread / SymbolInfoDouble(currentSymbol, SYMBOL_POINT) / 10.0;
 
-   double maxSpread = MaxSpreadPips;
-   if(isGoldSymbol)
-      maxSpread *= GoldSpreadMultiplier;
-
-   return (spreadPips <= maxSpread);
+   return (spreadPips <= MaxSpreadPips);
 }
 
 //+------------------------------------------------------------------+
@@ -888,10 +761,10 @@ void UpdateChartDisplay()
    int line_height = 18;
    int x_pos = 10;
 
-   // CSM Display
-   string csmText = StringFormat("CSM: USD=%.1f EUR=%.1f GBP=%.1f JPY=%.1f XAU=%.1f",
+   // CSM Display (8 currencies - Session 19)
+   string csmText = StringFormat("CSM: USD=%.1f EUR=%.1f GBP=%.1f JPY=%.1f CHF=%.1f",
                                  csmStrengths[0], csmStrengths[1], csmStrengths[2],
-                                 csmStrengths[3], csmStrengths[8]);
+                                 csmStrengths[3], csmStrengths[4]);
    CreateLabel("CSM_Display", csmText, x_pos, y_offset, clrWhite, 9);
    y_offset += line_height;
 
