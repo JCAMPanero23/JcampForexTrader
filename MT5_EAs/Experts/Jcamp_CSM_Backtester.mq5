@@ -9,17 +9,20 @@
 //| - Optimization ready (OnTester returns Profit Factor)            |
 //|                                                                   |
 //| USAGE:                                                            |
-//| 1. Attach to M15 chart: EURUSD, GBPUSD, AUDJPY, or XAUUSD           |
+//| 1. Attach to M15 chart: EURUSD, GBPUSD, AUDJPY, USDJPY, USDCHF  |
 //| 2. Run Strategy Tester (Ctrl+R)                                  |
 //| 3. Set date range (e.g., 1 year: 2024.01.01 - 2025.01.01)       |
 //| 4. Enable "Every tick" mode for accuracy                         |
 //| 5. Run backtest and analyze results                              |
+//|                                                                   |
+//| NOTE: 5-Asset System (Session 19) - Focus on 5 forex pairs      |
+//|       CSM still tracks 9 currencies (including Gold as indicator)|
 //+------------------------------------------------------------------+
 #property copyright "JcampForexTrader"
 #property link      ""
-#property version   "2.10"
-#property description "M15 Timeframe Optimized (H1 CSM + M15 Signals)"
-#property description "CSM Alpha Backtester - Modular Strategy Validation"
+#property version   "3.00"
+#property description "Session 19: 9-Currency CSM + 5-Asset Trading"
+#property description "CSM Alpha Backtester - With RangeRider Enabled"
 #property strict
 
 //+------------------------------------------------------------------+
@@ -39,7 +42,7 @@
 //+------------------------------------------------------------------+
 input group "=== Risk Management ==="
 input double   RiskPercent = 1.0;           // Risk per trade (% of balance)
-input int      MinConfidence = 70;          // Minimum confidence to trade
+input int      MinConfidence = 65;          // Minimum confidence to trade (Session 19)
 input double   MaxSpreadPips = 2.0;         // Max spread (pips)
 input double   GoldSpreadMultiplier = 5.0;  // Gold spread multiplier
 
@@ -50,7 +53,7 @@ input int      TrailingStartPips = 30;      // Start trailing after profit (pips
 
 input group "=== Strategy Settings ==="
 input int      RegimeCheckMinutes = 15;     // Regime check interval (minutes)
-input bool     UseRangeRider = false;       // Enable RangeRider (needs range detection)
+input bool     UseRangeRider = true;        // Enable RangeRider ✅ (Session 19)
 
 input group "=== Regime Detection Tuning ==="
 input double   TrendingThreshold = 55.0;    // Trending classification threshold (%)
