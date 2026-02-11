@@ -405,13 +405,13 @@ private:
       int handle = iStochastic(symbol, tf, 14, 3, 3, MODE_SMA, STO_LOWHIGH);
       if(handle == INVALID_HANDLE) return false;
 
-      double mainBuffer[], signalBuffer[];
+      double mainBuffer[], stochSignalBuffer[];
       ArraySetAsSeries(mainBuffer, true);
-      ArraySetAsSeries(signalBuffer, true);
+      ArraySetAsSeries(stochSignalBuffer, true);
 
       bool success = false;
       if(CopyBuffer(handle, 0, 0, 2, mainBuffer) > 0 &&
-         CopyBuffer(handle, 1, 0, 2, signalBuffer) > 0)
+         CopyBuffer(handle, 1, 0, 2, stochSignalBuffer) > 0)
       {
          main = mainBuffer[0];
          signal = signalBuffer[0];

@@ -289,6 +289,7 @@ void OnTick()
     // Load CSM from file (every tick, but cached internally)
     //═══════════════════════════════════════════════════════════════
     LoadCSMFromFile();
+    engine.UpdateCSM(csm_data, 9);  // Update StrategyEngine's CSM copy
 
     //═══════════════════════════════════════════════════════════════
     // Update regime every 4 hours (independent of analysis interval)

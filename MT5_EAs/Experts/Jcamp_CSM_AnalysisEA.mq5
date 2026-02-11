@@ -96,15 +96,7 @@ input ENUM_TIMEFRAMES XAUUSD_ATRTimeframe = PERIOD_H4;
 //+------------------------------------------------------------------+
 //| CSM DATA STRUCTURES                                               |
 //+------------------------------------------------------------------+
-struct CurrencyStrengthData
-{
-    string   currency;
-    double   current_strength;
-    double   strength_24h_ago;
-    double   strength_change_24h;
-    bool     data_valid;
-    datetime last_update;
-};
+// ✅ CurrencyStrengthData is now defined in StrategyEngine.mqh (Session 19)
 
 struct PairData
 {
@@ -325,6 +317,10 @@ int OnInit()
     {
         Print("✅ Initial CSM calculation successful");
 
+        // Update StrategyEngine's CSM copy (Session 19)
+        if(BacktestMode)
+            engine.UpdateCSM(csm_data, 9);
+
         if(!BacktestMode)
         {
             ExportCSM();
@@ -396,6 +392,10 @@ void OnTick()
 
         if(csm_data[0].data_valid)
         {
+            // Update StrategyEngine's CSM copy (Session 19)
+            if(BacktestMode)
+                engine.UpdateCSM(csm_data, 9);
+
             if(!BacktestMode)
             {
                 ExportCSM();

@@ -101,8 +101,8 @@ private:
     IStrategy* trendRider;
     RangeRiderStrategy* rangeRider;
 
-    // CSM Data (reference, not owned)
-    CurrencyStrengthData* csmData;
+    // CSM Data (internal copy)
+    CurrencyStrengthData csmData[9];
     int csmDataSize;
 
     // Currency list (reference)
@@ -117,9 +117,12 @@ public:
         // Copy configuration
         config = cfg;
 
-        // Store CSM reference
-        csmData = csm;
+        // Copy CSM data internally
         csmDataSize = csmSize;
+        for(int i = 0; i < csmSize && i < 9; i++)
+        {
+            csmData[i] = csm[i];
+        }
 
         // Initialize currency list
         currencies[0] = "USD"; currencies[1] = "EUR"; currencies[2] = "GBP";
@@ -142,6 +145,18 @@ public:
         // Cleanup strategies
         if(trendRider != NULL) delete trendRider;
         if(rangeRider != NULL) delete rangeRider;
+    }
+
+    //+------------------------------------------------------------------+
+    //| Update CSM Data (call when CSM is refreshed)                     |
+    //+------------------------------------------------------------------+
+    void UpdateCSM(CurrencyStrengthData &csm[], int csmSize)
+    {
+        csmDataSize = csmSize;
+        for(int i = 0; i < csmSize && i < 9; i++)
+        {
+            csmData[i] = csm[i];
+        }
     }
 
     //+------------------------------------------------------------------+
