@@ -2,7 +2,7 @@
 
 **Purpose:** Single authoritative reference for Claude Code
 **Project:** CSM Alpha - 4-Asset Trading System with Gold
-**Last Updated:** February 7, 2026 (Session 16 - 3-Phase Asymmetric Trailing Complete)
+**Last Updated:** February 11, 2026 (Session 19 Planning - Backtest Architecture)
 
 ---
 
@@ -424,47 +424,71 @@ git commit -m "Updated strategy logic"
   - [x] Broker suffix handling
   - [x] CSM Gatekeeper refactoring (Session 11)
   - [x] Enhanced Signal Dashboard with component scores (Session 13)
-- [x] Session 14: Market validation (NEXT - pending market open)
-- [ ] Sessions 15-17: Collect 50+ demo trades (~2 weeks)
-- [ ] Fine-tune confidence thresholds based on data
+  - [x] Sessions 15-17: 3-Phase SL/TP Enhancement Complete ✅
+    - [x] ATR-based dynamic SL/TP (Session 15)
+    - [x] 3-phase asymmetric trailing (Session 16)
+    - [x] Confidence-based R:R scaling (Session 17)
+- [ ] Session 18: CSMMonitor layout fixes (at home, pending commit)
+- [ ] Session 19-20: MT5 Backtest + Python Portfolio Simulator (~1 week)
 
-### Phase 3: Python Multi-Pair Backtesting (Week 3-4)
-**Decision (Session 14.5):** MT5 multi-pair backtester scrapped - resume Phase 8 Python backtester instead
+### Phase 3: MT5 Multi-Symbol Backtesting + Python Portfolio Simulation (Sessions 19-20)
+**New Approach:** Generate signals in MT5 backtest, simulate portfolio in Python
 
-- [ ] Resume Phase 8 Python backtester (D:\Jcamp_TradingApp)
-- [ ] Port CSM Alpha logic to Python
-  - [ ] 9-currency competitive scoring
-  - [ ] Synthetic Gold pair calculation
-  - [ ] TrendRider/RangeRider/GoldTrendRider strategies
-  - [ ] CSM gatekeeper logic
-- [ ] Run 1-year multi-pair backtest (2024-2025)
-  - [ ] All 4 pairs: EURUSD, GBPUSD, AUDJPY, XAUUSD
-  - [ ] Portfolio-level simulation (1% risk per trade)
-  - [ ] Combined equity curve
-- [ ] Compare architectures
-  - [ ] CSM Gate ON vs OFF (answer Session 14.5 question)
+**Session 19: StrategyEngine Refactoring + CSM Backtester** (~3-4 hours)
+- [ ] Create StrategyEngine.mqh (single source of truth for strategy logic)
+- [ ] Refactor Strategy_AnalysisEA to use StrategyEngine
+- [ ] Modify CSM_AnalysisEA for backtest mode:
+  - [ ] Generate signals for ALL 4 assets (using StrategyEngine)
+  - [ ] Execute trades for attached symbol only
+  - [ ] Buffer all signals + trades in memory
+  - [ ] Export JSON on backtest completion
+
+**Session 20: Run 4 Backtests** (~1 hour)
+- [ ] EURUSD backtest (2024-2025, M15) → eurusd_backtest_2024.json
+- [ ] GBPUSD backtest (2024-2025, M15) → gbpusd_backtest_2024.json
+- [ ] AUDJPY backtest (2024-2025, M15) → audjpy_backtest_2024.json
+- [ ] XAUUSD backtest (2024-2025, M15) → xauusd_backtest_2024.json
+
+**Session 21: Python Portfolio Simulator** (~2 hours)
+- [ ] Create portfolio_simulator.py
+- [ ] Load all 4 JSON files, merge by timestamp
+- [ ] Simulate portfolio (max 3 positions, 1% risk per trade)
+- [ ] Calculate R-multiple based equity curve
+- [ ] Generate comparison reports:
+  - [ ] CSM Gate ON vs OFF
   - [ ] Confidence thresholds (70 vs 80 vs 90)
-  - [ ] Spread multipliers optimization
-- [ ] Generate comprehensive reports
+  - [ ] Max positions (1 vs 2 vs 3)
   - [ ] Per-pair performance
   - [ ] Correlation analysis
-  - [ ] Drawdown scenarios
-  - [ ] Win rate, R-multiples, Sharpe ratio
+- [ ] Export results (CSV + charts)
+
+**Advantages Over Phase 8 Python Backtester:**
+- ✅ Faster development (~6 hours vs ~2 weeks)
+- ✅ Real MT5 tick data (more accurate than interpolated)
+- ✅ MT5's built-in slippage/spread modeling
+- ✅ Easy parameter testing (rerun MT5 backtest in 1 min)
+- ✅ Identical strategy logic to live system (via StrategyEngine.mqh)
 
 **Prerequisites:**
-- ✅ 50+ closed demo trades collected
+- ✅ Sessions 15-17 complete (3-Phase SL/TP system)
 - ✅ CSM Alpha system stable (no critical bugs)
-- ✅ Need to validate historical performance
 
-### Phase 4: VPS Deployment (Week 5)
+### Phase 4: VPS Deployment & Git Branching (Week 5)
 **Only proceed if:**
 - ✅ Demo trading: Win rate > 50%, positive R-multiple
-- ✅ Python backtest: Profitable over 1 year, max DD < 20%
+- ✅ MT5 backtest + Python simulation: Profitable over 1 year, max DD < 20%
 
-**Tasks:**
+**Git Branching Setup (Before VPS Deployment):**
+- [ ] Create `dev` branch (active development)
+- [ ] Protect `main` branch (production releases only)
+- [ ] Tag current version (v1.0.0-live)
+- [ ] Establish merge workflow (dev → main only after validation)
+
+**VPS Deployment Tasks:**
 - [ ] Setup Forex VPS (Vultr recommended, $12/month)
 - [ ] Install Windows Server 2022
 - [ ] Install MT5 on VPS
+- [ ] Clone repository on VPS (main branch only!)
 - [ ] Deploy CSM architecture remotely
 - [ ] Setup file sync for C# Monitor
 - [ ] Verify 24/7 operation
@@ -572,8 +596,8 @@ Flow: Demo → Collect data → Backtest → Validate → VPS → Live
 
 ## 🎯 CURRENT SESSION STATUS
 
-**Current Session:** 17 (Confidence Scaling + Symbol Calibration - Complete ✅)
-**Next Session:** 18 (Extended Demo Trading Validation) 🎯
+**Current Session:** Planning (Backtest Architecture Discussion)
+**Next Session:** 19 (StrategyEngine Refactoring + CSM Backtester) 🎯
 
 ---
 
@@ -895,14 +919,6 @@ Net Improvement (Sessions 15-17 Combined):
 **Documentation Created:**
 - `Documentation/SESSION_17_TESTING_GUIDE.md` - Complete testing checklist and validation scenarios
 
-**Next Session (18) Preview:**
-Extended Demo Trading Validation (1-2 weeks)
-- Collect 50+ closed trades across all 4 symbols
-- Analyze confidence distribution and actual R-multiples
-- Compare Sessions 15-17 results vs original fixed system
-- Fine-tune confidence thresholds if needed (90/80 → 95/85?)
-- Prepare for Phase 3 Python multi-pair backtesting
-
 **Key Achievement:**
 ✅ **3-Phase SL/TP Enhancement COMPLETE** (Sessions 15-17)
 - Layer 1: ATR-based dynamic SL/TP ✅
@@ -912,6 +928,123 @@ Extended Demo Trading Validation (1-2 weeks)
 - Layer 5: Symbol-specific calibration ✅
 
 Expected: +167% improvement in net R over 100 trades!
+
+---
+
+### Session 18: CSMMonitor Layout Fixes (February 11, 2026)
+**Duration:** ~1 hour | **Status:** ⏳ Done at Home (Not Yet in Repo)
+
+**Objective:**
+Fix C# CSMMonitor dashboard layout issues and UI improvements.
+
+**Location:** Home computer (local changes only)
+
+**Tasks:**
+- [ ] Commit layout fixes when back home
+- [ ] Push changes to repository
+- [ ] Document changes in commit message
+
+**Status:** Waiting for user to return home and commit changes
+
+---
+
+### Session 19: StrategyEngine Refactoring + CSM Backtester (NEXT SESSION)
+**Duration:** ~3-4 hours | **Status:** 🎯 Planned
+
+**Objective:**
+Create reusable StrategyEngine module and enable multi-symbol backtesting with portfolio simulation in Python.
+
+**Architecture Decision:**
+- ✅ Extract strategy evaluation logic into `StrategyEngine.mqh` (single source of truth)
+- ✅ Modify `Jcamp_CSM_AnalysisEA.mq5` to support backtest mode
+- ✅ Generate signals for ALL 4 assets, execute trades for attached symbol only
+- ✅ Export JSON on backtest completion for Python portfolio simulation
+
+**Backtest Parameters (Confirmed):**
+- **Period:** 2024-01-01 to 2025-01-01 (1 year)
+- **Timeframe:** M15 (execution timeframe)
+- **Strategy Evaluation:** H1 (Option B - same as live system)
+- **Max Open Positions:** 3 preferred (2 minimum)
+- **Export Format:** JSON
+
+**Tasks:**
+
+1. **Create StrategyEngine.mqh** (~300 lines)
+   - Extract evaluation logic from Strategy_AnalysisEA
+   - `EvaluateSymbol(symbol, csm, timeframe)` method
+   - ATR-based SL/TP calculation (Session 15 logic)
+   - Confidence-based R:R scaling (Session 17 logic)
+   - Gold special handling (TrendRider only)
+   - NO file I/O, NO caching (evaluation only!)
+
+2. **Refactor Strategy_AnalysisEA.mq5** (~200 lines, down from 548)
+   - Replace evaluation logic with `engine.EvaluateSymbol()`
+   - Keep input parameters section
+   - Keep SignalExporter for file writing
+   - Test compilation + demo validation
+
+3. **Modify CSM_AnalysisEA.mq5 → Backtest Mode** (~700 lines)
+   - Add multi-symbol signal generation (use StrategyEngine!)
+   - Add in-memory signal buffering (arrays)
+   - Add trade execution for attached symbol only
+   - Add JSON bulk export on OnDeinit()
+   - Test 1-month backtest (validation)
+
+**Data Flow:**
+```
+CSM_AnalysisEA (Backtest Mode - M15 bars)
+├── Calculate CSM (9-currency competitive scoring)
+├── Generate signals for ALL 4 assets using StrategyEngine
+│   ├── EURUSD (evaluate on H1, check every M15)
+│   ├── GBPUSD (evaluate on H1, check every M15)
+│   ├── AUDJPY (evaluate on H1, check every M15)
+│   └── XAUUSD (evaluate on H1, check every M15)
+├── Buffer signals in memory (not written to file yet)
+├── Execute trades for attached symbol only
+└── OnDeinit: Export all buffered signals + trades to JSON
+```
+
+**JSON Export Format:**
+```json
+{
+  "backtest_info": {
+    "symbol": "EURUSD",
+    "start_date": "2024-01-01 00:00:00",
+    "end_date": "2025-01-01 23:45:00",
+    "timeframe": "M15",
+    "strategy_timeframe": "H1",
+    "total_bars": 35040
+  },
+  "signals": [
+    {
+      "timestamp": "2024-01-01 00:15:00",
+      "eurusd": { "direction": "BUY", "confidence": 85, ... },
+      "gbpusd": { "direction": "HOLD", "confidence": 45, ... },
+      "audjpy": { "direction": "SELL", "confidence": 78, ... },
+      "xauusd": { "direction": "BUY", "confidence": 92, ... }
+    }
+    // ... ~35,040 signal sets
+  ],
+  "trades": [
+    {
+      "entry_time": "2024-01-01 08:15:00",
+      "exit_time": "2024-01-01 12:30:00",
+      "symbol": "EURUSD",
+      "r_multiple": 1.92,
+      // ... only trades for attached symbol
+    }
+  ]
+}
+```
+
+**Next Steps (Session 20):**
+- Run 4 backtests (EURUSD, GBPUSD, AUDJPY, XAUUSD)
+- Create Python portfolio simulator (max 3 positions, R-multiple PnL)
+- Generate comparison reports (CSM Gate ON vs OFF)
+
+**Git Branching:**
+- Deferred to Phase 4 (before VPS deployment)
+- Continue on `main` branch for now (simpler workflow)
 
 ---
 
