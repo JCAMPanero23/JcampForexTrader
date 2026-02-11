@@ -414,7 +414,7 @@ private:
          CopyBuffer(handle, 1, 0, 2, stochSignalBuffer) > 0)
       {
          main = mainBuffer[0];
-         signal = signalBuffer[0];
+         signal = stochSignalBuffer[0];
          success = true;
       }
 
