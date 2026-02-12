@@ -135,9 +135,22 @@ int OnInit()
                                          VerboseLogging);
    performanceTracker = new PerformanceTracker(ExportFolder, MagicNumber, VerboseLogging);
 
+   // Session 20: Initialize Smart Order Manager
+   smartOrderManager = new SmartOrderManager(MagicNumber,
+                                             VerboseLogging,
+                                             RetracementTriggerPips,
+                                             ExtensionThresholdPips,
+                                             MaxRetracementPips,
+                                             SwingLookbackBars,
+                                             BreakoutTriggerPips,
+                                             MaxSwingDistancePips,
+                                             RetracementExpiryHours,
+                                             BreakoutExpiryHours);
+
    // Verify modules initialized
    if(signalReader == NULL || tradeExecutor == NULL ||
-      positionManager == NULL || performanceTracker == NULL)
+      positionManager == NULL || performanceTracker == NULL ||
+      smartOrderManager == NULL)
    {
       Print("ERROR: Failed to initialize modules");
       return(INIT_FAILED);
@@ -146,7 +159,9 @@ int OnInit()
    // Initial export
    performanceTracker.ExportAll();
 
-   Print("✅ MainTradingEA initialized successfully");
+   Print("✅ MainTradingEA v3.00 initialized successfully");
+   if(UseSmartPending)
+      Print("✅ Smart Pending Order System is ACTIVE");
 
    return(INIT_SUCCEEDED);
 }
@@ -173,6 +188,7 @@ void OnDeinit(const int reason)
    if(tradeExecutor != NULL) delete tradeExecutor;
    if(positionManager != NULL) delete positionManager;
    if(performanceTracker != NULL) delete performanceTracker;
+   if(smartOrderManager != NULL) delete smartOrderManager;  // Session 20
 
    Print("✅ MainTradingEA shutdown complete");
 }
@@ -185,6 +201,10 @@ void OnTick()
    // Always update positions (trailing stops, etc.)
    if(positionManager != NULL)
       positionManager.UpdatePositions();
+
+   // Session 20: Update pending orders (check cancellation conditions)
+   if(smartOrderManager != NULL)
+      smartOrderManager.UpdatePendingOrders();
 
    datetime currentTime = TimeCurrent();
 
@@ -227,7 +247,7 @@ void OnTick()
 }
 
 //+------------------------------------------------------------------+
-//| Check for New Signals and Execute Trades                         |
+//| Check for New Signals and Execute Trades (Session 20 Updated)    |
 //+------------------------------------------------------------------+
 void CheckAndExecuteSignals()
 {
@@ -284,42 +304,99 @@ void CheckAndExecuteSignals()
          continue;
       }
 
-      // Execute trade
+      // Execute trade (Session 20: Try smart pending order first, fallback to market)
       Print("🎯 Executing signal: ", signal.symbol, " ", signal.signalText,
             " | Confidence: ", signal.confidence, " | Strategy: ", signal.strategy);
 
-      ulong ticket = tradeExecutor.ExecuteSignal(signal);
+      ulong ticket = 0;
+      bool pendingOrderPlaced = false;
 
+      // SESSION 20: Try smart pending order first (if enabled)
+      if(UseSmartPending && smartOrderManager != NULL)
+      {
+         // Calculate position size (simplified version - matches TradeExecutor logic)
+         double price = (signal.signal > 0) ?
+                        SymbolInfoDouble(signal.symbol, SYMBOL_ASK) :
+                        SymbolInfoDouble(signal.symbol, SYMBOL_BID);
+
+         double lots = 0;
+         double balance = AccountInfoDouble(ACCOUNT_BALANCE);
+         double risk = balance * (RiskPercent / 100.0);
+         double slDistance = signal.stopLossDollars;
+
+         if(slDistance > 0)
+         {
+            double tickValue = SymbolInfoDouble(signal.symbol, SYMBOL_TRADE_TICK_VALUE);
+            double tickSize = SymbolInfoDouble(signal.symbol, SYMBOL_TRADE_TICK_SIZE);
+            double slPips = slDistance / tickSize;
+            lots = risk / (slPips * tickValue);
+            lots = MathMax(SymbolInfoDouble(signal.symbol, SYMBOL_VOLUME_MIN), lots);
+            lots = MathMin(SymbolInfoDouble(signal.symbol, SYMBOL_VOLUME_MAX), lots);
+         }
+
+         if(lots > 0)
+         {
+            ticket = smartOrderManager.PlaceSmartPendingOrder(signal, lots);
+
+            if(ticket > 0)
+            {
+               pendingOrderPlaced = true;
+               Print("✅ Smart pending order placed: Ticket #", ticket);
+            }
+            else
+            {
+               if(VerboseLogging)
+                  Print("Smart pending returned 0 -> Using market order (fallback)");
+            }
+         }
+      }
+
+      // If pending order not placed (disabled or returned 0), use market order
+      if(!pendingOrderPlaced)
+      {
+         ticket = tradeExecutor.ExecuteSignal(signal);
+      }
+
+      // Process successful order/trade
       if(ticket > 0)
       {
-         totalPositions++;
-         Print("✅ Trade opened successfully: Ticket #", ticket);
+         totalPositions++; // Count pending orders toward position limit
 
-         // ✅ SESSION 16: Register position for 3-phase trailing
-         if(PositionSelectByTicket(ticket))
+         if(pendingOrderPlaced)
          {
-            double entryPrice = PositionGetDouble(POSITION_PRICE_OPEN);
-            double sl = PositionGetDouble(POSITION_SL);
+            Print("📋 Pending order placed successfully: Ticket #", ticket);
+            // Note: Position registration will happen when order executes (OnTradeTransaction)
+         }
+         else
+         {
+            Print("✅ Market trade opened successfully: Ticket #", ticket);
 
-            // Calculate SL distance in price units
-            double slDistance = MathAbs(entryPrice - sl);
-
-            // Register with position manager
-            bool registered = positionManager.RegisterPosition(
-               ticket,
-               signal.symbol,
-               signal.strategy,
-               signal.signal,
-               entryPrice,
-               slDistance
-            );
-
-            if(registered && VerboseLogging)
+            // SESSION 16: Register position for 3-phase trailing (market orders only)
+            if(PositionSelectByTicket(ticket))
             {
-               Print("📊 Position Registered for 3-Phase Trailing: #", ticket,
-                     " | Strategy: ", signal.strategy,
-                     " | Entry: ", entryPrice,
-                     " | SL Distance: ", slDistance);
+               double entryPrice = PositionGetDouble(POSITION_PRICE_OPEN);
+               double sl = PositionGetDouble(POSITION_SL);
+
+               // Calculate SL distance in price units
+               double slDistance = MathAbs(entryPrice - sl);
+
+               // Register with position manager
+               bool registered = positionManager.RegisterPosition(
+                  ticket,
+                  signal.symbol,
+                  signal.strategy,
+                  signal.signal,
+                  entryPrice,
+                  slDistance
+               );
+
+               if(registered && VerboseLogging)
+               {
+                  Print("📊 Position Registered for 3-Phase Trailing: #", ticket,
+                        " | Strategy: ", signal.strategy,
+                        " | Entry: ", entryPrice,
+                        " | SL Distance: ", slDistance);
+               }
             }
          }
       }
