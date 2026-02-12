@@ -168,19 +168,23 @@ public:
       // Calculate pip size
       double pipSize = GetPipSize(signal.symbol);
 
-      // Determine order price (EMA20 + trigger pips)
+      // Determine order price (EMA20 +/- trigger pips)
       double orderPrice = 0;
       ENUM_ORDER_TYPE orderType;
 
       if(signal.signal > 0) // BUY signal
       {
-         orderPrice = ema20 + (retracementTriggerPips * pipSize);
-         orderType = ORDER_TYPE_BUY_STOP;
+         // Price extended below EMA20, waiting for retracement UP
+         // Place BUY LIMIT at EMA20 - 3 pips (below EMA20)
+         orderPrice = ema20 - (retracementTriggerPips * pipSize);
+         orderType = ORDER_TYPE_BUY_LIMIT;
       }
       else // SELL signal
       {
-         orderPrice = ema20 - (retracementTriggerPips * pipSize);
-         orderType = ORDER_TYPE_SELL_STOP;
+         // Price extended above EMA20, waiting for retracement DOWN
+         // Place SELL LIMIT at EMA20 + 3 pips (above EMA20)
+         orderPrice = ema20 + (retracementTriggerPips * pipSize);
+         orderType = ORDER_TYPE_SELL_LIMIT;
       }
 
       // Calculate SL/TP from signal data
