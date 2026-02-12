@@ -1,12 +1,12 @@
-﻿//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
 //|                                        Jcamp_MainTradingEA.mq5   |
 //|                                            JcampForexTrader       |
 //|                                       CSM Main Trading EA         |
 //+------------------------------------------------------------------+
 #property copyright "JcampForexTrader"
 #property link      ""
-#property version   "3.00"
-#property description "CSM Alpha Main Trading EA - Session 20: Smart Pending Orders"
+#property version   "2.10"
+#property description "CSM Alpha Main Trading EA - 5 Asset System (Session 19)"
 #property description "Trades: EURUSD.r, GBPUSD.r, AUDJPY.r, USDJPY.r, USDCHF.r (with broker suffix)"
 #property strict
 
@@ -15,7 +15,6 @@
 #include <JcampStrategies/Trading/TradeExecutor.mqh>
 #include <JcampStrategies/Trading/PositionManager.mqh>
 #include <JcampStrategies/Trading/PerformanceTracker.mqh>
-#include <JcampStrategies/Trading/SmartOrderManager.mqh>  // Session 20: Smart Pending Orders
 
 //+------------------------------------------------------------------+
 //| Input Parameters                                                  |
@@ -40,19 +39,7 @@ input double SpreadMultiplierUSDJPY = 1.0;             // USDJPY spread multipli
 input double SpreadMultiplierUSDCHF = 1.0;             // USDCHF spread multiplier (1x = 2.0 pips) - Session 19
 // input double SpreadMultiplierXAUUSD = 15.0;         // XAUUSD (Gold) - Disabled Session 19 (resume at $1000+ account)
 input int MaxPositionsPerSymbol = 1;                   // Max simultaneous positions per symbol
-input int MaxTotalPositions = 3;
-
-// --- Smart Pending Order System (Session 20) ---
-input group "SMART PENDING ORDER SYSTEM"
-input bool   UseSmartPending = true;                    // Enable Smart Pending Orders
-input int    RetracementTriggerPips = 3;                // Retracement entry: EMA20 + X pips
-input int    ExtensionThresholdPips = 15;               // Price > EMA20 + X = extended (use retracement)
-input int    MaxRetracementPips = 30;                   // Cancel if price retraces beyond this
-input int    SwingLookbackBars = 20;                    // Bars to find swing high/low
-input int    BreakoutTriggerPips = 1;                   // Breakout entry: Swing + X pips
-input int    MaxSwingDistancePips = 30;                 // Max distance to swing (use market if farther)
-input int    RetracementExpiryHours = 4;                // Retracement order expiry time
-input int    BreakoutExpiryHours = 8;                   // Breakout order expiry time                       // Max total open positions
+input int MaxTotalPositions = 3;                       // Max total open positions
 
 // --- Position Management (Session 16: 3-Phase Trailing) ---
 input group "═══ 3-PHASE TRAILING SYSTEM ═══"
@@ -87,7 +74,6 @@ SignalReader*       signalReader;
 TradeExecutor*      tradeExecutor;
 PositionManager*    positionManager;
 PerformanceTracker* performanceTracker;
-SmartOrderManager*  smartOrderManager;   // Session 20: Smart pending orders
 
 datetime lastSignalCheck = 0;
 datetime lastTradeHistoryCheck = 0;
@@ -107,15 +93,6 @@ int OnInit()
    Print("Risk Per Trade: ", RiskPercent, "%");
    Print("Min Confidence: ", MinConfidence);
    Print("Magic Number: ", MagicNumber);
-   Print("Smart Pending Orders: ", (UseSmartPending ? "ENABLED" : "DISABLED"));
-   if(UseSmartPending)
-   {
-      Print("  - Retracement Trigger: EMA20 + ", RetracementTriggerPips, " pips");
-      Print("  - Extension Threshold: ", ExtensionThresholdPips, " pips");
-      Print("  - Breakout Trigger: Swing + ", BreakoutTriggerPips, " pip");
-      Print("  - Retracement Expiry: ", RetracementExpiryHours, " hours");
-      Print("  - Breakout Expiry: ", BreakoutExpiryHours, " hours");
-   }
    Print("Trade History Check: Every ", TradeHistoryCheckIntervalSeconds, " seconds (real-time)");
    Print("Position Export: Every ", PositionExportIntervalSeconds, " seconds (REAL-TIME for monitor)");
    Print("Performance Export: Every ", PerformanceExportIntervalSeconds, " seconds");
