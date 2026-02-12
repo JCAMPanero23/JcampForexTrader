@@ -720,7 +720,7 @@ public:
       for(int i = 0; i < PositionsTotal(); i++)
       {
          if(PositionGetSymbol(i) == symbol &&
-            PositionGetInteger(POSITION_MAGIC) == magicNumber)
+            PositionGetInteger(POSITION_MAGIC) == magic)
          {
             return true;
          }
@@ -741,7 +741,7 @@ public:
          if(ticket > 0)
          {
             if(OrderGetString(ORDER_SYMBOL) == symbol &&
-               OrderGetInteger(ORDER_MAGIC) == magicNumber)
+               OrderGetInteger(ORDER_MAGIC) == magic)
             {
                count++;
             }
