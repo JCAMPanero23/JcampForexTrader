@@ -20,9 +20,9 @@
 //+------------------------------------------------------------------+
 #property copyright "JcampForexTrader"
 #property link      ""
-#property version   "3.00"
-#property description "Session 19: 9-Currency CSM + 5-Asset Trading"
-#property description "CSM Alpha Backtester - With RangeRider Enabled"
+#property version   "3.10"
+#property description "Session 20: Smart Pending Order System Integration"
+#property description "CSM Alpha Backtester - With RangeRider + Smart Pending Orders"
 #property strict
 
 //+------------------------------------------------------------------+
@@ -36,6 +36,7 @@
 #include <JcampStrategies/RegimeDetector.mqh>
 #include <JcampStrategies/Strategies/TrendRiderStrategy.mqh>
 #include <JcampStrategies/Strategies/RangeRiderStrategy.mqh>
+#include <JcampStrategies/Trading/SmartOrderManager.mqh>  // Session 20: Smart Pending Orders
 
 //+------------------------------------------------------------------+
 //| INPUT PARAMETERS                                                  |
@@ -54,6 +55,17 @@ input int      TrailingStartPips = 30;      // Start trailing after profit (pips
 input group "=== Strategy Settings ==="
 input int      RegimeCheckMinutes = 15;     // Regime check interval (minutes)
 input bool     UseRangeRider = true;        // Enable RangeRider ✅ (Session 19)
+
+input group "=== Smart Pending Order System (Session 20) ==="
+input bool     UseSmartPending = true;                    // Enable Smart Pending Orders
+input int      RetracementTriggerPips = 3;                // Retracement entry: EMA20 + X pips
+input int      ExtensionThresholdPips = 15;               // Price > EMA20 + X = extended
+input int      MaxRetracementPips = 30;                   // Cancel if retraces beyond this
+input int      SwingLookbackBars = 20;                    // Bars to find swing high/low
+input int      BreakoutTriggerPips = 1;                   // Breakout entry: Swing + X pips
+input int      MaxSwingDistancePips = 30;                 // Max distance to swing
+input int      RetracementExpiryHours = 4;                // Retracement order expiry
+input int      BreakoutExpiryHours = 8;                   // Breakout order expiry
 
 input group "=== Regime Detection Tuning ==="
 input double   TrendingThreshold = 55.0;    // Trending classification threshold (%)
@@ -77,6 +89,7 @@ bool isGoldSymbol;
 // Strategy Modules (indicators and regime are functions, not classes)
 TrendRiderStrategy* trendRider;
 RangeRiderStrategy* rangeRider;
+SmartOrderManager*  smartOrderManager;  // Session 20: Smart pending orders
 
 // Current regime (cached from DetectMarketRegime function)
 MARKET_REGIME currentRegime;
@@ -162,7 +175,21 @@ int OnInit()
    // Initialize regime to TRANSITIONAL
    currentRegime = REGIME_TRANSITIONAL;
 
+   // Session 20: Initialize Smart Order Manager
+   smartOrderManager = new SmartOrderManager(MagicNumber,
+                                             VerboseLogging,
+                                             RetracementTriggerPips,
+                                             ExtensionThresholdPips,
+                                             MaxRetracementPips,
+                                             SwingLookbackBars,
+                                             BreakoutTriggerPips,
+                                             MaxSwingDistancePips,
+                                             RetracementExpiryHours,
+                                             BreakoutExpiryHours);
+
    Print("✅ All modules initialized successfully");
+   if(UseSmartPending)
+      Print("✅ Smart Pending Order System is ACTIVE");
    Print("========================================");
    Print("🎯 BACKTEST READY");
    Print("========================================");
@@ -196,6 +223,7 @@ void OnDeinit(const int reason)
    // Cleanup strategies only (indicators and regime are functions, not classes)
    if(trendRider != NULL) delete trendRider;
    if(rangeRider != NULL && !isGoldSymbol) delete rangeRider;
+   if(smartOrderManager != NULL) delete smartOrderManager;  // Session 20
 }
 
 //+------------------------------------------------------------------+
@@ -226,6 +254,10 @@ bool isNewBar(ENUM_TIMEFRAMES tf)
 //+------------------------------------------------------------------+
 void OnTick()
 {
+   // Session 20: Update pending orders (check cancellation conditions)
+   if(smartOrderManager != NULL)
+      smartOrderManager.UpdatePendingOrders();
+
    tickCounter++;
 
    // Periodic status update (every 1 hour of backtest time)
@@ -627,7 +659,7 @@ void EvaluateAndTrade()
 }
 
 //+------------------------------------------------------------------+
-//| Execute Trade                                                     |
+//| Execute Trade (Session 20: Smart Pending Order Integration)      |
 //+------------------------------------------------------------------+
 void ExecuteTrade(int signal, int confidence, string strategy)
 {
@@ -649,32 +681,78 @@ void ExecuteTrade(int signal, int confidence, string strategy)
    double sl = CalculateStopLoss(orderType, price);
    double tp = CalculateTakeProfit(orderType, price);
 
-   // Build comment
-   string comment = "BT|" + strategy + "|C" + IntegerToString(confidence);
+   ulong ticket = 0;
+   bool pendingOrderPlaced = false;
 
-   // Execute order
-   bool success = false;
-   if(orderType == ORDER_TYPE_BUY)
-      success = trade.Buy(lots, currentSymbol, price, sl, tp, comment);
-   else
-      success = trade.Sell(lots, currentSymbol, price, sl, tp, comment);
-
-   if(success)
+   // SESSION 20: Try smart pending order first (if enabled)
+   if(UseSmartPending && smartOrderManager != NULL)
    {
-      Print("✅ Trade Executed: ", EnumToString(orderType),
-            " | Lots: ", lots,
-            " | Price: ", price,
-            " | SL: ", sl,
-            " | TP: ", tp,
-            " | Confidence: ", confidence,
-            " | Strategy: ", strategy);
+      // Create SignalData structure for SmartOrderManager
+      SignalData signalData;
+      signalData.symbol = currentSymbol;
+      signalData.signal = signal;
+      signalData.confidence = confidence;
+      signalData.strategy = strategy;
+      signalData.isValid = true;
 
-      lastTradeTime = TimeCurrent();
-      trailingHighWaterMark = 0;  // Reset trailing tracker
+      // Calculate SL/TP distances for pending orders
+      double slDistance = MathAbs(price - sl);
+      double tpDistance = MathAbs(tp - price);
+
+      signalData.stopLossDollars = slDistance;
+      signalData.takeProfitDollars = tpDistance;
+
+      // Try to place smart pending order
+      ticket = smartOrderManager.PlaceSmartPendingOrder(signalData, lots);
+
+      if(ticket > 0)
+      {
+         pendingOrderPlaced = true;
+         Print("✅ Smart pending order placed: Ticket #", ticket);
+      }
+      else
+      {
+         if(VerboseLogging)
+            Print("Smart pending returned 0 -> Using market order (fallback)");
+      }
+   }
+
+   // If pending order not placed (disabled or returned 0), use market order
+   if(!pendingOrderPlaced)
+   {
+      // Build comment
+      string comment = "BT|" + strategy + "|C" + IntegerToString(confidence);
+
+      // Execute market order
+      bool success = false;
+      if(orderType == ORDER_TYPE_BUY)
+         success = trade.Buy(lots, currentSymbol, price, sl, tp, comment);
+      else
+         success = trade.Sell(lots, currentSymbol, price, sl, tp, comment);
+
+      if(success)
+      {
+         Print("✅ Market Trade Executed: ", EnumToString(orderType),
+               " | Lots: ", lots,
+               " | Price: ", price,
+               " | SL: ", sl,
+               " | TP: ", tp,
+               " | Confidence: ", confidence,
+               " | Strategy: ", strategy);
+
+         lastTradeTime = TimeCurrent();
+         trailingHighWaterMark = 0;  // Reset trailing tracker
+      }
+      else
+      {
+         Print("ERROR: Trade failed - ", trade.ResultRetcodeDescription());
+      }
    }
    else
    {
-      Print("ERROR: Trade failed - ", trade.ResultRetcodeDescription());
+      // Pending order placed successfully
+      Print("📋 Pending order placed successfully: Ticket #", ticket);
+      lastTradeTime = TimeCurrent();
    }
 }
 

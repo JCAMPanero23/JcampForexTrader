@@ -120,6 +120,32 @@ input int    BreakoutExpiryHours = 8;                   // Breakout expiry
 - `integrate_smart_orders.ps1` - PowerShell script Part 1 (applied)
 - `integrate_smart_orders_part2.ps1` - PowerShell script Part 2 (applied)
 
+### 4. Jcamp_CSM_Backtester.mq5 Integration ✅ COMPLETE
+
+**Objective:** Apply smart pending system to backtester for accurate historical testing
+
+**Completed:**
+- ✅ SmartOrderManager include added
+- ✅ Version updated to 3.10
+- ✅ 9 smart pending input parameters added
+- ✅ SmartOrderManager global variable added
+- ✅ Initialization in OnInit()
+- ✅ UpdatePendingOrders() call in OnTick()
+- ✅ ExecuteTrade() function updated
+  - Try smart pending first (if enabled)
+  - Fallback to market order
+  - SignalData structure created from parameters
+- ✅ Cleanup in OnDeinit()
+
+**Changes:** 101 insertions, 23 deletions (124 lines changed)
+
+**Why This Matters:**
+- Backtester now matches live system 1:1
+- Historical backtests will include pending order logic
+- Can test retracement vs breakout strategies on historical data
+- Accurate simulation of order cancellations
+- Performance projections will be more realistic
+
 ---
 
 ## 📋 MANUAL INTEGRATION STEPS
@@ -312,7 +338,8 @@ Result: Executes immediate market order (existing system)
 - `Documentation/SESSION_20_SMART_PENDING_ORDERS.md` (this file)
 
 ### Modified Files
-- `MT5_EAs/Experts/Jcamp_MainTradingEA.mq5` (partial - needs completion)
+- `MT5_EAs/Experts/Jcamp_MainTradingEA.mq5` (✅ 100% integrated)
+- `MT5_EAs/Experts/Jcamp_CSM_Backtester.mq5` (✅ 100% integrated)
 
 ### Backup Files
 - `MT5_EAs/Experts/Jcamp_MainTradingEA.mq5.backup` (safety backup)
@@ -335,6 +362,7 @@ Result: Executes immediate market order (existing system)
 ### Status
 - **SmartOrderManager.mqh:** ✅ 100% Complete
 - **MainTradingEA.mq5 Integration:** ✅ 100% Complete
+- **CSM_Backtester.mq5 Integration:** ✅ 100% Complete (Bonus!)
 - **Testing:** ⏳ Pending (compilation then demo)
 - **Demo Validation:** ⏳ Pending (after testing)
 

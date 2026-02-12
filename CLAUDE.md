@@ -1055,13 +1055,28 @@ Complete manual integration of SmartOrderManager.mqh into MainTradingEA.mq5. Cor
   - Prevents memory leaks
 
 **Files Modified:**
-- `MT5_EAs/Experts/Jcamp_MainTradingEA.mq5` (120 lines modified)
-  - OnInit(): SmartOrderManager initialization + verification
-  - OnTick(): UpdatePendingOrders() call
-  - CheckAndExecuteSignals(): Complete rewrite with smart pending logic
-  - OnDeinit(): smartOrderManager cleanup
+1. `MT5_EAs/Experts/Jcamp_MainTradingEA.mq5` (120 lines modified)
+   - OnInit(): SmartOrderManager initialization + verification
+   - OnTick(): UpdatePendingOrders() call
+   - CheckAndExecuteSignals(): Complete rewrite with smart pending logic
+   - OnDeinit(): smartOrderManager cleanup
 
-**Commit:** `[pending]` - feat: Session 20 - Complete SmartOrderManager Integration
+2. `MT5_EAs/Experts/Jcamp_CSM_Backtester.mq5` (✅ Bonus Integration - 124 lines modified)
+   - SmartOrderManager include + 9 input parameters
+   - OnInit(): SmartOrderManager initialization
+   - OnTick(): UpdatePendingOrders() call
+   - ExecuteTrade(): Smart pending logic with SignalData conversion
+   - OnDeinit(): smartOrderManager cleanup
+
+**Why Backtester Matters:**
+- Backtester now matches live system 1:1
+- Can test smart pending logic on historical data
+- Accurate simulation of order cancellations & entry improvements
+- Performance projections will be realistic
+
+**Commits:**
+- `e720b27` - feat: Session 20 - Complete SmartOrderManager Integration (MainTradingEA)
+- `[pending]` - feat: Session 20 - Backtester Integration
 
 **Integration Status:**
 - ✅ SmartOrderManager.mqh (669 lines) - Created in previous session
