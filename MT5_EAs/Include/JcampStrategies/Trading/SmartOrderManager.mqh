@@ -117,16 +117,39 @@ public:
    //+------------------------------------------------------------------+
    ulong PlaceSmartPendingOrder(const SignalData &signal, double lots)
    {
-      // Determine which pending strategy to use
-      ENUM_PENDING_STRATEGY strategy = DeterminePendingStrategy(signal);
+      // CHECK 1: Is there already an open position for this symbol?
+      if(HasOpenPosition(signal.symbol))
+      {
+         if(verboseLogging)
+            Print("⚠️  Position already exists for ", signal.symbol, " - skipping pending order");
+         return 0; // Use market order or skip
+      }
+
+      // CHECK 2: Count existing pending orders for this symbol
+      int existingPending = CountPendingOrdersForSymbol(signal.symbol);
+      if(existingPending >= 2)
+      {
+         if(verboseLogging)
+            Print("⚠️  Already have ", existingPending, " pending orders for ", signal.symbol, " - skipping");
+         return 0;
+      }
+
+      // CHECK 3: Do we already have a pending order for the same strategy?
+      ENUM_PENDING_STRATEGY requestedStrategy = DeterminePendingStrategy(signal);
+      if(HasPendingOrderForStrategy(signal.symbol, requestedStrategy))
+      {
+         if(verboseLogging)
+            Print("⚠️  Already have ", EnumToString(requestedStrategy), " order for ", signal.symbol, " - skipping");
+         return 0;
+      }
 
       if(verboseLogging)
-         Print("🎯 Smart Pending Order: ", signal.symbol, " | Strategy: ", EnumToString(strategy));
+         Print("🎯 Smart Pending Order: ", signal.symbol, " | Strategy: ", EnumToString(requestedStrategy));
 
       ulong ticket = 0;
 
       // Execute appropriate strategy
-      switch(strategy)
+      switch(requestedStrategy)
       {
          case PENDING_STRATEGY_RETRACEMENT:
             ticket = PlaceRetracementOrder(signal, lots);
@@ -398,6 +421,7 @@ public:
    //+------------------------------------------------------------------+
    void UpdatePendingOrders()
    {
+      // STEP 1: Check for executed orders and cancel conflicting ones
       for(int i = ArraySize(pendingOrders) - 1; i >= 0; i--)
       {
          if(!pendingOrders[i].active)
@@ -406,8 +430,20 @@ public:
          // Check if order still exists
          if(!OrderSelect(pendingOrders[i].ticket))
          {
-            // Order executed or cancelled
+            // Order no longer pending (executed or cancelled)
+            string executedSymbol = pendingOrders[i].symbol;
             pendingOrders[i].active = false;
+
+            // Check if position was created (order executed)
+            if(HasOpenPosition(executedSymbol))
+            {
+               if(verboseLogging)
+                  Print("✅ Pending order executed for ", executedSymbol, " → Cancelling other pending orders");
+
+               // Cancel all other pending orders for this symbol
+               CancelPendingOrdersForSymbol(executedSymbol);
+            }
+
             continue;
          }
 
@@ -440,6 +476,26 @@ public:
                   Print("🚫 Pending order cancelled: ", pendingOrders[i].symbol, " | Reason: Conditions violated");
                pendingOrders[i].active = false;
             }
+         }
+      }
+
+      // STEP 2: Periodic check - cancel pending orders if position exists
+      //         (handles cases where position opened via market order)
+      for(int i = ArraySize(pendingOrders) - 1; i >= 0; i--)
+      {
+         if(!pendingOrders[i].active)
+            continue;
+
+         if(HasOpenPosition(pendingOrders[i].symbol))
+         {
+            if(verboseLogging)
+               Print("🚫 Position exists for ", pendingOrders[i].symbol, " → Cancelling pending order #", pendingOrders[i].ticket);
+
+            if(OrderSelect(pendingOrders[i].ticket))
+            {
+               trade.OrderDelete(pendingOrders[i].ticket);
+            }
+            pendingOrders[i].active = false;
          }
       }
    }
@@ -654,6 +710,93 @@ public:
       pendingOrders[size].swingLevel = swingLevel;
       pendingOrders[size].signalDirection = signal.signal;
       pendingOrders[size].active = true;
+   }
+
+   //+------------------------------------------------------------------+
+   //| Helper: Check if Open Position Exists for Symbol                 |
+   //+------------------------------------------------------------------+
+   bool HasOpenPosition(string symbol)
+   {
+      for(int i = 0; i < PositionsTotal(); i++)
+      {
+         if(PositionGetSymbol(i) == symbol &&
+            PositionGetInteger(POSITION_MAGIC) == magicNumber)
+         {
+            return true;
+         }
+      }
+      return false;
+   }
+
+   //+------------------------------------------------------------------+
+   //| Helper: Count Pending Orders for Symbol                          |
+   //+------------------------------------------------------------------+
+   int CountPendingOrdersForSymbol(string symbol)
+   {
+      int count = 0;
+
+      for(int i = 0; i < OrdersTotal(); i++)
+      {
+         ulong ticket = OrderGetTicket(i);
+         if(ticket > 0)
+         {
+            if(OrderGetString(ORDER_SYMBOL) == symbol &&
+               OrderGetInteger(ORDER_MAGIC) == magicNumber)
+            {
+               count++;
+            }
+         }
+      }
+
+      return count;
+   }
+
+   //+------------------------------------------------------------------+
+   //| Helper: Check if Pending Order Exists for Strategy              |
+   //+------------------------------------------------------------------+
+   bool HasPendingOrderForStrategy(string symbol, ENUM_PENDING_STRATEGY strategy)
+   {
+      // Check our tracked pending orders
+      for(int i = 0; i < ArraySize(pendingOrders); i++)
+      {
+         if(pendingOrders[i].active &&
+            pendingOrders[i].symbol == symbol &&
+            pendingOrders[i].strategy == strategy)
+         {
+            return true;
+         }
+      }
+      return false;
+   }
+
+   //+------------------------------------------------------------------+
+   //| Helper: Cancel All Pending Orders for Symbol                    |
+   //+------------------------------------------------------------------+
+   void CancelPendingOrdersForSymbol(string symbol)
+   {
+      int cancelledCount = 0;
+
+      for(int i = ArraySize(pendingOrders) - 1; i >= 0; i--)
+      {
+         if(pendingOrders[i].active && pendingOrders[i].symbol == symbol)
+         {
+            // Try to cancel the order
+            if(OrderSelect(pendingOrders[i].ticket))
+            {
+               if(trade.OrderDelete(pendingOrders[i].ticket))
+               {
+                  if(verboseLogging)
+                     Print("   🚫 Cancelled pending order #", pendingOrders[i].ticket,
+                           " (", EnumToString(pendingOrders[i].strategy), ")");
+                  cancelledCount++;
+               }
+            }
+            pendingOrders[i].active = false;
+         }
+      }
+
+      if(verboseLogging && cancelledCount > 0)
+         Print("   ✅ Total cancelled: ", cancelledCount, " pending orders for ", symbol);
    }
 
    //+------------------------------------------------------------------+
