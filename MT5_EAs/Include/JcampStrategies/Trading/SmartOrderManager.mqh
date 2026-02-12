@@ -113,7 +113,10 @@ public:
 
    //+------------------------------------------------------------------+
    //| Main Entry Point: Place Smart Pending Order                      |
-   //| Determines best strategy and places order accordingly             |
+   //| Return values:                                                    |
+   //|  > 0 : Pending order placed (ticket number)                      |
+   //|  = 0 : Use market order fallback (conditions not met)            |
+   //|  ULONG_MAX : Skip entirely (position or pending exists)          |
    //+------------------------------------------------------------------+
    ulong PlaceSmartPendingOrder(const SignalData &signal, double lots)
    {
@@ -121,8 +124,8 @@ public:
       if(HasOpenPosition(signal.symbol))
       {
          if(verboseLogging)
-            Print("⚠️  Position already exists for ", signal.symbol, " - skipping pending order");
-         return 0; // Use market order or skip
+            Print("⚠️  Position already exists for ", signal.symbol, " - skipping signal");
+         return ULONG_MAX; // Skip entirely (don't execute market order)
       }
 
       // CHECK 2: Count existing pending orders for this symbol
@@ -130,8 +133,8 @@ public:
       if(existingPending >= 2)
       {
          if(verboseLogging)
-            Print("⚠️  Already have ", existingPending, " pending orders for ", signal.symbol, " - skipping");
-         return 0;
+            Print("⚠️  Already have ", existingPending, " pending orders for ", signal.symbol, " - skipping signal");
+         return ULONG_MAX; // Skip entirely
       }
 
       // CHECK 3: Do we already have a pending order for the same strategy?
@@ -139,8 +142,8 @@ public:
       if(HasPendingOrderForStrategy(signal.symbol, requestedStrategy))
       {
          if(verboseLogging)
-            Print("⚠️  Already have ", EnumToString(requestedStrategy), " order for ", signal.symbol, " - skipping");
-         return 0;
+            Print("⚠️  Already have ", EnumToString(requestedStrategy), " order for ", signal.symbol, " - skipping signal");
+         return ULONG_MAX; // Skip entirely
       }
 
       if(verboseLogging)

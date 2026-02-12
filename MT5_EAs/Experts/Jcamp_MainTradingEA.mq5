@@ -343,7 +343,14 @@ void CheckAndExecuteSignals()
                pendingOrderPlaced = true;
                Print("✅ Smart pending order placed: Ticket #", ticket);
             }
-            else
+            else if(ticket == ULONG_MAX)
+            {
+               // Skip entirely (position or pending exists)
+               if(VerboseLogging)
+                  Print("⏭️  Skipping signal - position or pending order exists");
+               continue; // Skip to next signal, don't execute market order
+            }
+            else // ticket == 0
             {
                if(VerboseLogging)
                   Print("Smart pending returned 0 -> Using market order (fallback)");
