@@ -2,7 +2,7 @@
 
 **Purpose:** Single authoritative reference for Claude Code
 **Project:** CSM Alpha - 4-Asset Trading System with Gold
-**Last Updated:** February 11, 2026 (Session 19 Planning - Backtest Architecture)
+**Last Updated:** February 12, 2026 (Session 19.5 - Trade Execution Redesign Planning)
 
 ---
 
@@ -596,8 +596,8 @@ Flow: Demo → Collect data → Backtest → Validate → VPS → Live
 
 ## 🎯 CURRENT SESSION STATUS
 
-**Current Session:** Planning (Backtest Architecture Discussion)
-**Next Session:** 19 (StrategyEngine Refactoring + CSM Backtester) 🎯
+**Current Session:** 19.5 - Complete (Trade Execution System Redesign Planning)
+**Next Session:** 20 (Smart Pending Order System Implementation) 🎯
 
 ---
 
@@ -948,7 +948,80 @@ Fix C# CSMMonitor dashboard layout issues and UI improvements.
 
 ---
 
-### Session 19: StrategyEngine Refactoring + CSM Backtester (NEXT SESSION)
+### Session 19.5: Trade Execution System Redesign Planning (February 12, 2026)
+**Duration:** ~2 hours | **Status:** ✅ Complete (Planning & Documentation)
+
+**Objective:**
+Identify and design solutions for critical performance issues in current trading system.
+
+**Problem Identified:**
+```
+Current System (12 trades analyzed):
+- Win Rate: 58.3% ✅ GOOD
+- Net P&L: -$17.98 ❌ LOSING MONEY
+- Avg Win: +9 pips ❌ TOO SMALL
+- Avg Loss: -34 pips ❌ FULL SL HITS
+- Win:Loss Ratio: 1:3.3 ❌ CATASTROPHIC
+
+ROOT CAUSE: Trailing stop too aggressive + poor entry timing
+```
+
+**Solutions Designed:**
+
+1. **Smart Pending Order System**
+   - Strategy A: Retracement to EMA20 (when price extended)
+   - Strategy B: Swing high/low breakout (when price near EMA20)
+   - Auto-cancellation of false signals (30% of orders = 0 pips loss!)
+   - Expected: +840 pips per 100 trades
+
+2. **4-Hour Fixed SL with 1.5R Profit Lock**
+   - No trailing for first 4 hours (let trade breathe)
+   - BUT if hits +1.5R early → Lock profit at +0.5R
+   - Protects quick spikes (from -50 loss to +25 profit!)
+   - Expected: +900 pips per 100 trades
+
+3. **Chandelier Stop Trailing**
+   - SL = Highest High (20 bars) - (2.5 × ATR)
+   - Market structure-based (not arbitrary R-multiples)
+   - Adapts to volatility automatically
+   - Expected: +2116 pips per 100 trades
+
+4. **Smart TP System**
+   - 70% exit @ structure-based TP1 (next resistance/support)
+   - 30% runner with Chandelier (no fixed TP)
+   - Captures big trends (3R, 4R, 5R+)
+   - Expected: +865 pips per 100 trades
+
+**Total Expected Improvement:**
+```
++4721 pips per 100 trades
+From: -$90 to +$472 (0.01 lot)
+= +$562 swing! 🚀
+```
+
+**Documentation Created:**
+1. `BACKTESTER_VS_LIVE_SLTP_COMPARISON.md` - SL/TP discrepancy analysis
+2. `TRADE_EXECUTION_REDESIGN_PROPOSAL.md` - Initial system redesign (v1.0)
+3. `ENHANCED_EXECUTION_SYSTEM_v2.md` - Complete v2.0 design (4 components)
+4. `SMART_TP_SYSTEM_DESIGN.md` - Detailed Smart TP analysis
+5. `SESSION_20-23_MASTER_PLAN.md` - Complete implementation roadmap
+
+**Implementation Plan:**
+- Session 20: Smart Pending Orders (~5 hours)
+- Session 21: Profit Lock + Chandelier (~3 hours)
+- Session 22: Smart TP System (~2 hours)
+- Session 23: Integration + Backtester Update (~2 hours)
+
+**Commit:** Pending (this session)
+
+**Key Decision:**
+- ✅ Apply all enhancements to CSM_Backtester as well
+- ✅ Full system overhaul approved by user
+- ✅ Ready for implementation in Session 20
+
+---
+
+### Session 19: StrategyEngine Refactoring + CSM Backtester (DEFERRED)
 **Duration:** ~3-4 hours | **Status:** 🎯 Planned
 
 **Objective:**
