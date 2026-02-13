@@ -239,7 +239,7 @@ public:
                                       tp,
                                       ORDER_TIME_SPECIFIED,
                                       expiry,
-                                      "Retracement Entry");
+                                      "Entry: Retracement");
 
       if(success)
       {
@@ -296,8 +296,8 @@ public:
       if(distancePips > maxSwingDistancePips)
       {
          if(verboseLogging)
-            Print("⚠️  Swing level too far (", distancePips, " pips), using market order");
-         return 0; // Use market order instead
+            Print("⚠️  Swing level too far (", distancePips, " pips) - skipping signal");
+         return ULONG_MAX; // Skip signal (conditions not ideal)
       }
 
       // Determine order price (swing level + breakout trigger pips)
@@ -341,7 +341,7 @@ public:
                                       tp,
                                       ORDER_TIME_SPECIFIED,
                                       expiry,
-                                      "Breakout Entry");
+                                      "Entry: Breakout");
 
       if(success)
       {
