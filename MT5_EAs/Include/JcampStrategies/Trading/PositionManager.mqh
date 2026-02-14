@@ -47,7 +47,7 @@ public:
                    double lockLevelR = 0.5,
                    int fixedPeriodHours = 4,
                    bool useChandelier = true,
-                   int chandelierLookback = 20,
+                   int lookbackBars = 20,
                    double chandelierATRMult = 2.5,
                    bool verbose = false)
    {
@@ -59,20 +59,20 @@ public:
       profitLockLevelR = lockLevelR;
       fixedSLPeriodHours = fixedPeriodHours;
       useChandelierStop = useChandelier;
-      chandelierLookback = chandelierLookback;
+      chandelierLookback = lookbackBars;
       chandelierATRMultiplier = chandelierATRMult;
       
       verboseLogging = verbose;
       
       // Initialize Chandelier with configured settings
-      chandelier = new CChandelierStop(chandelierLookback, chandelierATRMult, PERIOD_H1, 14);
+      chandelier = new CChandelierStop(lookbackBars, chandelierATRMult, PERIOD_H1, 14);
       
       trade.SetExpertMagicNumber(magic);
    }
 
    ~PositionManager() 
    {
-      if(CheckPointer(chandelier) == POINTER_DYNAMIC)
+      if(chandelier != NULL)
          delete chandelier;
    }
 

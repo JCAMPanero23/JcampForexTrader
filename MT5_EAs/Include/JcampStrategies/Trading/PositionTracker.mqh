@@ -236,19 +236,6 @@ public:
         return true;
     }
 
-private:
-    //+------------------------------------------------------------------+
-    //| Get Position Index by Ticket                                     |
-    //+------------------------------------------------------------------+
-    int GetPositionIndex(ulong ticket)
-    {
-        for(int i = 0; i < ArraySize(m_positions); i++)
-        {
-            if(m_positions[i].ticket == ticket)
-                return i;
-        }
-        return -1;
-    }
 
     //+------------------------------------------------------------------+
     //| Session 21: Mark Profit Lock as Triggered                        |

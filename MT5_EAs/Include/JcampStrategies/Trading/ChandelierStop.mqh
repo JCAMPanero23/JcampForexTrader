@@ -158,7 +158,7 @@ private:
         if(CopyHigh(symbol, timeframe, 0, bars, highBuffer) != bars)
             return 0;
 
-        return highBuffer[ArrayMaximum(highBuffer, 0, bars)];
+        return highBuffer[(int)ArrayMaximum(highBuffer, 0, bars)];
     }
 
     //+------------------------------------------------------------------+
@@ -176,7 +176,7 @@ private:
         if(CopyLow(symbol, timeframe, 0, bars, lowBuffer) != bars)
             return 0;
 
-        return lowBuffer[ArrayMinimum(lowBuffer, 0, bars)];
+        return lowBuffer[(int)ArrayMinimum(lowBuffer, 0, bars)];
     }
 
     //+------------------------------------------------------------------+
