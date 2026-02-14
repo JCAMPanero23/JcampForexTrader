@@ -72,8 +72,8 @@ public:
 
    ~PositionManager() 
    {
-      if(chandelier != NULL)
-         delete chandelier;
+      delete chandelier;
+   }
    }
 
    //+------------------------------------------------------------------+

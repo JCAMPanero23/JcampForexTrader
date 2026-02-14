@@ -148,17 +148,14 @@ private:
     //+------------------------------------------------------------------+
     double GetHighestHigh(string symbol, int bars)
     {
-        int handle = iHigh(symbol, timeframe, 0);
-        if(handle == INVALID_HANDLE)
-            return 0;
-
         double highBuffer[];
         ArraySetAsSeries(highBuffer, true);
 
         if(CopyHigh(symbol, timeframe, 0, bars, highBuffer) != bars)
             return 0;
 
-        return highBuffer[(int)ArrayMaximum(highBuffer, 0, bars)];
+        int maxIndex = ArrayMaximum(highBuffer, 0, WHOLE_ARRAY);
+        return highBuffer[maxIndex];
     }
 
     //+------------------------------------------------------------------+
@@ -166,17 +163,14 @@ private:
     //+------------------------------------------------------------------+
     double GetLowestLow(string symbol, int bars)
     {
-        int handle = iLow(symbol, timeframe, 0);
-        if(handle == INVALID_HANDLE)
-            return 0;
-
         double lowBuffer[];
         ArraySetAsSeries(lowBuffer, true);
 
         if(CopyLow(symbol, timeframe, 0, bars, lowBuffer) != bars)
             return 0;
 
-        return lowBuffer[(int)ArrayMinimum(lowBuffer, 0, bars)];
+        int minIndex = ArrayMinimum(lowBuffer, 0, WHOLE_ARRAY);
+        return lowBuffer[minIndex];
     }
 
     //+------------------------------------------------------------------+
