@@ -144,6 +144,8 @@ int OnInit()
                                              RetracementExpiryHours,
                                              BreakoutExpiryHours);
 
+   performanceTracker = new PerformanceTracker(ExportFolder, MagicNumber, VerboseLogging);
+
    // Verify modules initialized
    if(signalReader == NULL || tradeExecutor == NULL ||
       positionManager == NULL || performanceTracker == NULL ||
