@@ -342,9 +342,17 @@ void OnTick()
    // STEP 5: Manage open positions on every tick (precise execution)
    //═══════════════════════════════════════════════════════════════
    // Session 21: Update positions (Chandelier + Profit Lock)
+   static int updateCallCount = 0;
    if(positionManager != NULL)
    {
+      updateCallCount++;
       positionManager.UpdatePositions();  // Tick-level precision for trailing
+
+      // Debug: Log every 100 calls if we have a position
+      if(HasOpenPosition() && (updateCallCount % 100 == 0))
+      {
+         Print("🔄 UpdatePositions() called ", updateCallCount, " times | Open Positions: ", PositionsTotal());
+      }
    }
 
    //═══════════════════════════════════════════════════════════════
@@ -768,18 +776,29 @@ void ExecuteTrade(int signal, int confidence, string strategy)
          lastTradeTime = TimeCurrent();
 
          // Session 21: Register position with PositionManager for trailing
-         ulong ticket = trade.ResultOrder();
-         if(ticket > 0 && PositionSelectByTicket(ticket))
+         // Select the position that was just opened (by symbol and magic)
+         if(PositionSelect(currentSymbol))
          {
+            ulong ticket = PositionGetInteger(POSITION_TICKET);
             double entryPrice = PositionGetDouble(POSITION_PRICE_OPEN);
             double currentSL = PositionGetDouble(POSITION_SL);
             double slDistance = MathAbs(entryPrice - currentSL);
             int signal = (orderType == ORDER_TYPE_BUY) ? 1 : -1;
 
-            positionManager.RegisterPosition(ticket, currentSymbol, strategy, signal, entryPrice, slDistance);
+            bool registered = positionManager.RegisterPosition(ticket, currentSymbol, strategy, signal, entryPrice, slDistance);
 
-            if(VerboseLogging)
+            if(registered)
+            {
                Print("📊 Position Registered: #", ticket, " | ", strategy, " | Entry: ", entryPrice, " | SL Dist: ", slDistance);
+            }
+            else
+            {
+               Print("⚠️ Position Registration FAILED: #", ticket);
+            }
+         }
+         else
+         {
+            Print("⚠️ Could not select position after trade execution!");
          }
       }
       else
