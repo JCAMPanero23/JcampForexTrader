@@ -37,6 +37,7 @@
 #include <JcampStrategies/Strategies/TrendRiderStrategy.mqh>
 #include <JcampStrategies/Strategies/RangeRiderStrategy.mqh>
 #include <JcampStrategies/Trading/SmartOrderManager.mqh>  // Session 20: Smart Pending Orders
+#include <JcampStrategies/Trading/PositionManager.mqh>    // Session 21: Chandelier + Profit Lock
 
 //+------------------------------------------------------------------+
 //| INPUT PARAMETERS                                                  |
@@ -47,10 +48,16 @@ input int      MinConfidence = 65;          // Minimum confidence to trade (Sess
 input double   MaxSpreadPips = 2.0;         // Max spread (pips)
 input double   GoldSpreadMultiplier = 5.0;  // Gold spread multiplier
 
-input group "=== Position Management ==="
-input bool     EnableTrailing = true;       // Enable trailing stop
-input int      TrailingStopPips = 20;       // Trailing stop distance (pips)
-input int      TrailingStartPips = 30;      // Start trailing after profit (pips)
+input group "=== Position Management (Session 21) ==="
+input bool     UseConditionalLock = true;                // Enable 1.5R profit lock (within 4 hours)
+input double   ProfitLockTriggerR = 1.5;                 // Trigger profit lock at +1.5R
+input double   ProfitLockLevelR = 0.5;                   // Lock SL at +0.5R when triggered
+input int      FixedSLPeriodHours = 4;                   // Fixed SL period (no trailing for X hours)
+
+input group "=== Chandelier Trailing Stop (Session 21) ==="
+input bool     UseChandelierStop = true;                 // Enable Chandelier trailing
+input int      ChandelierLookback = 20;                  // Chandelier lookback bars (H1)
+input double   ChandelierATRMultiplier = 2.5;            // Chandelier ATR multiplier
 
 input group "=== Strategy Settings ==="
 input int      RegimeCheckMinutes = 15;     // Regime check interval (minutes)
@@ -90,6 +97,7 @@ bool isGoldSymbol;
 TrendRiderStrategy* trendRider;
 RangeRiderStrategy* rangeRider;
 SmartOrderManager*  smartOrderManager;  // Session 20: Smart pending orders
+PositionManager*    positionManager;    // Session 21: Chandelier + Profit Lock
 
 // Current regime (cached from DetectMarketRegime function)
 MARKET_REGIME currentRegime;
@@ -118,9 +126,6 @@ datetime lastTradeTime = 0;
 // Bar tracking for M15/H1 optimization (matches live system)
 datetime lastM15Bar = 0;
 datetime lastH1Bar = 0;
-
-// Trailing Stop Tracking
-double trailingHighWaterMark = 0;
 
 // Last signal data (for chart display)
 int lastSignal = 0;
@@ -151,7 +156,8 @@ int OnInit()
    Print("Risk: ", RiskPercent, "%");
    Print("Min Confidence: ", MinConfidence);
    Print("Max Spread: ", MaxSpreadPips, " pips", (isGoldSymbol ? " (x" + DoubleToString(GoldSpreadMultiplier, 1) + " for Gold)" : ""));
-   Print("Trailing Stop: ", (EnableTrailing ? "ENABLED" : "DISABLED"));
+   Print("Session 21: Profit Lock @ +", ProfitLockTriggerR, "R → Lock @ +", ProfitLockLevelR, "R | Fixed SL: ", FixedSLPeriodHours, "h");
+   Print("Session 21: Chandelier Stop: ", (UseChandelierStop ? "ENABLED" : "DISABLED"), " | Lookback: ", ChandelierLookback, " | ATR Mult: ", ChandelierATRMultiplier);
 
    // Initialize trade manager
    trade.SetExpertMagicNumber(MagicNumber);
@@ -186,6 +192,17 @@ int OnInit()
                                              MaxSwingDistancePips,
                                              RetracementExpiryHours,
                                              BreakoutExpiryHours);
+
+   // Session 21: Initialize Position Manager (Chandelier + Profit Lock)
+   positionManager = new PositionManager(MagicNumber,
+                                         UseConditionalLock,
+                                         ProfitLockTriggerR,
+                                         ProfitLockLevelR,
+                                         FixedSLPeriodHours,
+                                         UseChandelierStop,
+                                         ChandelierLookback,
+                                         ChandelierATRMultiplier,
+                                         VerboseLogging);
 
    Print("✅ All modules initialized successfully");
    if(UseSmartPending)
@@ -324,9 +341,10 @@ void OnTick()
    //═══════════════════════════════════════════════════════════════
    // STEP 5: Manage open positions on every tick (precise execution)
    //═══════════════════════════════════════════════════════════════
-   if(HasOpenPosition())
+   // Session 21: Update positions (Chandelier + Profit Lock)
+   if(positionManager != NULL)
    {
-      ManagePosition();  // Trailing stops need tick-level precision
+      positionManager.UpdatePositions();  // Tick-level precision for trailing
    }
 
    //═══════════════════════════════════════════════════════════════
@@ -748,7 +766,21 @@ void ExecuteTrade(int signal, int confidence, string strategy)
                " | Strategy: ", strategy);
 
          lastTradeTime = TimeCurrent();
-         trailingHighWaterMark = 0;  // Reset trailing tracker
+
+         // Session 21: Register position with PositionManager for trailing
+         ulong ticket = trade.ResultOrder();
+         if(ticket > 0 && PositionSelectByTicket(ticket))
+         {
+            double entryPrice = PositionGetDouble(POSITION_PRICE_OPEN);
+            double currentSL = PositionGetDouble(POSITION_SL);
+            double slDistance = MathAbs(entryPrice - currentSL);
+            int signal = (orderType == ORDER_TYPE_BUY) ? 1 : -1;
+
+            positionManager.RegisterPosition(ticket, currentSymbol, strategy, signal, entryPrice, slDistance);
+
+            if(VerboseLogging)
+               Print("📊 Position Registered: #", ticket, " | ", strategy, " | Entry: ", entryPrice, " | SL Dist: ", slDistance);
+         }
       }
       else
       {
@@ -880,88 +912,6 @@ bool HasOpenPosition()
       }
    }
    return false;
-}
-
-//+------------------------------------------------------------------+
-//| Manage Open Position (Trailing Stop)                            |
-//+------------------------------------------------------------------+
-void ManagePosition()
-{
-   if(!EnableTrailing)
-      return;
-
-   for(int i = 0; i < PositionsTotal(); i++)
-   {
-      ulong ticket = PositionGetTicket(i);
-      if(ticket <= 0) continue;
-
-      if(PositionGetInteger(POSITION_MAGIC) != MagicNumber ||
-         PositionGetString(POSITION_SYMBOL) != currentSymbol)
-         continue;
-
-      ENUM_POSITION_TYPE posType = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
-      double openPrice = PositionGetDouble(POSITION_PRICE_OPEN);
-      double currentPrice = (posType == POSITION_TYPE_BUY) ?
-                            SymbolInfoDouble(currentSymbol, SYMBOL_BID) :
-                            SymbolInfoDouble(currentSymbol, SYMBOL_ASK);
-      double sl = PositionGetDouble(POSITION_SL);
-      double tp = PositionGetDouble(POSITION_TP);
-
-      // Calculate profit in pips
-      double point = SymbolInfoDouble(currentSymbol, SYMBOL_POINT);
-      double priceDiff = 0;
-      if(posType == POSITION_TYPE_BUY)
-         priceDiff = currentPrice - openPrice;
-      else
-         priceDiff = openPrice - currentPrice;
-
-      double profitPips = priceDiff / (point * 10.0);
-
-      // Only trail if profit > TrailingStartPips
-      if(profitPips < TrailingStartPips)
-         return;
-
-      // Update high water mark
-      if(posType == POSITION_TYPE_BUY)
-      {
-         if(trailingHighWaterMark == 0 || currentPrice > trailingHighWaterMark)
-            trailingHighWaterMark = currentPrice;
-      }
-      else
-      {
-         if(trailingHighWaterMark == 0 || currentPrice < trailingHighWaterMark)
-            trailingHighWaterMark = currentPrice;
-      }
-
-      // Calculate new trailing SL
-      double pipValue = point * 10.0;
-      double newSL = 0;
-
-      if(posType == POSITION_TYPE_BUY)
-      {
-         newSL = trailingHighWaterMark - (TrailingStopPips * pipValue);
-         if(newSL > sl || sl == 0)
-         {
-            newSL = NormalizeDouble(newSL, (int)SymbolInfoInteger(currentSymbol, SYMBOL_DIGITS));
-            trade.PositionModify(ticket, newSL, tp);
-
-            if(VerboseLogging)
-               Print("📈 Trailing Stop Updated: SL=", newSL);
-         }
-      }
-      else
-      {
-         newSL = trailingHighWaterMark + (TrailingStopPips * pipValue);
-         if(newSL < sl || sl == 0)
-         {
-            newSL = NormalizeDouble(newSL, (int)SymbolInfoInteger(currentSymbol, SYMBOL_DIGITS));
-            trade.PositionModify(ticket, newSL, tp);
-
-            if(VerboseLogging)
-               Print("📉 Trailing Stop Updated: SL=", newSL);
-         }
-      }
-   }
 }
 
 //+------------------------------------------------------------------+
