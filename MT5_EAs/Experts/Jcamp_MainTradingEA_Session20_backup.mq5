@@ -54,17 +54,21 @@ input int    MaxSwingDistancePips = 30;                 // Max distance to swing
 input int    RetracementExpiryHours = 4;                // Retracement order expiry time
 input int    BreakoutExpiryHours = 8;                   // Breakout order expiry time                       // Max total open positions
 
-// --- Position Management (Session 21: Profit Lock + Chandelier) ---
-input group "═══ SESSION 21: CONDITIONAL PROFIT LOCK ═══"
-input bool   UseConditionalLock = true;                // Enable 1.5R profit lock (within 4 hours)
-input double ProfitLockTriggerR = 1.5;                 // Trigger profit lock at +1.5R
-input double ProfitLockLevelR = 0.5;                   // Lock SL at +0.5R when triggered
-input int    FixedSLPeriodHours = 4;                   // Fixed SL period (no trailing for X hours)
+// --- Position Management (Session 16: 3-Phase Trailing) ---
+input group "═══ 3-PHASE TRAILING SYSTEM ═══"
+input bool UseAdvancedTrailing = true;                 // Enable 3-phase trailing system
+input double TrailingActivationR = 0.5;                // Start trailing at +0.5R
 
-input group "═══ SESSION 21: CHANDELIER STOP SYSTEM ═══"
-input bool   UseChandelierStop = true;                 // Enable Chandelier trailing
-input int    ChandelierLookback = 20;                  // Chandelier lookback bars (H1)
-input double ChandelierATRMultiplier = 2.5;            // Chandelier ATR multiplier
+input group "═══ PHASE 1: Early Protection (0.5R - 1.0R) ═══"
+input double Phase1EndR = 1.0;                         // Phase 1 ends at this R
+input double Phase1TrailDistance = 0.3;                // Trail 0.3R behind (tight lock)
+
+input group "═══ PHASE 2: Profit Building (1.0R - 2.0R) ═══"
+input double Phase2EndR = 2.0;                         // Phase 2 ends at this R
+input double Phase2TrailDistance = 0.5;                // Trail 0.5R behind (balanced)
+
+input group "═══ PHASE 3: Let Winners Run (2.0R+) ═══"
+input double Phase3TrailDistance = 0.8;                // Trail 0.8R behind (loose)
 
 // --- Performance Export ---
 input string ExportFolder = "CSM_Data";                // Folder for performance data export
@@ -123,14 +127,13 @@ int OnInit()
                                      SpreadMultiplierEURUSD, SpreadMultiplierGBPUSD,
                                      SpreadMultiplierAUDJPY, SpreadMultiplierUSDJPY, SpreadMultiplierUSDCHF);
    positionManager = new PositionManager(MagicNumber,
-                                         UseConditionalLock,
-                                         ProfitLockTriggerR,
-                                         ProfitLockLevelR,
-                                         FixedSLPeriodHours,
-                                         UseChandelierStop,
-                                         ChandelierLookback,
-                                         ChandelierATRMultiplier,
+                                         UseAdvancedTrailing,
+                                         TrailingActivationR,
+                                         Phase1EndR, Phase1TrailDistance,
+                                         Phase2EndR, Phase2TrailDistance,
+                                         Phase3TrailDistance,
                                          VerboseLogging);
+   performanceTracker = new PerformanceTracker(ExportFolder, MagicNumber, VerboseLogging);
 
    // Session 20: Initialize Smart Order Manager
    smartOrderManager = new SmartOrderManager(MagicNumber,
@@ -154,7 +157,7 @@ int OnInit()
    }
 
    // Initial export
-   performanceTracker->ExportAll();
+   performanceTracker.ExportAll();
 
    Print("✅ MainTradingEA v3.00 initialized successfully");
    if(UseSmartPending)
@@ -176,7 +179,7 @@ void OnDeinit(const int reason)
    // Final export before shutdown
    if(performanceTracker != NULL)
    {
-      performanceTracker->ExportAll();
+      performanceTracker.ExportAll();
       Print("📊 Final performance data exported");
    }
 
@@ -197,11 +200,11 @@ void OnTick()
 {
    // Always update positions (trailing stops, etc.)
    if(positionManager != NULL)
-      positionManager->UpdatePositions();
+      positionManager.UpdatePositions();
 
    // Session 20: Update pending orders (check cancellation conditions)
    if(smartOrderManager != NULL)
-      smartOrderManager->UpdatePendingOrders();
+      smartOrderManager.UpdatePendingOrders();
 
    datetime currentTime = TimeCurrent();
 
@@ -211,7 +214,7 @@ void OnTick()
       lastTradeHistoryCheck = currentTime;
 
       if(performanceTracker != NULL)
-         performanceTracker->Update();  // Check for new closed trades (lightweight, returns early if none)
+         performanceTracker.Update();  // Check for new closed trades (lightweight, returns early if none)
    }
 
    // Check for new signals (throttled)
@@ -227,7 +230,7 @@ void OnTick()
       lastPositionExport = currentTime;
 
       if(performanceTracker != NULL)
-         performanceTracker->ExportOpenPositions();  // Real-time position updates
+         performanceTracker.ExportOpenPositions();  // Real-time position updates
    }
 
    // Export performance stats periodically (5 minutes - less frequently)
@@ -237,8 +240,8 @@ void OnTick()
 
       if(performanceTracker != NULL)
       {
-         performanceTracker->ExportTradeHistory();      // Update trade history
-         performanceTracker->ExportPerformanceStats();  // Update performance.txt
+         performanceTracker.ExportTradeHistory();      // Update trade history
+         performanceTracker.ExportPerformanceStats();  // Update performance.txt
       }
    }
 }
@@ -253,7 +256,7 @@ void CheckAndExecuteSignals()
 
    // Read signals for all traded symbols
    SignalData signals[];
-   int validSignals = signalReader->ReadMultipleSignals(TradedSymbols, signals);
+   int validSignals = signalReader.ReadMultipleSignals(TradedSymbols, signals);
 
    if(validSignals == 0)
    {
@@ -266,7 +269,7 @@ void CheckAndExecuteSignals()
       Print("📡 Found ", validSignals, " valid signals");
 
    // Check current positions
-   int totalPositions = positionManager->GetOpenPositionCount();
+   int totalPositions = positionManager.GetOpenPositionCount();
 
    // Process each signal
    for(int i = 0; i < ArraySize(signals); i++)
@@ -278,7 +281,7 @@ void CheckAndExecuteSignals()
          continue;
 
       // Check if signal is tradeable
-      if(!signalReader->IsSignalTradeable(signal, MinConfidence, MaxSignalAgeMinutes))
+      if(!signalReader.IsSignalTradeable(signal, MinConfidence, MaxSignalAgeMinutes))
       {
          if(VerboseLogging)
             Print("Signal not tradeable: ", signal.symbol);
@@ -293,7 +296,7 @@ void CheckAndExecuteSignals()
          break;
       }
 
-      int symbolPositions = positionManager->GetOpenPositionCountForSymbol(signal.symbol);
+      int symbolPositions = positionManager.GetOpenPositionCountForSymbol(signal.symbol);
       if(symbolPositions >= MaxPositionsPerSymbol)
       {
          if(VerboseLogging)
@@ -333,7 +336,7 @@ void CheckAndExecuteSignals()
 
          if(lots > 0)
          {
-            ticket = smartOrderManager->PlaceSmartPendingOrder(signal, lots);
+            ticket = smartOrderManager.PlaceSmartPendingOrder(signal, lots);
 
             if(ticket > 0)
             {
@@ -358,7 +361,7 @@ void CheckAndExecuteSignals()
       // If pending order not placed (disabled or returned 0), use market order
       if(!pendingOrderPlaced)
       {
-         ticket = tradeExecutor->ExecuteSignal(signal);
+         ticket = tradeExecutor.ExecuteSignal(signal);
       }
 
       // Process successful order/trade
@@ -385,7 +388,7 @@ void CheckAndExecuteSignals()
                double slDistance = MathAbs(entryPrice - sl);
 
                // Register with position manager
-               bool registered = positionManager->RegisterPosition(
+               bool registered = positionManager.RegisterPosition(
                   ticket,
                   signal.symbol,
                   signal.strategy,
@@ -422,7 +425,7 @@ void OnTradeTransaction(const MqlTradeTransaction &trans,
    if(trans.type == TRADE_TRANSACTION_DEAL_ADD)
    {
       if(performanceTracker != NULL)
-         performanceTracker->Update();
+         performanceTracker.Update();
    }
 }
 

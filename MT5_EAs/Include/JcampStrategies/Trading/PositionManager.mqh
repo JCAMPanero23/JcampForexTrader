@@ -23,7 +23,7 @@ class PositionManager
 private:
    CTrade   trade;
    CPositionTracker tracker;
-   CChandelierStop chandelier;
+   CChandelierStop* chandelier;
    int      magic;
    
    // Session 21: Profit Lock Settings
@@ -70,10 +70,9 @@ public:
       trade.SetExpertMagicNumber(magic);
    }
 
-   ~PositionManager() 
+   ~PositionManager()
    {
       delete chandelier;
-   }
    }
 
    //+------------------------------------------------------------------+
@@ -193,11 +192,11 @@ public:
          if(pos.chandelierActive && useChandelierStop)
          {
             double newChandelierSL = 0;
-            
+
             if(posType == POSITION_TYPE_BUY)
-               newChandelierSL = chandelier.CalculateBuySL(symbol);
+               newChandelierSL = chandelier->CalculateBuySL(symbol);
             else
-               newChandelierSL = chandelier.CalculateSellSL(symbol);
+               newChandelierSL = chandelier->CalculateSellSL(symbol);
 
             if(newChandelierSL <= 0)
             {
@@ -207,7 +206,7 @@ public:
             }
 
             // Check if should update
-            if(chandelier.ShouldUpdate(currentSL, newChandelierSL, posType))
+            if(chandelier->ShouldUpdate(currentSL, newChandelierSL, posType))
             {
                int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
                newChandelierSL = NormalizeDouble(newChandelierSL, digits);
