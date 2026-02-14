@@ -341,6 +341,48 @@ void OnTick()
    //═══════════════════════════════════════════════════════════════
    // STEP 5: Manage open positions on every tick (precise execution)
    //═══════════════════════════════════════════════════════════════
+   // Session 21: Auto-register any unregistered positions (for pending order executions)
+   static ulong lastRegisteredTicket = 0;
+   if(HasOpenPosition())
+   {
+      if(PositionSelect(currentSymbol))
+      {
+         ulong ticket = PositionGetInteger(POSITION_TICKET);
+
+         // If this is a new position (different ticket), register it
+         if(ticket != lastRegisteredTicket)
+         {
+            double entryPrice = PositionGetDouble(POSITION_PRICE_OPEN);
+            double currentSL = PositionGetDouble(POSITION_SL);
+            double slDistance = MathAbs(entryPrice - currentSL);
+            ENUM_POSITION_TYPE posType = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+            int signal = (posType == POSITION_TYPE_BUY) ? 1 : -1;
+
+            // Extract strategy from comment (format: "BT|STRATEGY|CXX")
+            string comment = PositionGetString(POSITION_COMMENT);
+            string strategy = "UNKNOWN";
+            if(StringFind(comment, "|") >= 0)
+            {
+               string parts[];
+               StringSplit(comment, '|', parts);
+               if(ArraySize(parts) >= 2)
+                  strategy = parts[1];
+            }
+
+            bool registered = positionManager.RegisterPosition(ticket, currentSymbol, strategy, signal, entryPrice, slDistance);
+            if(registered)
+            {
+               Print("🔧 Auto-Registered Position: #", ticket, " | ", strategy, " | Entry: ", entryPrice, " | SL Dist: ", slDistance);
+               lastRegisteredTicket = ticket;
+            }
+         }
+      }
+   }
+   else
+   {
+      lastRegisteredTicket = 0; // Reset when no position
+   }
+
    // Session 21: Update positions (Chandelier + Profit Lock)
    static int updateCallCount = 0;
    if(positionManager != NULL)
