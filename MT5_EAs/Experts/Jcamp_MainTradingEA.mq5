@@ -154,7 +154,7 @@ int OnInit()
    }
 
    // Initial export
-   performanceTracker->ExportAll();
+   performanceTracker.ExportAll();
 
    Print("✅ MainTradingEA v3.00 initialized successfully");
    if(UseSmartPending)
@@ -176,7 +176,7 @@ void OnDeinit(const int reason)
    // Final export before shutdown
    if(performanceTracker != NULL)
    {
-      performanceTracker->ExportAll();
+      performanceTracker.ExportAll();
       Print("📊 Final performance data exported");
    }
 
@@ -197,11 +197,11 @@ void OnTick()
 {
    // Always update positions (trailing stops, etc.)
    if(positionManager != NULL)
-      positionManager->UpdatePositions();
+      positionManager.UpdatePositions();
 
    // Session 20: Update pending orders (check cancellation conditions)
    if(smartOrderManager != NULL)
-      smartOrderManager->UpdatePendingOrders();
+      smartOrderManager.UpdatePendingOrders();
 
    datetime currentTime = TimeCurrent();
 
@@ -211,7 +211,7 @@ void OnTick()
       lastTradeHistoryCheck = currentTime;
 
       if(performanceTracker != NULL)
-         performanceTracker->Update();  // Check for new closed trades (lightweight, returns early if none)
+         performanceTracker.Update();  // Check for new closed trades (lightweight, returns early if none)
    }
 
    // Check for new signals (throttled)
@@ -227,7 +227,7 @@ void OnTick()
       lastPositionExport = currentTime;
 
       if(performanceTracker != NULL)
-         performanceTracker->ExportOpenPositions();  // Real-time position updates
+         performanceTracker.ExportOpenPositions();  // Real-time position updates
    }
 
    // Export performance stats periodically (5 minutes - less frequently)
@@ -237,8 +237,8 @@ void OnTick()
 
       if(performanceTracker != NULL)
       {
-         performanceTracker->ExportTradeHistory();      // Update trade history
-         performanceTracker->ExportPerformanceStats();  // Update performance.txt
+         performanceTracker.ExportTradeHistory();      // Update trade history
+         performanceTracker.ExportPerformanceStats();  // Update performance.txt
       }
    }
 }
@@ -253,7 +253,7 @@ void CheckAndExecuteSignals()
 
    // Read signals for all traded symbols
    SignalData signals[];
-   int validSignals = signalReader->ReadMultipleSignals(TradedSymbols, signals);
+   int validSignals = signalReader.ReadMultipleSignals(TradedSymbols, signals);
 
    if(validSignals == 0)
    {
@@ -266,7 +266,7 @@ void CheckAndExecuteSignals()
       Print("📡 Found ", validSignals, " valid signals");
 
    // Check current positions
-   int totalPositions = positionManager->GetOpenPositionCount();
+   int totalPositions = positionManager.GetOpenPositionCount();
 
    // Process each signal
    for(int i = 0; i < ArraySize(signals); i++)
@@ -278,7 +278,7 @@ void CheckAndExecuteSignals()
          continue;
 
       // Check if signal is tradeable
-      if(!signalReader->IsSignalTradeable(signal, MinConfidence, MaxSignalAgeMinutes))
+      if(!signalReader.IsSignalTradeable(signal, MinConfidence, MaxSignalAgeMinutes))
       {
          if(VerboseLogging)
             Print("Signal not tradeable: ", signal.symbol);
@@ -293,7 +293,7 @@ void CheckAndExecuteSignals()
          break;
       }
 
-      int symbolPositions = positionManager->GetOpenPositionCountForSymbol(signal.symbol);
+      int symbolPositions = positionManager.GetOpenPositionCountForSymbol(signal.symbol);
       if(symbolPositions >= MaxPositionsPerSymbol)
       {
          if(VerboseLogging)
@@ -333,7 +333,7 @@ void CheckAndExecuteSignals()
 
          if(lots > 0)
          {
-            ticket = smartOrderManager->PlaceSmartPendingOrder(signal, lots);
+            ticket = smartOrderManager.PlaceSmartPendingOrder(signal, lots);
 
             if(ticket > 0)
             {
@@ -358,7 +358,7 @@ void CheckAndExecuteSignals()
       // If pending order not placed (disabled or returned 0), use market order
       if(!pendingOrderPlaced)
       {
-         ticket = tradeExecutor->ExecuteSignal(signal);
+         ticket = tradeExecutor.ExecuteSignal(signal);
       }
 
       // Process successful order/trade
@@ -385,7 +385,7 @@ void CheckAndExecuteSignals()
                double slDistance = MathAbs(entryPrice - sl);
 
                // Register with position manager
-               bool registered = positionManager->RegisterPosition(
+               bool registered = positionManager.RegisterPosition(
                   ticket,
                   signal.symbol,
                   signal.strategy,
@@ -422,7 +422,7 @@ void OnTradeTransaction(const MqlTradeTransaction &trans,
    if(trans.type == TRADE_TRANSACTION_DEAL_ADD)
    {
       if(performanceTracker != NULL)
-         performanceTracker->Update();
+         performanceTracker.Update();
    }
 }
 

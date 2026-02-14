@@ -194,9 +194,9 @@ public:
             double newChandelierSL = 0;
 
             if(posType == POSITION_TYPE_BUY)
-               newChandelierSL = chandelier->CalculateBuySL(symbol);
+               newChandelierSL = chandelier.CalculateBuySL(symbol);
             else
-               newChandelierSL = chandelier->CalculateSellSL(symbol);
+               newChandelierSL = chandelier.CalculateSellSL(symbol);
 
             if(newChandelierSL <= 0)
             {
@@ -206,7 +206,7 @@ public:
             }
 
             // Check if should update
-            if(chandelier->ShouldUpdate(currentSL, newChandelierSL, posType))
+            if(chandelier.ShouldUpdate(currentSL, newChandelierSL, posType))
             {
                int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
                newChandelierSL = NormalizeDouble(newChandelierSL, digits);
