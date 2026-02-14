@@ -54,21 +54,17 @@ input int    MaxSwingDistancePips = 30;                 // Max distance to swing
 input int    RetracementExpiryHours = 4;                // Retracement order expiry time
 input int    BreakoutExpiryHours = 8;                   // Breakout order expiry time                       // Max total open positions
 
-// --- Position Management (Session 16: 3-Phase Trailing) ---
-input group "═══ 3-PHASE TRAILING SYSTEM ═══"
-input bool UseAdvancedTrailing = true;                 // Enable 3-phase trailing system
-input double TrailingActivationR = 0.5;                // Start trailing at +0.5R
+// --- Position Management (Session 21: Profit Lock + Chandelier) ---
+input group "═══ SESSION 21: CONDITIONAL PROFIT LOCK ═══"
+input bool   UseConditionalLock = true;                // Enable 1.5R profit lock (within 4 hours)
+input double ProfitLockTriggerR = 1.5;                 // Trigger profit lock at +1.5R
+input double ProfitLockLevelR = 0.5;                   // Lock SL at +0.5R when triggered
+input int    FixedSLPeriodHours = 4;                   // Fixed SL period (no trailing for X hours)
 
-input group "═══ PHASE 1: Early Protection (0.5R - 1.0R) ═══"
-input double Phase1EndR = 1.0;                         // Phase 1 ends at this R
-input double Phase1TrailDistance = 0.3;                // Trail 0.3R behind (tight lock)
-
-input group "═══ PHASE 2: Profit Building (1.0R - 2.0R) ═══"
-input double Phase2EndR = 2.0;                         // Phase 2 ends at this R
-input double Phase2TrailDistance = 0.5;                // Trail 0.5R behind (balanced)
-
-input group "═══ PHASE 3: Let Winners Run (2.0R+) ═══"
-input double Phase3TrailDistance = 0.8;                // Trail 0.8R behind (loose)
+input group "═══ SESSION 21: CHANDELIER STOP SYSTEM ═══"
+input bool   UseChandelierStop = true;                 // Enable Chandelier trailing
+input int    ChandelierLookback = 20;                  // Chandelier lookback bars (H1)
+input double ChandelierATRMultiplier = 2.5;            // Chandelier ATR multiplier
 
 // --- Performance Export ---
 input string ExportFolder = "CSM_Data";                // Folder for performance data export
@@ -127,13 +123,14 @@ int OnInit()
                                      SpreadMultiplierEURUSD, SpreadMultiplierGBPUSD,
                                      SpreadMultiplierAUDJPY, SpreadMultiplierUSDJPY, SpreadMultiplierUSDCHF);
    positionManager = new PositionManager(MagicNumber,
-                                         UseAdvancedTrailing,
-                                         TrailingActivationR,
-                                         Phase1EndR, Phase1TrailDistance,
-                                         Phase2EndR, Phase2TrailDistance,
-                                         Phase3TrailDistance,
+                                         UseConditionalLock,
+                                         ProfitLockTriggerR,
+                                         ProfitLockLevelR,
+                                         FixedSLPeriodHours,
+                                         UseChandelierStop,
+                                         ChandelierLookback,
+                                         ChandelierATRMultiplier,
                                          VerboseLogging);
-   performanceTracker = new PerformanceTracker(ExportFolder, MagicNumber, VerboseLogging);
 
    // Session 20: Initialize Smart Order Manager
    smartOrderManager = new SmartOrderManager(MagicNumber,

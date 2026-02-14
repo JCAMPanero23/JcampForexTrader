@@ -1,64 +1,83 @@
 //+------------------------------------------------------------------+
 //|                                           PositionManager.mqh     |
 //|                                            JcampForexTrader       |
-//|                         Session 16 - 3-Phase Trailing System     |
+//|           Session 21 - 4-Hour Fixed SL + Profit Lock + Chandelier|
 //+------------------------------------------------------------------+
 #property copyright "JcampForexTrader"
 #property link      ""
-#property version   "2.00"
+#property version   "3.00"
 #property strict
 
 #include <Trade\Trade.mqh>
 #include "PositionTracker.mqh"
+#include "ChandelierStop.mqh"
 
 //+------------------------------------------------------------------+
-//| Position Manager Class (Enhanced with 3-Phase Trailing)          |
-//| Manages open positions with asymmetric trailing stop system      |
+//| Position Manager Class (Session 21 Enhanced)                     |
+//| - 4-hour fixed SL period (no trailing)                           |
+//| - 1.5R profit lock at +0.5R (within 4 hours)                     |
+//| - Chandelier trailing after 4 hours OR profit lock               |
 //+------------------------------------------------------------------+
 class PositionManager
 {
 private:
    CTrade   trade;
    CPositionTracker tracker;
+   CChandelierStop chandelier;
    int      magic;
-   bool     useAdvancedTrailing;
-   double   trailingActivationR;
-   double   phase1EndR;
-   double   phase1TrailDistance;
-   double   phase2EndR;
-   double   phase2TrailDistance;
-   double   phase3TrailDistance;
+   
+   // Session 21: Profit Lock Settings
+   bool     useConditionalLock;
+   double   profitLockTriggerR;
+   double   profitLockLevelR;
+   int      fixedSLPeriodHours;
+   
+   // Session 21: Chandelier Settings  
+   bool     useChandelierStop;
+   int      chandelierLookback;
+   double   chandelierATRMultiplier;
+   
+   // Legacy (for backwards compatibility)
    bool     verboseLogging;
 
 public:
    PositionManager(int magicNum = 100001,
-                   bool useAdvanced = true,
-                   double activationR = 0.5,
-                   double p1End = 1.0,
-                   double p1Trail = 0.3,
-                   double p2End = 2.0,
-                   double p2Trail = 0.5,
-                   double p3Trail = 0.8,
+                   bool useCondLock = true,
+                   double lockTriggerR = 1.5,
+                   double lockLevelR = 0.5,
+                   int fixedPeriodHours = 4,
+                   bool useChandelier = true,
+                   int chandelierLookback = 20,
+                   double chandelierATRMult = 2.5,
                    bool verbose = false)
    {
       magic = magicNum;
-      useAdvancedTrailing = useAdvanced;
-      trailingActivationR = activationR;
-      phase1EndR = p1End;
-      phase1TrailDistance = p1Trail;
-      phase2EndR = p2End;
-      phase2TrailDistance = p2Trail;
-      phase3TrailDistance = p3Trail;
+      
+      // Session 21 settings
+      useConditionalLock = useCondLock;
+      profitLockTriggerR = lockTriggerR;
+      profitLockLevelR = lockLevelR;
+      fixedSLPeriodHours = fixedPeriodHours;
+      useChandelierStop = useChandelier;
+      chandelierLookback = chandelierLookback;
+      chandelierATRMultiplier = chandelierATRMult;
+      
       verboseLogging = verbose;
-
+      
+      // Initialize Chandelier with configured settings
+      chandelier = new CChandelierStop(chandelierLookback, chandelierATRMult, PERIOD_H1, 14);
+      
       trade.SetExpertMagicNumber(magic);
    }
 
-   ~PositionManager() {}
+   ~PositionManager() 
+   {
+      if(CheckPointer(chandelier) == POINTER_DYNAMIC)
+         delete chandelier;
+   }
 
    //+------------------------------------------------------------------+
    //| Register New Position for Tracking                               |
-   //| Call this immediately after trade execution                       |
    //+------------------------------------------------------------------+
    bool RegisterPosition(ulong ticket,
                           string symbol,
@@ -71,8 +90,11 @@ public:
    }
 
    //+------------------------------------------------------------------+
-   //| Update All Positions (3-Phase Trailing System)                   |
-   //| Call this on every OnTick                                         |
+   //| Update All Positions (Session 21 Logic)                          |
+   //| Flow:                                                             |
+   //| 1. Check 1.5R profit lock (within 4 hours)                       |
+   //| 2. Check if 4-hour period elapsed                                |
+   //| 3. Apply Chandelier trailing (if activated)                      |
    //+------------------------------------------------------------------+
    void UpdatePositions()
    {
@@ -90,7 +112,6 @@ public:
          // Check if position still exists
          if(!PositionSelectByTicket(ticket))
          {
-            // Position closed, remove from tracker
             tracker.RemovePosition(ticket);
             continue;
          }
@@ -99,9 +120,8 @@ public:
          PositionData pos;
          if(!tracker.GetPosition(ticket, pos))
          {
-            // Position not tracked (opened externally or before EA start)
-            continue;
-        }
+            continue; // Not tracked
+         }
 
          // Get current position info
          string symbol = PositionGetString(POSITION_SYMBOL);
@@ -118,87 +138,88 @@ public:
          // Update high water mark
          tracker.UpdateHighWaterMark(ticket, currentPrice);
 
-         // ✅ RANGE RIDER EARLY BREAKEVEN (at +0.5R)
-         if(!pos.breakevenSet && StringFind(pos.strategy, "RANGE") >= 0 && currentR >= 0.5)
-         {
-            ApplyBreakeven(ticket, symbol, posType, pos.entryPrice, currentSL, currentTP);
-            tracker.SetBreakevenSet(ticket, true);
-            continue; // Skip trailing this tick (breakeven just set)
-         }
+         // ═════════════════════════════════════════════════════════════
+         // SESSION 21 LOGIC: 4-Hour Fixed SL + Conditional Profit Lock
+         // ═════════════════════════════════════════════════════════════
 
-         // Check if advanced trailing should activate
-         if(!useAdvancedTrailing || currentR < trailingActivationR)
-            continue; // Not profitable enough yet
-
-         // Activate trailing if not already
-         if(!pos.trailingActivated)
+         // ✅ STEP 1: Check for 1.5R Profit Lock (within 4 hours)
+         if(useConditionalLock && !pos.profitLocked && !pos.chandelierActive)
          {
-            tracker.SetTrailingActivated(ticket, true);
-            if(verboseLogging)
+            // Check if 4-hour period NOT yet elapsed
+            bool withinFixedPeriod = !tracker.HasFixedPeriodElapsed(ticket, fixedSLPeriodHours);
+            
+            if(withinFixedPeriod && currentR >= profitLockTriggerR)
             {
-               Print("⚡ Trailing Activated: #", ticket, " | ",
-                     symbol, " | R=+", DoubleToString(currentR, 2));
+               // PROFIT LOCK TRIGGERED! Lock at +0.5R and activate Chandelier
+               ApplyProfitLock(ticket, symbol, posType, pos.entryPrice, pos.originalSLDistance, currentSL, currentTP);
+               tracker.SetProfitLocked(ticket, true);
+               tracker.SetChandelierActive(ticket, true);
+               
+               if(verboseLogging)
+               {
+                  Print("🔒 PROFIT LOCK | #", ticket, " | ", symbol,
+                        " | Hit +", DoubleToString(profitLockTriggerR, 1), "R in ", fixedSLPeriodHours, "h",
+                        " | Locked +", DoubleToString(profitLockLevelR, 1), "R | Chandelier ON");
+               }
+               
+               continue; // Skip further processing this tick
             }
          }
 
-         // Determine current phase
-         int phase = tracker.GetCurrentPhase(currentR, phase1EndR, phase2EndR);
-
-         // Get trail distance for current phase
-         double trailDistance = 0;
-         if(phase == 1)
-            trailDistance = phase1TrailDistance;
-         else if(phase == 2)
-            trailDistance = phase2TrailDistance;
-         else
-            trailDistance = phase3TrailDistance;
-
-         // Calculate new SL in R-multiples
-         double newSL_R = currentR - trailDistance;
-
-         // Prevent negative R (don't move SL below entry)
-         if(newSL_R < 0)
-            newSL_R = 0;
-
-         // Convert R to price
-         double newSL_Price;
-         if(posType == POSITION_TYPE_BUY)
-            newSL_Price = pos.entryPrice + (newSL_R * pos.originalSLDistance);
-         else
-            newSL_Price = pos.entryPrice - (newSL_R * pos.originalSLDistance);
-
-         // Only move SL if better than current
-         bool shouldUpdate = false;
-         if(posType == POSITION_TYPE_BUY && newSL_Price > currentSL)
-            shouldUpdate = true;
-         else if(posType == POSITION_TYPE_SELL && newSL_Price < currentSL)
-            shouldUpdate = true;
-
-         if(shouldUpdate)
+         // ✅ STEP 2: Check if 4-hour fixed period has elapsed
+         if(!pos.chandelierActive)
          {
-            // Normalize price
-            int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
-            newSL_Price = NormalizeDouble(newSL_Price, digits);
-
-            if(trade.PositionModify(ticket, newSL_Price, currentTP))
+            bool fixedPeriodElapsed = tracker.HasFixedPeriodElapsed(ticket, fixedSLPeriodHours);
+            
+            if(fixedPeriodElapsed)
             {
-               // Update phase if changed
-               if(phase != pos.currentPhase)
-               {
-                  tracker.SetPhase(ticket, phase);
-                  if(verboseLogging)
-                  {
-                     Print("🎯 Phase Transition: #", ticket, " | ",
-                           symbol, " | Phase ", pos.currentPhase, " → ", phase,
-                           " | R=+", DoubleToString(currentR, 2));
-                  }
-               }
-
+               // Activate Chandelier after 4 hours
+               tracker.SetChandelierActive(ticket, true);
+               
                if(verboseLogging)
                {
-                  Print("✓ Trailing Phase ", phase, " | #", ticket, " | ",
-                        symbol, " | R=+", DoubleToString(currentR, 2),
-                        " | SL→+", DoubleToString(newSL_R, 2), "R");
+                  Print("⏰ 4-HOUR ELAPSED | #", ticket, " | ", symbol,
+                        " | Chandelier ON | R: +", DoubleToString(currentR, 2));
+               }
+            }
+            else
+            {
+               // Still in fixed SL period, no trailing
+               continue;
+            }
+         }
+
+         // ✅ STEP 3: Apply Chandelier Trailing (if active)
+         if(pos.chandelierActive && useChandelierStop)
+         {
+            double newChandelierSL = 0;
+            
+            if(posType == POSITION_TYPE_BUY)
+               newChandelierSL = chandelier.CalculateBuySL(symbol);
+            else
+               newChandelierSL = chandelier.CalculateSellSL(symbol);
+
+            if(newChandelierSL <= 0)
+            {
+               if(verboseLogging)
+                  Print("⚠️ Chandelier calc failed: ", symbol);
+               continue;
+            }
+
+            // Check if should update
+            if(chandelier.ShouldUpdate(currentSL, newChandelierSL, posType))
+            {
+               int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
+               newChandelierSL = NormalizeDouble(newChandelierSL, digits);
+
+               if(trade.PositionModify(ticket, newChandelierSL, currentTP))
+               {
+                  if(verboseLogging)
+                  {
+                     Print("📊 Chandelier | #", ticket, " | ", symbol,
+                           " | R: +", DoubleToString(currentR, 2),
+                           " | SL: ", DoubleToString(newChandelierSL, digits));
+                  }
                }
             }
          }
@@ -268,8 +289,7 @@ public:
       }
       else
       {
-         Print("ERROR: Failed to close position #", ticket,
-               " | Error: ", GetLastError());
+         Print("ERROR: Failed to close #", ticket, " | Error: ", GetLastError());
          return false;
       }
    }
@@ -302,40 +322,44 @@ public:
 
 private:
    //+------------------------------------------------------------------+
-   //| Apply Breakeven Stop Loss (RangeRider at +0.5R)                  |
+   //| Session 21: Apply Profit Lock (Move SL to +0.5R)                 |
    //+------------------------------------------------------------------+
-   void ApplyBreakeven(ulong ticket,
-                       string symbol,
-                       ENUM_POSITION_TYPE posType,
-                       double entryPrice,
-                       double currentSL,
-                       double currentTP)
+   void ApplyProfitLock(ulong ticket,
+                        string symbol,
+                        ENUM_POSITION_TYPE posType,
+                        double entryPrice,
+                        double slDistance,
+                        double currentSL,
+                        double currentTP)
    {
-      double point = SymbolInfoDouble(symbol, SYMBOL_POINT);
-      int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
-
-      // Move to breakeven + 2 pips
-      double bePrice;
+      // Calculate +0.5R price level
+      double lockPrice;
       if(posType == POSITION_TYPE_BUY)
-         bePrice = entryPrice + (2.0 * 10 * point); // +2 pips
+         lockPrice = entryPrice + (profitLockLevelR * slDistance);
       else
-         bePrice = entryPrice - (2.0 * 10 * point); // -2 pips
+         lockPrice = entryPrice - (profitLockLevelR * slDistance);
 
-      bePrice = NormalizeDouble(bePrice, digits);
+      // Normalize
+      int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
+      lockPrice = NormalizeDouble(lockPrice, digits);
 
       // Only update if better than current SL
       bool shouldUpdate = false;
-      if(posType == POSITION_TYPE_BUY && bePrice > currentSL)
+      if(posType == POSITION_TYPE_BUY && lockPrice > currentSL)
          shouldUpdate = true;
-      else if(posType == POSITION_TYPE_SELL && bePrice < currentSL)
+      else if(posType == POSITION_TYPE_SELL && lockPrice < currentSL)
          shouldUpdate = true;
 
       if(shouldUpdate)
       {
-         if(trade.PositionModify(ticket, bePrice, currentTP))
+         if(trade.PositionModify(ticket, lockPrice, currentTP))
          {
-            Print("🛡️ RangeRider Breakeven | #", ticket, " | ",
-                  symbol, " | SL→Entry+2 pips (worst case: -0.08R)");
+            if(verboseLogging)
+            {
+               Print("🔐 Profit Lock Applied | #", ticket, " | ", symbol,
+                     " | SL → +", DoubleToString(profitLockLevelR, 1), "R (",
+                     DoubleToString(lockPrice, digits), ")");
+            }
          }
       }
    }

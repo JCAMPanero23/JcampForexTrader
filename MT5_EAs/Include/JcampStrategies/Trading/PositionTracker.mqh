@@ -25,6 +25,8 @@ struct PositionData
     int      currentPhase;           // 1, 2, or 3
     bool     breakevenSet;           // Has breakeven been set? (RangeRider only)
     double   highWaterMark;          // Track highest/lowest price for trailing
+    bool     profitLocked;           // Session 21: Has 1.5R profit lock been triggered?
+    bool     chandelierActive;       // Session 21: Is Chandelier trailing active?
 };
 
 //+------------------------------------------------------------------+
@@ -75,6 +77,8 @@ public:
         m_positions[m_count].currentPhase = 0;
         m_positions[m_count].breakevenSet = false;
         m_positions[m_count].highWaterMark = entryPrice;
+        m_positions[m_count].profitLocked = false;
+        m_positions[m_count].chandelierActive = false;
 
         return true;
     }
@@ -230,6 +234,55 @@ public:
 
         outPos = m_positions[index];
         return true;
+    }
+
+private:
+    //+------------------------------------------------------------------+
+    //| Get Position Index by Ticket                                     |
+    //+------------------------------------------------------------------+
+    int GetPositionIndex(ulong ticket)
+    {
+        for(int i = 0; i < ArraySize(m_positions); i++)
+        {
+            if(m_positions[i].ticket == ticket)
+                return i;
+        }
+        return -1;
+    }
+
+    //+------------------------------------------------------------------+
+    //| Session 21: Mark Profit Lock as Triggered                        |
+    //+------------------------------------------------------------------+
+    void SetProfitLocked(ulong ticket, bool locked)
+    {
+        int idx = GetPositionIndex(ticket);
+        if(idx >= 0)
+            m_positions[idx].profitLocked = locked;
+    }
+
+    //+------------------------------------------------------------------+
+    //| Session 21: Mark Chandelier as Active                            |
+    //+------------------------------------------------------------------+
+    void SetChandelierActive(ulong ticket, bool active)
+    {
+        int idx = GetPositionIndex(ticket);
+        if(idx >= 0)
+            m_positions[idx].chandelierActive = active;
+    }
+
+    //+------------------------------------------------------------------+
+    //| Session 21: Check if 4-hour fixed period has elapsed             |
+    //+------------------------------------------------------------------+
+    bool HasFixedPeriodElapsed(ulong ticket, int fixedPeriodHours)
+    {
+        int idx = GetPositionIndex(ticket);
+        if(idx < 0)
+            return true; // Default to true if not found
+
+        datetime now = TimeCurrent();
+        int hoursElapsed = (int)((now - m_positions[idx].entryTime) / 3600);
+
+        return (hoursElapsed >= fixedPeriodHours);
     }
 
 private:
